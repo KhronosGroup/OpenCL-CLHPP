@@ -1,10 +1,20 @@
+#!/usr/bin/env python
 import re
 import sys
+from optparse import OptionParser
 
-inputCLHPP = open('input_cl.hpp', 'r')
+parser = OptionParser()
+parser.add_option('-i', '--input', dest = 'input_filename', metavar = 'FILE', default = 'input_cl.hpp', help = 'Template file')
+parser.add_option('-o', '--output', dest = 'output_filename', metavar = 'FILE', default = 'cl.hpp', help = 'Output file')
+(options, args) = parser.parse_args()
+if len(args) > 0:
+    parser.error("No arguments expected")
+
+inputCLHPP = open(options.input_filename, 'r')
 contents = inputCLHPP.read()
+inputCLHPP.close()
 
-outputCLHPP = open('cl.hpp', 'w')
+outputCLHPP = open(options.output_filename, 'w')
 
 numArgs = 32
 
@@ -111,3 +121,4 @@ outputContents = contents.replace("%FUNCTION_IMPLEMENTATION_REPLACEMENT_POINT%",
 outputContents = re.sub("//@@@@EXCESSIVE-ARG-START.*?[\n\r](.*?[\n\r])+?//@@@@EXCESSIVE-ARG-END.*?[\n\r]", "", outputContents, 0, re.MULTILINE)
 
 outputCLHPP.write(outputContents)
+outputCLHPP.close()

@@ -8,7 +8,7 @@
 const int numElements = 32;
 
 int main(void)
-{    
+{
 
     cl::Program vectorAddProgram(
         std::string(
@@ -21,26 +21,25 @@ int main(void)
             cl::Buffer&,
             cl::Buffer&
             >( vectorAddProgram, "vectorAdd" );
-    
+
     std::vector<int> inputA(numElements, 1);
     std::vector<int> inputB(numElements, 2);
-    std::vector<int> output(numElements, 0xdeadbeef);    
+    std::vector<int> output(numElements, 0xdeadbeef);
     cl::Buffer inputABuffer(begin(inputA), end(inputA), true);
     cl::Buffer inputBBuffer(begin(inputB), end(inputB), true);
-    cl::Buffer outputBuffer(begin(output), end(output), false);   
+    cl::Buffer outputBuffer(begin(output), end(output), false);
 
-    vectorAddKernel(                
+    vectorAddKernel(
         cl::EnqueueArgs(
-            cl::NDRange(numElements), 
+            cl::NDRange(numElements),
             cl::NDRange(numElements)),
         inputABuffer,
         inputBBuffer,
-        outputBuffer);    
-    
+        outputBuffer);
+
     cl::copy(outputBuffer, begin(output), end(output));
-        
+
     std::cout << "Output:\n";
-    bool correct = true;
     for( int i = 1; i < numElements; ++i ) {
         std::cout << "\t" << output[i] << "\n";
     }
