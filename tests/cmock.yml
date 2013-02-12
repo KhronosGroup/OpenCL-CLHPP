@@ -1,0 +1,7 @@
+:cmock:
+  :includes:
+    - CL/cl_platform.h
+  :treat_externs: :include
+  :enforce_strict_ordering: :true
+  :plugins:
+    - :callback
