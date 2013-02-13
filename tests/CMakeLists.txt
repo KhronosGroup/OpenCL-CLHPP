@@ -30,6 +30,8 @@ include_directories(
 add_definitions(-DUNITY_SUPPORT_64)
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     add_definitions(-DUNITY_POINTER_WIDTH=64)
+	add_definitions("-DCMOCK_MEM_PTR_AS_INT=unsigned long long")
+	add_definitions(-DCMOCK_MEM_ALIGN=3)
 endif()
 if( CMAKE_SIZEOF_LONG EQUAL 8 )
     add_definitions(-DUNITY_LONG_WIDTH=64)
