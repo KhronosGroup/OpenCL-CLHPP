@@ -1,4 +1,5 @@
 #include <CL/cl.hpp>
+#undef _UP
 
 extern "C"
 {
