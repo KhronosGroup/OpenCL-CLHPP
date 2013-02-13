@@ -2950,7 +2950,7 @@ class Buffer;
 template< typename IteratorType >
 cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Buffer &buffer );
 template< typename IteratorType >
-cl_int copy( cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
+cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
 
 /*! \brief Class interface for Buffer Memory Objects.
  * 
@@ -6186,7 +6186,7 @@ inline cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Bu
  * Blocking copy operation between iterators and a buffer.
  */
 template< typename IteratorType >
-inline cl_int copy( cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator )
+inline cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator )
 {
     typedef typename std::iterator_traits<IteratorType>::value_type DataType;
     cl_int error;
