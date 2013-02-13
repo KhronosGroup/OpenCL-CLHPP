@@ -30,6 +30,7 @@
  *   Additions and fixes from:
  *       Brian Cole, March 3rd 2010 and April 2012 
  *       Matt Gruenke, April 2012.
+ *       Bruce Merry, February 2013.
  *   
  *   \version 1.2.4
  *   \date January 2013
@@ -1650,6 +1651,36 @@ struct ReferenceHandler<cl_event>
     { return ::clReleaseEvent(event); }
 };
 
+
+// Extracts version number with major in the upper 16 bits, minor in the lower 16
+static cl_uint getVersion(const char *versionInfo)
+{
+    int highVersion = 0;
+    int lowVersion = 0;
+    int index = 7;
+    while(versionInfo[index] != '.' ) {
+        highVersion *= 10;
+        highVersion += versionInfo[index]-'0';
+        ++index;
+    }
+    ++index;
+    while(versionInfo[index] != ' ' ) {
+        lowVersion *= 10;
+        lowVersion += versionInfo[index]-'0';
+        ++index;
+    }
+    return (highVersion << 16) | lowVersion;
+}
+
+static cl_uint getPlatformVersion(cl_platform_id platform)
+{
+    ::size_t size = 0;
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, 0, &size);
+    char *versionInfo = (char *) alloca(size);
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, &versionInfo[0], &size);
+    return getVersion(versionInfo);
+}
+
 template <typename T>
 class Wrapper
 {
@@ -1719,35 +1750,19 @@ protected:
 
     static int getVersion(cl_device_id device)
     {
-        ::size_t size = 0;
-        clGetDeviceInfo(device, CL_DEVICE_VERSION, 0, 0, &size);
-        STRING_CLASS versionInfo;
-        versionInfo.resize(size + 1);
-        clGetDeviceInfo(device, CL_DEVICE_VERSION, size, &versionInfo[0],
-&size);
-        int highVersion = 0;
-        int lowVersion = 0;
-        int index = 7;
-        while(versionInfo[index] != '.' ) {
-            highVersion *= 10;
-            highVersion += versionInfo[index]-'0';
-            ++index;
-        }
-        ++index;
-        while(versionInfo[index] != ' ' ) {
-            lowVersion *= 10;
-            lowVersion += versionInfo[index]-'0';
-            ++index;
-        }
-        return (highVersion << 16) | lowVersion;
+        cl_platform_id platform;
+        clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL);
+        return getPlatformVersion(platform);
     }
 
     static bool isReferenceCountable(cl_device_id device)
     {
         bool retVal = false;
-        int version = getVersion(device);
-        if(version > ((1 << 16) + 1)) {
-            retVal = true;
+        if (device != NULL) {
+            int version = getVersion(device);
+            if(version > ((1 << 16) + 1)) {
+                retVal = true;
+            }
         }
         return retVal;
     }
