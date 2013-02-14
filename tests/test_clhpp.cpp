@@ -1,6 +1,8 @@
 #include <CL/cl.hpp>
 #undef _UP
 
+#include <map>
+
 extern "C"
 {
 #include <unity.h>
@@ -308,18 +310,46 @@ cl_int clGetImageInfo_testGetImageInfoBuffer(
     return CL_SUCCESS;
 }
 
+/**
+ * Reference count for memory object make_mem(1) used by retain and release
+ */
+static int testGetImageInfoBuffer_memObjectRefCount = 0;
+
+/**
+ * Stub to reference count instances of memory object make_mem(1)
+ */
+cl_int clRetainMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
+{    
+    TEST_ASSERT_EQUAL(make_mem(1), memobj);
+    ++testGetImageInfoBuffer_memObjectRefCount;
+    return CL_SUCCESS;
+}
+
+/**
+ * Stub to reference count instances of memory object make_mem(1)
+ */
+cl_int clReleaseMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
+{    
+    TEST_ASSERT_EQUAL(make_mem(1), memobj);
+    --testGetImageInfoBuffer_memObjectRefCount;
+    TEST_ASSERT(testGetImageInfoBuffer_memObjectRefCount >= 0);
+    return CL_SUCCESS;
+}
+
 void testGetImageInfoBuffer()
 {
     clGetImageInfo_StubWithCallback(clGetImageInfo_testGetImageInfoBuffer);
-    clRetainMemObject_ExpectAndReturn(make_mem(1), CL_SUCCESS);
+    clRetainMemObject_StubWithCallback(clRetainMemObject_testGetImageInfoBuffer);
+    clReleaseMemObject_StubWithCallback(clReleaseMemObject_testGetImageInfoBuffer);
 
     cl::Image1DBuffer image(make_mem(0));
-    cl::Buffer buffer = image.getImageInfo<CL_IMAGE_BUFFER>();
+    const cl::Buffer &buffer = image.getImageInfo<CL_IMAGE_BUFFER>();
     TEST_ASSERT_EQUAL_PTR(make_mem(1), buffer());
+    // Ref count should be 1 here because buffer has not been destroyed yet
+    TEST_ASSERT_EQUAL(testGetImageInfoBuffer_memObjectRefCount, 1);
 
     // prevent destructor from interfering with the test
     image() = NULL;
-    buffer() = NULL;
 }
 
 /**
