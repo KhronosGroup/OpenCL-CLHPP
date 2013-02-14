@@ -257,6 +257,7 @@ class Device;
 class Context;
 class CommandQueue;
 class Memory;
+class Buffer;
 
 #if defined(__CL_ENABLE_EXCEPTIONS)
 /*! \brief Exception class 
@@ -1305,6 +1306,7 @@ struct GetInfoHelper<Func, CPP_TYPE> \
     F(cl_image_info, CL_IMAGE_WIDTH, ::size_t) \
     F(cl_image_info, CL_IMAGE_HEIGHT, ::size_t) \
     F(cl_image_info, CL_IMAGE_DEPTH, ::size_t) \
+    F(cl_image_info, CL_IMAGE_BUFFER, cl::Buffer) \
     \
     F(cl_sampler_info, CL_SAMPLER_REFERENCE_COUNT, cl_uint) \
     F(cl_sampler_info, CL_SAMPLER_CONTEXT, cl::Context) \

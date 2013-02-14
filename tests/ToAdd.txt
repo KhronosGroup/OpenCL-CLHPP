@@ -1,0 +1,9 @@
+Test for image buffer getInfo:
+
+    std::vector<int> inputA(numElements, 1);
+    cl::Buffer inputABuffer(begin(inputA), end(inputA), true);
+    cl::Image1DBuffer i(cl::Context::getDefault(), 0, cl::ImageFormat(CL_R, CL_SIGNED_INT32), numElements, inputABuffer);
+    cl::Buffer &b(i.getImageInfo<CL_IMAGE_BUFFER>());
+    if( b() == inputABuffer() ) {
+        std::cout << "Correct\n";
+    }
