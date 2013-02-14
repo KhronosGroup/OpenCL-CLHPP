@@ -1079,145 +1079,136 @@ public:
 
 namespace detail {
 
-// GetInfo help struct
-template <typename Functor, typename T>
-struct GetInfoHelper
+// Generic getInfoHelper. The final parameter is used to guide overload
+// resolution: the actual parameter passed is an int, which makes this
+// a worse conversion sequence than a specialization that declares the
+// parameter as an int.
+template<typename Functor, typename T>
+inline cl_int getInfoHelper(Functor f, cl_uint name, T* param, long)
 {
-    static cl_int
-    get(Functor f, cl_uint name, T* param)
-    {
-        return f(name, sizeof(T), param, NULL);
-    }
-};
+    return f(name, sizeof(T), param, NULL);
+}
 
-// Specialized GetInfoHelper for VECTOR_CLASS params
+// Specialized getInfoHelper for VECTOR_CLASS params
 template <typename Func, typename T>
-struct GetInfoHelper<Func, VECTOR_CLASS<T> >
+inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<T>* param, int)
 {
-    static cl_int get(Func f, cl_uint name, VECTOR_CLASS<T>* param)
-    {
-        ::size_t required;
-        cl_int err = f(name, 0, NULL, &required);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        T* value = (T*) alloca(required);
-        err = f(name, required, value, NULL);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        param->assign(&value[0], &value[required/sizeof(T)]);
-        return CL_SUCCESS;
+    ::size_t required;
+    cl_int err = f(name, 0, NULL, &required);
+    if (err != CL_SUCCESS) {
+        return err;
     }
-};
+
+    T* value = (T*) alloca(required);
+    err = f(name, required, value, NULL);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+
+    param->assign(&value[0], &value[required/sizeof(T)]);
+    return CL_SUCCESS;
+}
 
 template <typename Func>
-struct GetInfoHelper<Func, VECTOR_CLASS<cl::Device> >
+inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<cl::Device>* param, int)
 {
-    static cl_int get(Func f, cl_uint name, VECTOR_CLASS<cl::Device>* param)
-    {
-        ::size_t required;
-        cl_int err = f(name, 0, NULL, &required);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        cl_device_id* value = (cl_device_id*) alloca(required);
-        err = f(name, required, value, NULL);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        param->assign(&value[0], &value[required/sizeof(cl_device_id)]);
-        return CL_SUCCESS;
+    ::size_t required;
+    cl_int err = f(name, 0, NULL, &required);
+    if (err != CL_SUCCESS) {
+        return err;
     }
-};
+
+    cl_device_id* value = (cl_device_id*) alloca(required);
+    err = f(name, required, value, NULL);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+
+    param->assign(&value[0], &value[required/sizeof(cl_device_id)]);
+    return CL_SUCCESS;
+}
 
 // Specialized for getInfo<CL_PROGRAM_BINARIES>
 template <typename Func>
-struct GetInfoHelper<Func, VECTOR_CLASS<char *> >
+inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<char *>* param, int)
 {
-    static cl_int
-    get(Func f, cl_uint name, VECTOR_CLASS<char *>* param)
-    {
-      cl_uint err = f(name, param->size() * sizeof(char *), &(*param)[0], NULL);
+    cl_int err = f(name, param->size() * sizeof(char *), &(*param)[0], NULL);
 
-      if (err != CL_SUCCESS) {
+    if (err != CL_SUCCESS) {
         return err;
-      }
-
-      return CL_SUCCESS;
     }
-};
+
+    return CL_SUCCESS;
+}
 
 // Specialized GetInfoHelper for STRING_CLASS params
 template <typename Func>
-struct GetInfoHelper<Func, STRING_CLASS>
+inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, int)
 {
-    static cl_int get(Func f, cl_uint name, STRING_CLASS* param)
-    {
-        ::size_t required;
-        cl_int err = f(name, 0, NULL, &required);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        char* value = (char*) alloca(required);
-        err = f(name, required, value, NULL);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        *param = value;
-        return CL_SUCCESS;
+    ::size_t required;
+    cl_int err = f(name, 0, NULL, &required);
+    if (err != CL_SUCCESS) {
+        return err;
     }
-};
+
+    char* value = (char*) alloca(required);
+    err = f(name, required, value, NULL);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+
+    *param = value;
+    return CL_SUCCESS;
+}
 
 // Specialized GetInfoHelper for cl::size_t params
 template <typename Func, ::size_t N>
-struct GetInfoHelper<Func, size_t<N> >
+inline cl_int getInfoHelper(Func f, cl_uint name, size_t<N>* param, int)
 {
-    static cl_int get(Func f, cl_uint name, size_t<N>* param)
-    {
-        ::size_t required;
-        cl_int err = f(name, 0, NULL, &required);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        ::size_t* value = (::size_t*) alloca(required);
-        err = f(name, required, value, NULL);
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-
-        for(int i = 0; i < N; ++i) {
-            (*param)[i] = value[i];
-        }
- 
-        return CL_SUCCESS;
+    ::size_t required;
+    cl_int err = f(name, 0, NULL, &required);
+    if (err != CL_SUCCESS) {
+        return err;
     }
-};
 
-#define __GET_INFO_HELPER_WITH_RETAIN(CPP_TYPE) \
-namespace detail { \
-template <typename Func> \
-struct GetInfoHelper<Func, CPP_TYPE> \
-{ \
-    static cl_int get(Func f, cl_uint name, CPP_TYPE* param) \
-    { \
-      cl_uint err = f(name, sizeof(CPP_TYPE), param, NULL); \
-      if (err != CL_SUCCESS) { \
-        return err; \
-      } \
-      \
-      return ReferenceHandler<CPP_TYPE::cl_type>::retain((*param)()); \
-    } \
-}; \
-} 
+    ::size_t* value = (::size_t*) alloca(required);
+    err = f(name, required, value, NULL);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
 
+    for(int i = 0; i < N; ++i) {
+        (*param)[i] = value[i];
+    }
+
+    return CL_SUCCESS;
+}
+
+template<typename T> struct ReferenceHandler;
+
+/* Specialization for reference-counted types. This depends on the
+ * existence of Wrapper<T>::cl_type, and none of the other types having the
+ * cl_type member. Note that simplify specifying the parameter as Wrapper<T>
+ * does not work, because when using a derived type (e.g. Context) the generic
+ * template will provide a better match.
+ */
+template<typename Func, typename T>
+inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_type = 0)
+{
+    typename T::cl_type value;
+    cl_int err = f(name, sizeof(value), &value, NULL);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+    if (value) {
+        err = ReferenceHandler<typename T::cl_type>::retain(value);
+        if (err != CL_SUCCESS) {
+            return err;
+        }
+    }
+    *param = value;
+    return CL_SUCCESS;
+}
 
 #define __PARAM_NAME_INFO_1_0(F) \
     F(cl_platform_info, CL_PLATFORM_PROFILE, STRING_CLASS) \
@@ -1306,7 +1297,6 @@ struct GetInfoHelper<Func, CPP_TYPE> \
     F(cl_image_info, CL_IMAGE_WIDTH, ::size_t) \
     F(cl_image_info, CL_IMAGE_HEIGHT, ::size_t) \
     F(cl_image_info, CL_IMAGE_DEPTH, ::size_t) \
-    F(cl_image_info, CL_IMAGE_BUFFER, cl::Buffer) \
     \
     F(cl_sampler_info, CL_SAMPLER_REFERENCE_COUNT, cl_uint) \
     F(cl_sampler_info, CL_SAMPLER_CONTEXT, cl::Context) \
@@ -1369,6 +1359,8 @@ struct GetInfoHelper<Func, CPP_TYPE> \
     
 #if defined(CL_VERSION_1_2)
 #define __PARAM_NAME_INFO_1_2(F) \
+    F(cl_image_info, CL_IMAGE_BUFFER, cl::Buffer) \
+    \
     F(cl_program_info, CL_PROGRAM_NUM_KERNELS, ::size_t) \
     F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, STRING_CLASS) \
     \
@@ -1490,7 +1482,7 @@ template <typename Func, typename T>
 inline cl_int
 getInfo(Func f, cl_uint name, T* param)
 {
-    return GetInfoHelper<Func, T>::get(f, name, param);
+    return getInfoHelper(f, name, param, 0);
 }
 
 template <typename Func, typename Arg0>
@@ -1516,8 +1508,7 @@ inline cl_int
 getInfo(Func f, const Arg0& arg0, cl_uint name, T* param)
 {
     GetInfoFunctor0<Func, Arg0> f0 = { f, arg0 };
-    return GetInfoHelper<GetInfoFunctor0<Func, Arg0>, T>
-        ::get(f0, name, param);
+    return getInfoHelper(f0, name, param, 0);
 }
 
 template <typename Func, typename Arg0, typename Arg1, typename T>
@@ -1525,8 +1516,7 @@ inline cl_int
 getInfo(Func f, const Arg0& arg0, const Arg1& arg1, cl_uint name, T* param)
 {
     GetInfoFunctor1<Func, Arg0, Arg1> f0 = { f, arg0, arg1 };
-    return GetInfoHelper<GetInfoFunctor1<Func, Arg0, Arg1>, T>
-        ::get(f0, name, param);
+    return getInfoHelper(f0, name, param, 0);
 }
 
 template<typename T>
@@ -2615,8 +2605,6 @@ __attribute__((weak)) Context Context::default_;
 __attribute__((weak)) volatile cl_int Context::default_error_ = CL_SUCCESS;
 #endif
 
-__GET_INFO_HELPER_WITH_RETAIN(cl::Context)
-
 /*! \brief Class interface for cl_event.
  *
  *  \note Copies of these objects are shallow, meaning that the copy will refer
@@ -2764,8 +2752,6 @@ public:
             __WAIT_FOR_EVENTS_ERR);
     }
 };
-
-__GET_INFO_HELPER_WITH_RETAIN(cl::Event)
 
 #if defined(CL_VERSION_1_1)
 /*! \brief Class interface for user events (a subset of cl_event's).
@@ -2944,8 +2930,6 @@ public:
 #endif
 
 };
-
-__GET_INFO_HELPER_WITH_RETAIN(cl::Memory)
 
 // Pre-declare copy functions
 class Buffer;
@@ -4246,8 +4230,6 @@ public:
     }
 };
 
-__GET_INFO_HELPER_WITH_RETAIN(cl::Sampler)
-
 class Program;
 class CommandQueue;
 class Kernel;
@@ -4499,8 +4481,6 @@ public:
             __SET_KERNEL_ARGS_ERR);
     }
 };
-
-__GET_INFO_HELPER_WITH_RETAIN(cl::Kernel)
 
 /*! \class Program
  * \brief Program interface that implements cl_program.
@@ -4964,8 +4944,6 @@ inline VECTOR_CLASS<char *> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* er
     }
     return binaries;
 }
-
-__GET_INFO_HELPER_WITH_RETAIN(cl::Program)
 
 inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 {
@@ -6018,8 +5996,6 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         return detail::errHandler(::clFinish(object_), __FINISH_ERR);
     }
 };
-
-__GET_INFO_HELPER_WITH_RETAIN(cl::CommandQueue)
 
 #ifdef _WIN32
 __declspec(selectany) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
@@ -7340,8 +7316,6 @@ public:
 
 #undef __UNLOAD_COMPILER_ERR
 #endif //__CL_USER_OVERRIDE_ERROR_STRINGS
-
-#undef __GET_INFO_HELPER_WITH_RETAIN
 
 #undef __CL_FUNCTION_TYPE
 

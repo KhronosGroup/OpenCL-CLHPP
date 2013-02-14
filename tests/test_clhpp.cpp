@@ -357,4 +357,21 @@ void testGetImageInfoBufferNull()
     image() = NULL;
 }
 
+void testGetImageInfoBufferOverwrite()
+{
+    clGetImageInfo_StubWithCallback(clGetImageInfo_testGetImageInfoBuffer);
+    clRetainMemObject_ExpectAndReturn(make_mem(1), CL_SUCCESS);
+    clReleaseMemObject_ExpectAndReturn(make_mem(2), CL_SUCCESS);
+
+    cl::Image2D image(make_mem(0));
+    cl::Buffer buffer(make_mem(2));
+    cl_int status = image.getImageInfo(CL_IMAGE_BUFFER, &buffer);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, status);
+    TEST_ASSERT_EQUAL_PTR(make_mem(1), buffer());
+
+    // prevent destructor from interfering with the test
+    image() = NULL;
+    buffer() = NULL;
+}
+
 } // extern "C"
