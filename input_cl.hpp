@@ -4618,6 +4618,25 @@ public:
         }
     }
 
+    /**
+     * Construct a program object from a list of devices and a per-device list of binaries.
+     * \param context A valid OpenCL context in which to construct the program.
+     * \param devices A vector of OpenCL device objects for which the program will be created.
+     * \param binaries A vector of pairs of a pointer to a binary object and its length.
+     * \param binaryStatus An optional vector that on completion will be resized to
+     *   match the size of binaries and filled with values to specify if each binary
+     *   was successfully loaded.
+     *   Set to CL_SUCCESS if the binary was successfully loaded.
+     *   Set to CL_INVALID_VALUE if the length is 0 or the binary pointer is NULL.
+     *   Set to CL_INVALID_BINARY if the binary provided is not valid for the matching device.
+     * \param err if non-NULL will be set to CL_SUCCESS on successful operation or one of the following errors:
+     *   CL_INVALID_CONTEXT if context is not a valid context.
+     *   CL_INVALID_VALUE if the length of devices is zero; or if the length of binaries does not match the length of devices; 
+     *     or if any entry in binaries is NULL or has length 0.
+     *   CL_INVALID_DEVICE if OpenCL devices listed in devices are not in the list of devices associated with context.
+     *   CL_INVALID_BINARY if an invalid program binary was encountered for any device. binaryStatus will return specific status for each device.
+     *   CL_OUT_OF_HOST_MEMORY if there is a failure to allocate resources required by the OpenCL implementation on the host.
+     */
     Program(
         const Context& context,
         const VECTOR_CLASS<Device>& devices,
@@ -4626,26 +4645,41 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        const ::size_t n = binaries.size();
-        ::size_t* lengths = (::size_t*) alloca(n * sizeof(::size_t));
-        const unsigned char** images = (const unsigned char**) alloca(n * sizeof(const void*));
+        
+        const ::size_t numDevices = devices.size();
+        
+        // Catch size mismatch early and return
+        if(binaries.size() != numDevices) {
+            error = CL_INVALID_VALUE;
+            detail::errHandler(error, __CREATE_PROGRAM_WITH_BINARY_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+            return;
+        }
 
-        for (::size_t i = 0; i < n; ++i) {
-            images[i] = (const unsigned char*)binaries[(int)i].first;
+        ::size_t* lengths = (::size_t*) alloca(numDevices * sizeof(::size_t));
+        const unsigned char** images = (const unsigned char**) alloca(numDevices * sizeof(const unsigned char**));
+
+        for (::size_t i = 0; i < numDevices; ++i) {
+            images[i] = (const unsigned char*)binaries[i].first;
             lengths[i] = binaries[(int)i].second;
         }
 
-        ::size_t numDevices = devices.size();
         cl_device_id* deviceIDs = (cl_device_id*) alloca(numDevices * sizeof(cl_device_id));
         for( ::size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
+        if(binaryStatus) {
+            binaryStatus->resize(numDevices);
+        }
+        
         object_ = ::clCreateProgramWithBinary(
             context(), (cl_uint) devices.size(),
             deviceIDs,
             lengths, images, binaryStatus != NULL
-               ? (cl_int*) &binaryStatus->front()
+               ? &binaryStatus->front()
                : NULL, &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_BINARY_ERR);
@@ -4843,7 +4877,7 @@ inline Program linkProgram(
     void* data = NULL,
     cl_int* err = NULL) 
 {
-    cl_int err_local;
+    cl_int err_local = CL_SUCCESS;
 
     cl_program programs[2] = { input1(), input2() };
 
@@ -4860,11 +4894,9 @@ inline Program linkProgram(
         data,
         &err_local);
 
-    if (err_local != CL_SUCCESS) {
-        err_local = detail::errHandler(err_local,__COMPILE_PROGRAM_ERR);
-        if (err != NULL) {
-            *err = err_local;
-        }
+    detail::errHandler(err_local,__COMPILE_PROGRAM_ERR);
+    if (err != NULL) {
+        *err = err_local;
     }
 
     return Program(prog);
@@ -4877,15 +4909,7 @@ inline Program linkProgram(
     void* data = NULL,
     cl_int* err = NULL) 
 {
-    cl_int err_local;
-
-    if (inputPrograms.size() == 0) {
-        err_local = detail::errHandler(CL_INVALID_VALUE,__COMPILE_PROGRAM_ERR);
-        if (err != NULL) {
-            *err = err_local;
-        }
-        return Program();
-    }
+    cl_int err_local = CL_SUCCESS;
 
     cl_program * programs = (cl_program*) alloca(inputPrograms.size() * sizeof(cl_program));
 
@@ -4894,13 +4918,6 @@ inline Program linkProgram(
           programs[i] = inputPrograms[i]();
         }
     } 
-    else {
-        err_local = detail::errHandler(CL_OUT_OF_HOST_MEMORY,__COMPILE_PROGRAM_ERR);
-        if (err != NULL) {
-            *err = err_local;
-        }
-        return Program();
-    }
 
     cl_program prog = ::clLinkProgram(
         Context::getDefault()(),
@@ -4913,11 +4930,9 @@ inline Program linkProgram(
         data,
         &err_local);
 
-    if (err_local != CL_SUCCESS) {
-        err_local = detail::errHandler(err_local,__COMPILE_PROGRAM_ERR);
-        if (err != NULL) {
-            *err = err_local;
-        }
+    detail::errHandler(err_local,__COMPILE_PROGRAM_ERR);
+    if (err != NULL) {
+        *err = err_local;
     }
 
     return Program(prog);
