@@ -404,4 +404,49 @@ void testGetImageInfoBufferOverwrite()
     buffer() = NULL;
 }
 
+/**
+ * A stub for clCreateImage that creates an image from a buffer
+ * passing the buffer's cl_mem straight through.
+ */
+cl_mem clCreateImage_image1dbuffer(
+    cl_context context,
+ 	cl_mem_flags flags,
+ 	const cl_image_format *image_format,
+ 	const cl_image_desc *image_desc,
+ 	void *host_ptr,
+ 	cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_NOT_NULL(image_format);
+    TEST_ASSERT_NOT_NULL(image_desc);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE1D_BUFFER, image_desc->image_type);
+
+    // Return the passed buffer as the cl_mem
+    return image_desc->buffer;
+}
+
+void testConstructImageFromBuffer()
+{
+    const size_t width = 64;
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clCreateImage_StubWithCallback(clCreateImage_image1dbuffer);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    
+    cl::Context context(make_context(0));
+    cl::Buffer buffer(make_mem(0));    
+    cl::Image1DBuffer image(
+        context, 
+        CL_MEM_READ_ONLY, 
+        cl::ImageFormat(CL_R, CL_SIGNED_INT32), 
+        width, 
+        buffer);   
+    
+    // Check that returned buffer matches the original
+    TEST_ASSERT_EQUAL_HEX(buffer(), image());
+
+    buffer() = NULL;
+}
+
 } // extern "C"

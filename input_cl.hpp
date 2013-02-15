@@ -3540,8 +3540,7 @@ public:
         cl_mem_flags flags,
         ImageFormat format,
         ::size_t width,
-        Buffer &buffer,
-        void* host_ptr = NULL,
+        const Buffer &buffer,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -3557,7 +3556,7 @@ public:
             flags, 
             &format, 
             &desc, 
-            host_ptr, 
+            NULL, 
             &error);
 
         detail::errHandler(error, __CREATE_IMAGE_ERR);
