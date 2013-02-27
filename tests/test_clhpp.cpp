@@ -319,7 +319,7 @@ static int testGetImageInfoBuffer_memObjectRefCount = 0;
  * Stub to reference count instances of memory object make_mem(1)
  */
 cl_int clRetainMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
-{    
+{
     TEST_ASSERT_EQUAL(make_mem(1), memobj);
     ++testGetImageInfoBuffer_memObjectRefCount;
     return CL_SUCCESS;
@@ -329,7 +329,7 @@ cl_int clRetainMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
  * Stub to reference count instances of memory object make_mem(1)
  */
 cl_int clReleaseMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
-{    
+{
     TEST_ASSERT_EQUAL(make_mem(1), memobj);
     --testGetImageInfoBuffer_memObjectRefCount;
     TEST_ASSERT(testGetImageInfoBuffer_memObjectRefCount >= 0);
@@ -410,11 +410,11 @@ void testGetImageInfoBufferOverwrite()
  */
 cl_mem clCreateImage_image1dbuffer(
     cl_context context,
- 	cl_mem_flags flags,
- 	const cl_image_format *image_format,
- 	const cl_image_desc *image_desc,
- 	void *host_ptr,
- 	cl_int *errcode_ret,
+    cl_mem_flags flags,
+    const cl_image_format *image_format,
+    const cl_image_desc *image_desc,
+    void *host_ptr,
+    cl_int *errcode_ret,
     int num_calls)
 {
     TEST_ASSERT_NOT_NULL(image_format);
@@ -433,16 +433,16 @@ void testConstructImageFromBuffer()
     clCreateImage_StubWithCallback(clCreateImage_image1dbuffer);
     clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
-    
+
     cl::Context context(make_context(0));
-    cl::Buffer buffer(make_mem(0));    
+    cl::Buffer buffer(make_mem(0));
     cl::Image1DBuffer image(
-        context, 
-        CL_MEM_READ_ONLY, 
-        cl::ImageFormat(CL_R, CL_SIGNED_INT32), 
-        width, 
-        buffer);   
-    
+        context,
+        CL_MEM_READ_ONLY,
+        cl::ImageFormat(CL_R, CL_SIGNED_INT32),
+        width,
+        buffer);
+
     // Check that returned buffer matches the original
     TEST_ASSERT_EQUAL_HEX(buffer(), image());
 
