@@ -429,7 +429,7 @@ void testConstructImageFromBuffer()
 {
     const size_t width = 64;
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clCreateImage_StubWithCallback(clCreateImage_image1dbuffer);
     clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
