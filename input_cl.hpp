@@ -1667,11 +1667,33 @@ static cl_uint getVersion(const char *versionInfo)
 static cl_uint getPlatformVersion(cl_platform_id platform)
 {
     ::size_t size = 0;
-    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, 0, &size);
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size);
     char *versionInfo = (char *) alloca(size);
     clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, &versionInfo[0], &size);
     return getVersion(versionInfo);
 }
+
+static cl_uint getDevicePlatformVersion(cl_device_id device)
+{
+    cl_platform_id platform;
+    clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL);
+    return getPlatformVersion(platform);
+}
+
+#if defined(CL_VERSION_1_2) && defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
+static cl_uint getContextPlatformVersion(cl_context context)
+{
+    // The platform cannot be queried directly, so we first have to grab a
+    // device and obtain its context
+    ::size_t size = 0;
+    clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &size);
+    if (size == 0)
+        return 0;
+    cl_device_id *devices = (cl_device_id *) alloca(size);
+    clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices, NULL);
+    return getDevicePlatformVersion(devices[0]);
+}
+#endif // #if defined(CL_VERSION_1_2) && defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
 template <typename T>
 class Wrapper
@@ -1740,18 +1762,11 @@ protected:
     cl_type object_;
     bool referenceCountable_;
 
-    static int getVersion(cl_device_id device)
-    {
-        cl_platform_id platform;
-        clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL);
-        return getPlatformVersion(platform);
-    }
-
     static bool isReferenceCountable(cl_device_id device)
     {
         bool retVal = false;
         if (device != NULL) {
-            int version = getVersion(device);
+            int version = getDevicePlatformVersion(device);
             if(version > ((1 << 16) + 1)) {
                 retVal = true;
             }
@@ -3672,36 +3687,57 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-#if defined(CL_VERSION_1_2)
-        cl_image_desc desc;
-        desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-        desc.image_width = width;
-        desc.image_height = height;
-        desc.image_row_pitch = row_pitch;
-        desc.num_mip_levels = 0;
-        desc.num_samples = 0;
-        desc.buffer = 0;
-        object_ = ::clCreateImage(
-            context(), 
-            flags, 
-            &format, 
-            &desc, 
-            host_ptr, 
-            &error);
+        bool useCreateImage;
 
-        detail::errHandler(error, __CREATE_IMAGE_ERR);
-        if (err != NULL) {
-            *err = error;
+#if defined(CL_VERSION_1_2) && defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
+        // Run-time decision based on the actual platform
+        {
+            cl_uint version = detail::getContextPlatformVersion(context());
+            useCreateImage = (version >= 0x10002); // OpenCL 1.2 or above
         }
+#elif defined(CL_VERSION_1_2)
+        useCreateImage = true;
 #else
-        object_ = ::clCreateImage2D(
-            context(), flags,&format, width, height, row_pitch, host_ptr, &error);
+        useCreateImage = false;
+#endif
 
-        detail::errHandler(error, __CREATE_IMAGE2D_ERR);
-        if (err != NULL) {
-            *err = error;
+#if defined(CL_VERSION_1_2)
+        if (useCreateImage)
+        {
+            cl_image_desc desc;
+            desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+            desc.image_width = width;
+            desc.image_height = height;
+            desc.image_row_pitch = row_pitch;
+            desc.num_mip_levels = 0;
+            desc.num_samples = 0;
+            desc.buffer = 0;
+            object_ = ::clCreateImage(
+                context(),
+                flags,
+                &format,
+                &desc,
+                host_ptr,
+                &error);
+
+            detail::errHandler(error, __CREATE_IMAGE_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
         }
 #endif // #if defined(CL_VERSION_1_2)
+#if !defined(CL_VERSION_1_2) || defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
+        if (!useCreateImage)
+        {
+            object_ = ::clCreateImage2D(
+                context(), flags,&format, width, height, row_pitch, host_ptr, &error);
+
+            detail::errHandler(error, __CREATE_IMAGE2D_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+#endif // #if !defined(CL_VERSION_1_2) || defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
     }
 
     //! \brief Default constructor - initializes to NULL.
@@ -3916,39 +3952,60 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
+        bool useCreateImage;
+
+#if defined(CL_VERSION_1_2) && defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
+        // Run-time decision based on the actual platform
+        {
+            cl_uint version = detail::getContextPlatformVersion(context());
+            useCreateImage = (version >= 0x10002); // OpenCL 1.2 or above
+        }
+#elif defined(CL_VERSION_1_2)
+        useCreateImage = true;
+#else
+        useCreateImage = false;
+#endif
+
 #if defined(CL_VERSION_1_2)
-        cl_image_desc desc;
-        desc.image_type = CL_MEM_OBJECT_IMAGE3D;
-        desc.image_width = width;
-        desc.image_height = height;
-        desc.image_depth = depth;
-        desc.image_row_pitch = row_pitch;
-        desc.image_slice_pitch = slice_pitch;
-        desc.num_mip_levels = 0;
-        desc.num_samples = 0;
-        desc.buffer = 0;
-        object_ = ::clCreateImage(
-            context(), 
-            flags, 
-            &format, 
-            &desc, 
-            host_ptr, 
-            &error);
+        if (useCreateImage)
+        {
+            cl_image_desc desc;
+            desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+            desc.image_width = width;
+            desc.image_height = height;
+            desc.image_depth = depth;
+            desc.image_row_pitch = row_pitch;
+            desc.image_slice_pitch = slice_pitch;
+            desc.num_mip_levels = 0;
+            desc.num_samples = 0;
+            desc.buffer = 0;
+            object_ = ::clCreateImage(
+                context(), 
+                flags, 
+                &format, 
+                &desc, 
+                host_ptr, 
+                &error);
 
-        detail::errHandler(error, __CREATE_IMAGE_ERR);
-        if (err != NULL) {
-            *err = error;
+            detail::errHandler(error, __CREATE_IMAGE_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
         }
-#else  // #if defined(CL_VERSION_1_2)
-        object_ = ::clCreateImage3D(
-            context(), flags, &format, width, height, depth, row_pitch,
-            slice_pitch, host_ptr, &error);
+#endif  // #if defined(CL_VERSION_1_2)
+#if !defined(CL_VERSION_1_2) || defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
+        if (!useCreateImage)
+        {
+            object_ = ::clCreateImage3D(
+                context(), flags, &format, width, height, depth, row_pitch,
+                slice_pitch, host_ptr, &error);
 
-        detail::errHandler(error, __CREATE_IMAGE3D_ERR);
-        if (err != NULL) {
-            *err = error;
+            detail::errHandler(error, __CREATE_IMAGE3D_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
         }
-#endif // #if defined(CL_VERSION_1_2)
+#endif // #if !defined(CL_VERSION_1_2) || defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
     }
 
     //! \brief Default constructor - initializes to NULL.

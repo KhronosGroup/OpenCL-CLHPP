@@ -89,6 +89,29 @@ static cl_int clGetDeviceInfo_platform(
 }
 
 /**
+ * Stub implementation of clGetContextInfo that just returns the first device.
+ */
+static cl_int clGetContextInfo_device(
+    cl_context id,
+    cl_context_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL_HEX(CL_CONTEXT_DEVICES, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_device_id));
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = sizeof(cl_device_id);
+    if (param_value != NULL)
+        *(cl_device_id *) param_value = make_device_id(0);
+    return CL_SUCCESS;
+}
+
+
+/**
  * Stub implementation of clGetPlatformInfo that returns a specific version.
  * It also checks that the id is the zeroth platform.
  */
@@ -447,6 +470,232 @@ void testConstructImageFromBuffer()
     TEST_ASSERT_EQUAL_HEX(buffer(), image());
 
     buffer() = NULL;
+}
+
+/****************************************************************************
+ * Tests for cl::Image2D
+ ****************************************************************************/
+
+static cl_mem clCreateImage2D_testCreateImage2D_1_1(
+    cl_context context,
+    cl_mem_flags flags,
+    const cl_image_format *image_format,
+    size_t image_width,
+    size_t image_height,
+    size_t image_row_pitch,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_READ_WRITE, flags);
+
+    TEST_ASSERT_NOT_NULL(image_format);
+    TEST_ASSERT_EQUAL_HEX(CL_R, image_format->image_channel_order);
+    TEST_ASSERT_EQUAL_HEX(CL_FLOAT, image_format->image_channel_data_type);
+
+    TEST_ASSERT_EQUAL(64, image_width);
+    TEST_ASSERT_EQUAL(32, image_height);
+    TEST_ASSERT_EQUAL(256, image_row_pitch);
+    TEST_ASSERT_NULL(host_ptr);
+
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+void testCreateImage2D_1_1()
+{
+#ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clCreateImage2D_StubWithCallback(clCreateImage2D_testCreateImage2D_1_1);
+
+    cl_int err;
+    cl::Context context;
+    context() = make_context(0);
+    cl::Image2D image(
+        context, CL_MEM_READ_WRITE,
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 256, NULL, &err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+
+    context() = NULL;
+    image() = NULL;
+#endif
+}
+
+static cl_mem clCreateImage_testCreateImage2D_1_2(
+    cl_context context,
+    cl_mem_flags flags,
+    const cl_image_format *image_format,
+    const cl_image_desc *image_desc,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_READ_WRITE, flags);
+
+    TEST_ASSERT_NOT_NULL(image_format);
+    TEST_ASSERT_EQUAL_HEX(CL_R, image_format->image_channel_order);
+    TEST_ASSERT_EQUAL_HEX(CL_FLOAT, image_format->image_channel_data_type);
+
+    TEST_ASSERT_NOT_NULL(image_desc);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE2D, image_desc->image_type);
+    TEST_ASSERT_EQUAL(64, image_desc->image_width);
+    TEST_ASSERT_EQUAL(32, image_desc->image_height);
+    TEST_ASSERT_EQUAL(256, image_desc->image_row_pitch);
+    TEST_ASSERT_EQUAL(0, image_desc->num_mip_levels);
+    TEST_ASSERT_EQUAL(0, image_desc->num_samples);
+    TEST_ASSERT_NULL(image_desc->buffer);
+
+    TEST_ASSERT_NULL(host_ptr);
+
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+void testCreateImage2D_1_2()
+{
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clCreateImage_StubWithCallback(clCreateImage_testCreateImage2D_1_2);
+
+    cl_int err;
+    cl::Context context;
+    context() = make_context(0);
+    cl::Image2D image(
+        context, CL_MEM_READ_WRITE,
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 256, NULL, &err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+
+    context() = NULL;
+    image() = NULL;
+}
+
+/****************************************************************************
+ * Tests for cl::Image3D
+ ****************************************************************************/
+
+static cl_mem clCreateImage3D_testCreateImage3D_1_1(
+    cl_context context,
+    cl_mem_flags flags,
+    const cl_image_format *image_format,
+    size_t image_width,
+    size_t image_height,
+    size_t image_depth,
+    size_t image_row_pitch,
+    size_t image_slice_pitch,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, flags);
+
+    TEST_ASSERT_NOT_NULL(image_format);
+    TEST_ASSERT_EQUAL_HEX(CL_R, image_format->image_channel_order);
+    TEST_ASSERT_EQUAL_HEX(CL_FLOAT, image_format->image_channel_data_type);
+
+    TEST_ASSERT_EQUAL(64, image_width);
+    TEST_ASSERT_EQUAL(32, image_height);
+    TEST_ASSERT_EQUAL(16, image_depth);
+    TEST_ASSERT_EQUAL(256, image_row_pitch);
+    TEST_ASSERT_EQUAL(65536, image_slice_pitch);
+    TEST_ASSERT_EQUAL_PTR((void *) 0xdeadbeef, host_ptr);
+
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+void testCreateImage3D_1_1()
+{
+#ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clCreateImage3D_StubWithCallback(clCreateImage3D_testCreateImage3D_1_1);
+
+    cl_int err;
+    cl::Context context;
+    context() = make_context(0);
+    cl::Image3D image(
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 16, 256, 65536, (void *) 0xdeadbeef, &err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+
+    context() = NULL;
+    image() = NULL;
+#endif
+}
+
+static cl_mem clCreateImage_testCreateImage3D_1_2(
+    cl_context context,
+    cl_mem_flags flags,
+    const cl_image_format *image_format,
+    const cl_image_desc *image_desc,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR, flags);
+
+    TEST_ASSERT_NOT_NULL(image_format);
+    TEST_ASSERT_EQUAL_HEX(CL_R, image_format->image_channel_order);
+    TEST_ASSERT_EQUAL_HEX(CL_FLOAT, image_format->image_channel_data_type);
+
+    TEST_ASSERT_NOT_NULL(image_desc);
+    TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE3D, image_desc->image_type);
+    TEST_ASSERT_EQUAL(64, image_desc->image_width);
+    TEST_ASSERT_EQUAL(32, image_desc->image_height);
+    TEST_ASSERT_EQUAL(16, image_desc->image_depth);
+    TEST_ASSERT_EQUAL(256, image_desc->image_row_pitch);
+    TEST_ASSERT_EQUAL(65536, image_desc->image_slice_pitch);
+    TEST_ASSERT_EQUAL(0, image_desc->num_mip_levels);
+    TEST_ASSERT_EQUAL(0, image_desc->num_samples);
+    TEST_ASSERT_NULL(image_desc->buffer);
+
+    TEST_ASSERT_EQUAL_PTR((void *) 0xdeadbeef, host_ptr);
+
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+void testCreateImage3D_1_2()
+{
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clCreateImage_StubWithCallback(clCreateImage_testCreateImage3D_1_2);
+
+    cl_int err;
+    cl::Context context;
+    context() = make_context(0);
+    cl::Image3D image(
+        context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 16, 256, 65536, (void *) 0xdeadbeef, &err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+
+    context() = NULL;
+    image() = NULL;
 }
 
 } // extern "C"
