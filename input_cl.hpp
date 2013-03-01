@@ -2924,7 +2924,7 @@ public:
      *  Wraps clSetMemObjectDestructorCallback().
      *
      *  Repeated calls to this function, for a given cl_mem value, will append
-     *  to the list of functions called (in reverse order) when memory object’s
+     *  to the list of functions called (in reverse order) when memory object's
      *  resources are freed and the memory object is deleted.
      *
      *  \note
