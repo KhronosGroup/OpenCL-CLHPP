@@ -32,6 +32,11 @@ static inline cl_mem make_mem(int index)
     return (cl_mem) (size_t) (0x33333333 + index);
 }
 
+static inline cl_command_queue make_command_queue(int index)
+{
+    return (cl_command_queue) (size_t) (0xc0c0c0c0 + index);
+}
+
 /* Pools of pre-allocated wrapped objects for tests. There is no device pool,
  * because there is no way to know whether the test wants the device to be
  * reference countable or not.
@@ -39,28 +44,7 @@ static inline cl_mem make_mem(int index)
 static const int POOL_MAX = 5;
 static cl::Platform platformPool[POOL_MAX];
 static cl::Context contextPool[POOL_MAX];
-
-void setUp()
-{
-    /* We reach directly into the objects rather than using assignment to
-     * avoid the reference counting functions from being called.
-     */
-    for (int i = 0; i < POOL_MAX; i++)
-    {
-        platformPool[i]() = make_platform_id(i);
-        contextPool[i]() = make_context(i);
-    }
-}
-
-void tearDown()
-{
-    /* Wipe out the internal state to avoid a release call being made */
-    for (int i = 0; i < POOL_MAX; i++)
-    {
-        platformPool[i]() = NULL;
-        contextPool[i]() = NULL;
-    }
-}
+static cl::CommandQueue commandQueuePool[POOL_MAX];
 
 /****************************************************************************
  * Stub functions shared by multiple tests
@@ -172,16 +156,272 @@ static cl_int clGetPlatformInfo_version_1_2(
         param_value_size_ret, "OpenCL 1.2 Mock");
 }
 
+/* Simulated reference counts. The table points to memory held by the caller.
+ * This makes things simpler in the common case of only one object to be
+ * reference counted.
+ */
+class RefcountTable
+{
+private:
+    int n; // number of objects
+    void * const *objects; // object IDs
+    int *refcounts;        // current refcounts
+
+    int find(void *object)
+    {
+        int idx = 0;
+        while (idx < n && objects[idx] != object)
+            idx++;
+        TEST_ASSERT(idx < n);
+        TEST_ASSERT(refcounts[idx] > 0); // otherwise object has been destroyed
+        return idx;
+    }
+
+public:
+    RefcountTable() : n(0), objects(NULL), refcounts(NULL) {}
+
+    void init(int n, void * const *objects, int *refcounts)
+    {
+        this->n = n;
+        this->objects = objects;
+        this->refcounts = refcounts;
+    }
+
+    void reset()
+    {
+        init(0, NULL, NULL);
+    }
+
+    cl_int retain(void *object)
+    {
+        int idx = find(object);
+        ++refcounts[idx];
+        return CL_SUCCESS;
+    }
+
+    cl_int release(void *object)
+    {
+        int idx = find(object);
+        --refcounts[idx];
+        return CL_SUCCESS;
+    }
+};
+
+/* Stubs for retain/release calls that track reference counts. The stubs
+ * check that the reference count never becomes negative and that a zero
+ * reference count is never incremented.
+ *
+ * Use the prepareRefcount* calls to set up the global variables first.
+ */
+
+#define MAKE_REFCOUNT_STUBS(cl_type, retainfunc, releasefunc, table) \
+    static RefcountTable table; \
+    static cl_int retainfunc ## _refcount(cl_type object, int num_calls) \
+    { \
+        (void) num_calls; \
+        return table.retain(object); \
+    } \
+    static cl_int releasefunc ## _refcount(cl_type object, int num_calls) \
+    { \
+        (void) num_calls; \
+        return table.release(object); \
+    } \
+    static void prepare_ ## table(int n, cl_type const *objects, int *refcounts) \
+    { \
+        table.init(n, (void * const *) objects, refcounts); \
+        retainfunc ## _StubWithCallback(retainfunc ## _refcount); \
+        releasefunc ## _StubWithCallback(releasefunc ## _refcount); \
+    }
+
+MAKE_REFCOUNT_STUBS(cl_device_id, clRetainDevice, clReleaseDevice, deviceRefcounts)
+MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcounts)
+MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
+
+void setUp()
+{
+    /* We reach directly into the objects rather than using assignment to
+     * avoid the reference counting functions from being called.
+     */
+    for (int i = 0; i < POOL_MAX; i++)
+    {
+        platformPool[i]() = make_platform_id(i);
+        contextPool[i]() = make_context(i);
+        commandQueuePool[i]() = make_command_queue(i);
+    }
+
+    deviceRefcounts.reset();
+    contextRefcounts.reset();
+    memRefcounts.reset();
+}
+
+void tearDown()
+{
+    /* Wipe out the internal state to avoid a release call being made */
+    for (int i = 0; i < POOL_MAX; i++)
+    {
+        platformPool[i]() = NULL;
+        contextPool[i]() = NULL;
+        commandQueuePool[i]() = NULL;
+    }
+}
+
 /****************************************************************************
  * Tests for cl::Context
  ****************************************************************************/
 
-void test_CopyContextNonNull()
+void testCopyContextNonNull()
 {
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
 
     contextPool[0] = contextPool[1];
+}
+
+/// Stub for querying CL_CONTEXT_DEVICES that returns two devices
+static cl_int clGetContextInfo_testContextGetDevices(
+    cl_context context,
+    cl_context_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_HEX(CL_CONTEXT_DEVICES, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= 2 * sizeof(cl_device_id));
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = 2 * sizeof(cl_device_id);
+    if (param_value != NULL)
+    {
+        cl_device_id *devices = (cl_device_id *) param_value;
+        devices[0] = make_device_id(0);
+        devices[1] = make_device_id(1);
+    }
+    return CL_SUCCESS;
+}
+
+/// Test that queried devices are not refcounted
+void testContextGetDevices1_1()
+{
+    clGetContextInfo_StubWithCallback(clGetContextInfo_testContextGetDevices);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+
+    VECTOR_CLASS<cl::Device> devices = contextPool[0].getInfo<CL_CONTEXT_DEVICES>();
+    TEST_ASSERT_EQUAL(2, devices.size());
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), devices[0]());
+    TEST_ASSERT_EQUAL_PTR(make_device_id(1), devices[1]());
+}
+
+/// Test that queried devices are correctly refcounted
+void testContextGetDevices1_2()
+{
+    clGetContextInfo_StubWithCallback(clGetContextInfo_testContextGetDevices);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    VECTOR_CLASS<cl::Device> devices = contextPool[0].getInfo<CL_CONTEXT_DEVICES>();
+    TEST_ASSERT_EQUAL(2, devices.size());
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), devices[0]());
+    TEST_ASSERT_EQUAL_PTR(make_device_id(1), devices[1]());
+
+    // Prevent release in the destructor
+    devices[0]() = NULL;
+    devices[1]() = NULL;
+}
+
+/****************************************************************************
+ * Tests for cl::CommandQueue
+ ****************************************************************************/
+
+// Stub for clGetCommandQueueInfo that returns context 0
+static cl_int clGetCommandQueueInfo_testCommandQueueGetContext(
+    cl_command_queue command_queue,
+    cl_command_queue_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL_HEX(CL_QUEUE_CONTEXT, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = sizeof(cl_context);
+    if (param_value != NULL)
+        *(cl_context *) param_value = make_context(0);
+    return CL_SUCCESS;
+}
+
+void testCommandQueueGetContext()
+{
+    cl_context expected = make_context(0);
+    int refcount = 1;
+
+    clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_testCommandQueueGetContext);
+    prepare_contextRefcounts(1, &expected, &refcount);
+
+    cl::Context ctx = commandQueuePool[0].getInfo<CL_QUEUE_CONTEXT>();
+    TEST_ASSERT_EQUAL_PTR(expected, ctx());
+    TEST_ASSERT_EQUAL(2, refcount);
+
+    ctx() = NULL;
+}
+
+// Stub for clGetCommandQueueInfo that returns device 0
+static cl_int clGetCommandQueueInfo_testCommandQueueGetDevice(
+    cl_command_queue command_queue,
+    cl_command_queue_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL_HEX(CL_QUEUE_DEVICE, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_device_id));
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = sizeof(cl_device_id);
+    if (param_value != NULL)
+        *(cl_device_id *) param_value = make_device_id(0);
+    return CL_SUCCESS;
+}
+
+void testCommandQueueGetDevice1_1()
+{
+    cl_device_id expected = make_device_id(0);
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_testCommandQueueGetDevice);
+
+    cl::Device device = commandQueuePool[0].getInfo<CL_QUEUE_DEVICE>();
+    TEST_ASSERT_EQUAL_PTR(expected, device());
+
+    device() = NULL;
+}
+
+void testCommandQueueGetDevice1_2()
+{
+    cl_device_id expected = make_device_id(0);
+    int refcount = 1;
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_testCommandQueueGetDevice);
+    prepare_deviceRefcounts(1, &expected, &refcount);
+
+    cl::Device device = commandQueuePool[0].getInfo<CL_QUEUE_DEVICE>();
+    TEST_ASSERT_EQUAL_PTR(expected, device());
+    TEST_ASSERT_EQUAL(2, refcount);
+
+    device() = NULL;
 }
 
 /****************************************************************************
@@ -333,43 +573,19 @@ cl_int clGetImageInfo_testGetImageInfoBuffer(
     return CL_SUCCESS;
 }
 
-/**
- * Reference count for memory object make_mem(1) used by retain and release
- */
-static int testGetImageInfoBuffer_memObjectRefCount = 0;
-
-/**
- * Stub to reference count instances of memory object make_mem(1)
- */
-cl_int clRetainMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
-{
-    TEST_ASSERT_EQUAL(make_mem(1), memobj);
-    ++testGetImageInfoBuffer_memObjectRefCount;
-    return CL_SUCCESS;
-}
-
-/**
- * Stub to reference count instances of memory object make_mem(1)
- */
-cl_int clReleaseMemObject_testGetImageInfoBuffer(cl_mem memobj, int num_calls)
-{
-    TEST_ASSERT_EQUAL(make_mem(1), memobj);
-    --testGetImageInfoBuffer_memObjectRefCount;
-    TEST_ASSERT(testGetImageInfoBuffer_memObjectRefCount >= 0);
-    return CL_SUCCESS;
-}
-
 void testGetImageInfoBuffer()
 {
+    cl_mem expected = make_mem(1);
+    int refcount = 1;
+
     clGetImageInfo_StubWithCallback(clGetImageInfo_testGetImageInfoBuffer);
-    clRetainMemObject_StubWithCallback(clRetainMemObject_testGetImageInfoBuffer);
-    clReleaseMemObject_StubWithCallback(clReleaseMemObject_testGetImageInfoBuffer);
+    prepare_memRefcounts(1, &expected, &refcount);
 
     cl::Image1DBuffer image(make_mem(0));
     const cl::Buffer &buffer = image.getImageInfo<CL_IMAGE_BUFFER>();
     TEST_ASSERT_EQUAL_PTR(make_mem(1), buffer());
-    // Ref count should be 1 here because buffer has not been destroyed yet
-    TEST_ASSERT_EQUAL(testGetImageInfoBuffer_memObjectRefCount, 1);
+    // Ref count should be 2 here because buffer has not been destroyed yet
+    TEST_ASSERT_EQUAL(2, refcount);
 
     // prevent destructor from interfering with the test
     image() = NULL;
@@ -413,8 +629,8 @@ void testGetImageInfoBufferNull()
 void testGetImageInfoBufferOverwrite()
 {
     clGetImageInfo_StubWithCallback(clGetImageInfo_testGetImageInfoBuffer);
-    clRetainMemObject_ExpectAndReturn(make_mem(1), CL_SUCCESS);
     clReleaseMemObject_ExpectAndReturn(make_mem(2), CL_SUCCESS);
+    clRetainMemObject_ExpectAndReturn(make_mem(1), CL_SUCCESS);
 
     cl::Image2D image(make_mem(0));
     cl::Buffer buffer(make_mem(2));

@@ -1091,7 +1091,7 @@ inline cl_int getInfoHelper(Functor f, cl_uint name, T* param, long)
 
 // Specialized getInfoHelper for VECTOR_CLASS params
 template <typename Func, typename T>
-inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<T>* param, int)
+inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<T>* param, long)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -1109,8 +1109,14 @@ inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<T>* param, int)
     return CL_SUCCESS;
 }
 
-template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<cl::Device>* param, int)
+/* Specialization for reference-counted types. This depends on the
+ * existence of Wrapper<T>::cl_type, and none of the other types having the
+ * cl_type member. Note that simplify specifying the parameter as Wrapper<T>
+ * does not work, because when using a derived type (e.g. Context) the generic
+ * template will provide a better match.
+ */
+template <typename Func, typename T>
+inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<T>* param, int, typename T::cl_type = 0)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -1118,13 +1124,24 @@ inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<cl::Device>* para
         return err;
     }
 
-    cl_device_id* value = (cl_device_id*) alloca(required);
+    typename T::cl_type * value = (typename T::cl_type *) alloca(required);
     err = f(name, required, value, NULL);
     if (err != CL_SUCCESS) {
         return err;
     }
 
-    param->assign(&value[0], &value[required/sizeof(cl_device_id)]);
+    ::size_t elements = required / sizeof(typename T::cl_type);
+    param->assign(&value[0], &value[elements]);
+    for (::size_t i = 0; i < elements; i++)
+    {
+        if (value[i] != NULL)
+        {
+            err = (*param)[i].retain();
+            if (err != CL_SUCCESS) {
+                return err;
+            }
+        }
+    }
     return CL_SUCCESS;
 }
 
@@ -1143,7 +1160,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<char *>* param, i
 
 // Specialized GetInfoHelper for STRING_CLASS params
 template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, int)
+inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -1163,7 +1180,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, int)
 
 // Specialized GetInfoHelper for cl::size_t params
 template <typename Func, ::size_t N>
-inline cl_int getInfoHelper(Func f, cl_uint name, size_t<N>* param, int)
+inline cl_int getInfoHelper(Func f, cl_uint name, size_t<N>* param, long)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -1200,13 +1217,14 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     if (err != CL_SUCCESS) {
         return err;
     }
-    if (value) {
-        err = ReferenceHandler<typename T::cl_type>::retain(value);
+    *param = value;
+    if (value != NULL)
+    {
+        err = param->retain();
         if (err != CL_SUCCESS) {
             return err;
         }
     }
-    *param = value;
     return CL_SUCCESS;
 }
 
@@ -1740,6 +1758,8 @@ public:
     cl_type& operator ()() { return object_; }
 
 protected:
+    template<typename Func, typename U>
+    friend inline cl_int getInfoHelper(Func, cl_uint, U*, int, typename U::cl_type);
 
     cl_int retain() const
     {
@@ -1818,6 +1838,11 @@ public:
     cl_type& operator ()() { return object_; }
 
 protected:
+    template<typename Func, typename U>
+    friend inline cl_int getInfoHelper(Func, cl_uint, U*, int, typename U::cl_type);
+
+    template<typename Func, typename U>
+    friend inline cl_int getInfoHelper(Func, cl_uint, VECTOR_CLASS<U>*, int, typename U::cl_type);
 
     cl_int retain() const
     {
