@@ -33,7 +33,7 @@
  *       Bruce Merry, February 2013.
  *   
  *   \version 1.2.4
- *   \date January 2013
+ *   \date June 2013
  *
  *   Optional extension support
  *
@@ -59,8 +59,8 @@
  *
  * For detail documentation on the bindings see:
  *
- * The OpenCL C++ Wrapper API 1.1 (revision 04)
- *  http://www.khronos.org/registry/cl/specs/opencl-cplusplus-1.1.pdf
+ * The OpenCL C++ Wrapper API 1.2 (revision 09)
+ *  http://www.khronos.org/registry/cl/specs/opencl-cplusplus-1.2.pdf
  *
  * \section example Example
  *
