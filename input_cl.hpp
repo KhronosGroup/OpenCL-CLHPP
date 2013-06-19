@@ -32,7 +32,7 @@
  *       Matt Gruenke, April 2012.
  *       Bruce Merry, February 2013.
  *   
- *   \version 1.2.4
+ *   \version 1.2.5
  *   \date June 2013
  *
  *   Optional extension support
