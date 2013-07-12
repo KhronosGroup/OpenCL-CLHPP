@@ -683,7 +683,7 @@ void testConstructImageFromBuffer()
         buffer);
 
     // Check that returned buffer matches the original
-    TEST_ASSERT_EQUAL_HEX(buffer(), image());
+    TEST_ASSERT_EQUAL_PTR(buffer(), image());
 
     buffer() = NULL;
 }
