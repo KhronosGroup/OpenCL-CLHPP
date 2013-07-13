@@ -3510,13 +3510,12 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc;
-        desc.image_type = CL_MEM_OBJECT_IMAGE1D;
-        desc.image_width = width;
-        desc.image_row_pitch = 0;
-        desc.num_mip_levels = 0;
-        desc.num_samples = 0;
-        desc.buffer = 0;
+        cl_image_desc desc =
+        {
+            CL_MEM_OBJECT_IMAGE1D,
+            width,
+            0, 0, 0, 0, 0, 0, 0, 0
+        };
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -3584,13 +3583,13 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc;
-        desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
-        desc.image_width = width;
-        desc.image_row_pitch = 0;
-        desc.num_mip_levels = 0;
-        desc.num_samples = 0;
-        desc.buffer = buffer();
+        cl_image_desc desc =
+        {
+            CL_MEM_OBJECT_IMAGE1D_BUFFER,
+            width,
+            0, 0, 0, 0, 0, 0, 0,
+            buffer()
+        };
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -3643,14 +3642,15 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc;
-        desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
-        desc.image_array_size = arraySize;
-        desc.image_width = width;
-        desc.image_row_pitch = rowPitch;
-        desc.num_mip_levels = 0;
-        desc.num_samples = 0;
-        desc.buffer = 0;
+        cl_image_desc desc =
+        {
+            CL_MEM_OBJECT_IMAGE1D_ARRAY,
+            width,
+            0, 0,  // height, depth (unused)
+            arraySize,
+            rowPitch,
+            0, 0, 0, 0
+        };
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -3729,14 +3729,15 @@ public:
 #if defined(CL_VERSION_1_2)
         if (useCreateImage)
         {
-            cl_image_desc desc;
-            desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-            desc.image_width = width;
-            desc.image_height = height;
-            desc.image_row_pitch = row_pitch;
-            desc.num_mip_levels = 0;
-            desc.num_samples = 0;
-            desc.buffer = 0;
+            cl_image_desc desc =
+            {
+                CL_MEM_OBJECT_IMAGE2D,
+                width,
+                height,
+                0, 0, // depth, array size (unused)
+                row_pitch,
+                0, 0, 0, 0
+            };
             object_ = ::clCreateImage(
                 context(),
                 flags,
@@ -3905,16 +3906,17 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc;
-        desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
-        desc.image_array_size = arraySize;
-        desc.image_width = width;
-        desc.image_height = height;
-        desc.image_row_pitch = rowPitch;
-        desc.image_slice_pitch = slicePitch;
-        desc.num_mip_levels = 0;
-        desc.num_samples = 0;
-        desc.buffer = 0;
+        cl_image_desc desc =
+        {
+            CL_MEM_OBJECT_IMAGE2D_ARRAY,
+            width,
+            height,
+            0,       // depth (unused)
+            arraySize,
+            rowPitch,
+            slicePitch,
+            0, 0, 0
+        };
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -3994,16 +3996,17 @@ public:
 #if defined(CL_VERSION_1_2)
         if (useCreateImage)
         {
-            cl_image_desc desc;
-            desc.image_type = CL_MEM_OBJECT_IMAGE3D;
-            desc.image_width = width;
-            desc.image_height = height;
-            desc.image_depth = depth;
-            desc.image_row_pitch = row_pitch;
-            desc.image_slice_pitch = slice_pitch;
-            desc.num_mip_levels = 0;
-            desc.num_samples = 0;
-            desc.buffer = 0;
+            cl_image_desc desc =
+            {
+                CL_MEM_OBJECT_IMAGE3D,
+                width,
+                height,
+                depth,
+                0,      // array size (unused)
+                row_pitch,
+                slice_pitch,
+                0, 0, 0
+            };
             object_ = ::clCreateImage(
                 context(), 
                 flags, 
