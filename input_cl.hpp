@@ -4577,40 +4577,6 @@ public:
 
     Program(
         const STRING_CLASS& source,
-        cl_int* err = NULL)
-    {
-        cl_int error;
-
-        const char * strings = source.c_str();
-        const ::size_t length  = source.size();
-
-        Context context = Context::getDefault(err);
-
-        object_ = ::clCreateProgramWithSource(
-            context(), (cl_uint)1, &strings, &length, &error);
-
-        detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
-
-        if (error == CL_SUCCESS) {
-
-            error = ::clBuildProgram(
-                object_,
-                0,
-                NULL,
-                "",
-                NULL,
-                NULL);
-
-            detail::errHandler(error, __BUILD_PROGRAM_ERR);
-        }
-
-        if (err != NULL) {
-            *err = error;
-        }
-    }
-
-    Program(
-        const STRING_CLASS& source,
 		bool build,
         cl_int* err = NULL)
     {
@@ -4647,7 +4613,7 @@ public:
     Program(
         const Context& context,
         const STRING_CLASS& source,
-        bool build = false,
+        bool build,
         cl_int* err = NULL)
     {
         cl_int error;
