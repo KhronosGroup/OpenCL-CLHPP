@@ -3040,7 +3040,7 @@ public:
 
     /*!
      * \brief Construct a Buffer from a host container via iterators.
-     * If useHostPtr is specified iterators must be random access.
+     * If useHostPtr is specified iterators must represent contiguous data.
      */
     template< typename IteratorType >
     Buffer(
