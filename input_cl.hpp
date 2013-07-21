@@ -2977,6 +2977,11 @@ template< typename IteratorType >
 cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Buffer &buffer );
 template< typename IteratorType >
 cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
+template< typename IteratorType >
+cl_int copy( const CommandQueue &queue, IteratorType startIterator, IteratorType endIterator, cl::Buffer &buffer );
+template< typename IteratorType >
+cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
+
 
 /*! \brief Class interface for Buffer Memory Objects.
  * 
@@ -3081,6 +3086,61 @@ public:
 
         if( !useHostPtr ) {
             error = cl::copy(startIterator, endIterator, *this);
+            detail::errHandler(error, __CREATE_BUFFER_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+    }
+
+    /*!
+     * \brief Construct a Buffer from a host container via iterators using a specified context.
+     * If useHostPtr is specified iterators must represent contiguous data.
+     */
+    template< typename IteratorType >
+    Buffer(
+        const Context &context,
+        IteratorType startIterator,
+        IteratorType endIterator,
+        bool readOnly,
+        bool useHostPtr = false,
+        cl_int* err = NULL)
+    {
+        typedef typename std::iterator_traits<IteratorType>::value_type DataType;
+        cl_int error;
+
+        cl_mem_flags flags = 0;
+        if( readOnly ) {
+            flags |= CL_MEM_READ_ONLY;
+        }
+        else {
+            flags |= CL_MEM_READ_WRITE;
+        }
+        if( useHostPtr ) {
+            flags |= CL_MEM_USE_HOST_PTR;
+        }
+        
+        ::size_t size = sizeof(DataType)*(endIterator - startIterator);
+
+        if( useHostPtr ) {
+            object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+        } else {
+            object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
+        }
+
+        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+
+        if( !useHostPtr ) {
+            CommandQueue queue(context, 0, &error);
+            detail::errHandler(error, __CREATE_BUFFER_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+
+            error = cl::copy(queue, startIterator, endIterator, *this);
             detail::errHandler(error, __CREATE_BUFFER_ERR);
             if (err != NULL) {
                 *err = error;
@@ -5059,6 +5119,36 @@ public:
             }
         }
     }
+    /*!
+    * \brief Constructs a CommandQueue for an implementation defined device in the given context
+    */
+    explicit CommandQueue(
+        const Context& context,
+        cl_command_queue_properties properties = 0,
+        cl_int* err = NULL)
+    {
+        cl_int error;
+        std::vector<cl::Device> devices;
+        error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
+
+        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+
+        if (error != CL_SUCCESS)
+        {
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+
+        object_ = ::clCreateCommandQueue(context(), devices[0](), properties, &error);
+
+        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+
+        if (err != NULL) {
+            *err = error;
+        }
+
+    }
 
     CommandQueue(
         const Context& context,
@@ -6190,9 +6280,43 @@ inline cl_int enqueueCopyBuffer(
 
 /**
  * Blocking copy operation between iterators and a buffer.
+ * Host to Device.
+ * Uses default command queue.
  */
 template< typename IteratorType >
 inline cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Buffer &buffer )
+{
+    cl_int error;
+    CommandQueue queue = CommandQueue::getDefault(&error);
+    if (error != CL_SUCCESS)
+        return error;
+
+    return copy(queue, startIterator, endIterator, buffer);
+}
+
+/**
+ * Blocking copy operation between iterators and a buffer.
+ * Device to Host.
+ * Uses default command queue.
+ */
+template< typename IteratorType >
+inline cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator )
+{
+    cl_int error;
+    CommandQueue queue = CommandQueue::getDefault(&error);
+    if (error != CL_SUCCESS)
+        return error;
+
+    return copy(queue, buffer, startIterator, endIterator);
+}
+
+/**
+ * Blocking copy operation between iterators and a buffer.
+ * Host to Device.
+ * Uses specified queue.
+ */
+template< typename IteratorType >
+inline cl_int copy( const CommandQueue &queue, IteratorType startIterator, IteratorType endIterator, cl::Buffer &buffer )
 {
     typedef typename std::iterator_traits<IteratorType>::value_type DataType;
     cl_int error;
@@ -6201,7 +6325,7 @@ inline cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Bu
     ::size_t byteLength = length*sizeof(DataType);
 
     DataType *pointer = 
-        static_cast<DataType*>(enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_WRITE, 0, byteLength, 0, 0, &error));
+        static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_WRITE, 0, byteLength, 0, 0, &error));
     // if exceptions enabled, enqueueMapBuffer will throw
     if( error != CL_SUCCESS ) {
         return error;
@@ -6216,7 +6340,7 @@ inline cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Bu
     std::copy(startIterator, endIterator, pointer);
 #endif
     Event endEvent;
-    error = enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
+    error = queue.enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
     // if exceptions enabled, enqueueUnmapMemObject will throw
     if( error != CL_SUCCESS ) { 
         return error;
@@ -6227,9 +6351,11 @@ inline cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Bu
 
 /**
  * Blocking copy operation between iterators and a buffer.
+ * Device to Host.
+ * Uses specified queue.
  */
 template< typename IteratorType >
-inline cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator )
+inline cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator )
 {
     typedef typename std::iterator_traits<IteratorType>::value_type DataType;
     cl_int error;
@@ -6238,14 +6364,14 @@ inline cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, Iterat
     ::size_t byteLength = length*sizeof(DataType);
 
     DataType *pointer = 
-        static_cast<DataType*>(enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_READ, 0, byteLength, 0, 0, &error));
+        static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_READ, 0, byteLength, 0, 0, &error));
     // if exceptions enabled, enqueueMapBuffer will throw
     if( error != CL_SUCCESS ) {
         return error;
     }
     std::copy(pointer, pointer + length, startIterator);
     Event endEvent;
-    error = enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
+    error = queue.enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
     // if exceptions enabled, enqueueUnmapMemObject will throw
     if( error != CL_SUCCESS ) { 
         return error;

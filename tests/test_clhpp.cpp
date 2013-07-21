@@ -424,6 +424,54 @@ void testCommandQueueGetDevice1_2()
     device() = NULL;
 }
 
+// stub for clCreateCommandQueue - returns queue zero
+static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContext(
+    cl_context context,
+    cl_device_id device,
+    cl_command_queue_properties properties,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+    TEST_ASSERT(properties == 0);
+    return make_command_queue(0);
+
+}
+
+void testCommandQueueFromSpecifiedContext()
+{
+    cl_command_queue expected = make_command_queue(0);
+    cl_context expected_context =  make_context(0);
+    cl_device_id expected_device = make_device_id(0);
+
+    int context_refcount = 1;
+    int device_refcount = 1;
+    prepare_contextRefcounts(1, &expected_context, &context_refcount);
+    prepare_deviceRefcounts(1, &expected_device, &device_refcount);
+
+    // This is the context we will pass in to test
+    cl::Context context = contextPool[0];
+
+    // Assumes the context contains the first device
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+
+    clCreateCommandQueue_StubWithCallback(clCreateCommandQueue_testCommandQueueFromSpecifiedContext);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clReleaseCommandQueue_ExpectAndReturn(expected, CL_SUCCESS);
+
+    cl::CommandQueue queue(context);
+    TEST_ASSERT_EQUAL_PTR(expected, queue());
+
+    // Context not destroyed yet
+    TEST_ASSERT_EQUAL(2, context_refcount);
+    // Device object destroyed at end of scope
+    TEST_ASSERT_EQUAL(1, device_refcount);
+
+}
+
 /****************************************************************************
  * Tests for cl::Device
  ****************************************************************************/
@@ -544,6 +592,82 @@ void testDestroyDevice1_2()
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
 
     cl::Device d(make_device_id(0));
+}
+
+/****************************************************************************
+ * Tests for cl::Buffer
+ ****************************************************************************/
+
+// Stub of clCreateBuffer for testBufferConstructorContextInterator
+// - return the first memory location
+
+static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
+    cl_context context,
+    cl_mem_flags flags,
+    size_t size,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_BITS(CL_MEM_COPY_HOST_PTR, flags, !CL_MEM_COPY_HOST_PTR);
+    TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
+    TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
+    TEST_ASSERT_NULL(host_ptr);
+    return make_mem(0);
+}
+
+// Declare forward these functions
+static void * clEnqueueMapBuffer_testCopyHostToBuffer(
+    cl_command_queue command_queue,
+    cl_mem buffer,
+    cl_bool blocking_map,
+    cl_map_flags map_flags,
+    size_t offset,
+    size_t size,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event,
+    cl_int *errcode_ret,
+    int num_calls);
+
+static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
+    cl_command_queue  command_queue ,
+    cl_mem  memobj,
+    void  *mapped_ptr,
+    cl_uint  num_events_in_wait_list ,
+    const cl_event  *event_wait_list ,
+    cl_event  *event,
+    int num_calls);
+
+void testBufferConstructorContextIterator()
+{
+    cl_mem expected = make_mem(0);
+
+    // Assume this context includes make_device_id(0) for stub clGetContextInfo_device
+    cl::Context context(make_context(0));
+
+    clCreateBuffer_StubWithCallback(clCreateBuffer_testBufferConstructorContextIterator);
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clCreateCommandQueue_StubWithCallback(clCreateCommandQueue_testCommandQueueFromSpecifiedContext);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
+    clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
+
+    std::vector<int> host(1024);
+
+    cl::Buffer buffer(context, host.begin(), host.end(), true);
+
+    TEST_ASSERT_EQUAL_PTR(expected, buffer());
+
+    // Tidy up at end of test
+    clReleaseMemObject_ExpectAndReturn(expected, CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 }
 
 /****************************************************************************
@@ -912,6 +1036,73 @@ void testCreateImage3D_1_2()
 
     context() = NULL;
     image() = NULL;
+}
+
+/****************************************************************************
+ * Tests for cl::copy
+ ****************************************************************************/
+
+static void * clEnqueueMapBuffer_testCopyHostToBuffer(
+    cl_command_queue command_queue,
+    cl_mem buffer,
+    cl_bool blocking_map,
+    cl_map_flags map_flags,
+    size_t offset,
+    size_t size,
+    cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list,
+    cl_event *event,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer);
+    TEST_ASSERT_EQUAL(CL_TRUE, blocking_map);
+    TEST_ASSERT_EQUAL(CL_MAP_WRITE, map_flags);
+    TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
+
+    return (void *) 0xdeadbeef;
+}
+
+static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
+    cl_command_queue  command_queue ,
+    cl_mem  memobj,
+    void  *mapped_ptr,
+    cl_uint  num_events_in_wait_list ,
+    const cl_event  *event_wait_list ,
+    cl_event  *event,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), memobj);
+    TEST_ASSERT_EQUAL_PTR(0xdeadbeef, mapped_ptr);
+    TEST_ASSERT_NOT_NULL(event);
+    return CL_SUCCESS;
+}
+
+void testCopyHostToBuffer()
+{
+
+    cl_context context_expect = make_context(0);
+    int context_refcount = 1;
+    prepare_contextRefcounts(1, &context_expect, &context_refcount);
+    cl::Context context = contextPool[0];
+
+    cl_mem mem_expect = make_mem(0);
+    int mem_refcount = 1;
+    prepare_memRefcounts(1, &mem_expect, &mem_refcount);
+    cl::Buffer buffer(make_mem(0));
+
+    cl_command_queue queue_expect = make_command_queue(0);
+    cl::CommandQueue queue(queue_expect);
+    clReleaseCommandQueue_ExpectAndReturn(queue_expect, CL_SUCCESS);
+
+    // Returns the pointer to host memory
+    clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
+    clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);
+
+    std::vector<int> host(1024);
+    cl::copy(queue, host.begin(), host.end(), buffer);
 }
 
 } // extern "C"
