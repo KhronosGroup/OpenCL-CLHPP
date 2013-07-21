@@ -2416,7 +2416,7 @@ public:
         }
     }
 
-    /*! \brief Constructs a context including all devices of a specified type.
+    /*! \brief Constructs a context including all or a subset of devices of a specified type.
      *
      *  Wraps clCreateContextFromType().
      */
