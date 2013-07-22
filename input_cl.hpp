@@ -5128,7 +5128,7 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        std::vector<cl::Device> devices;
+        VECTOR_CLASS<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -5138,6 +5138,7 @@ public:
             if (err != NULL) {
                 *err = error;
             }
+            return;
         }
 
         object_ = ::clCreateCommandQueue(context(), devices[0](), properties, &error);
@@ -6291,7 +6292,7 @@ inline cl_int copy( IteratorType startIterator, IteratorType endIterator, cl::Bu
     if (error != CL_SUCCESS)
         return error;
 
-    return copy(queue, startIterator, endIterator, buffer);
+    return cl::copy(queue, startIterator, endIterator, buffer);
 }
 
 /**
@@ -6307,7 +6308,7 @@ inline cl_int copy( const cl::Buffer &buffer, IteratorType startIterator, Iterat
     if (error != CL_SUCCESS)
         return error;
 
-    return copy(queue, buffer, startIterator, endIterator);
+    return cl::copy(queue, buffer, startIterator, endIterator);
 }
 
 /**
