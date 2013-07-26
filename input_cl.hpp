@@ -4637,7 +4637,7 @@ public:
 
     Program(
         const STRING_CLASS& source,
-		bool build,
+		bool build = false,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -4673,7 +4673,7 @@ public:
     Program(
         const Context& context,
         const STRING_CLASS& source,
-        bool build,
+        bool build = false,
         cl_int* err = NULL)
     {
         cl_int error;
