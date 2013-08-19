@@ -31,6 +31,7 @@
  *       Brian Cole, March 3rd 2010 and April 2012 
  *       Matt Gruenke, April 2012.
  *       Bruce Merry, February 2013.
+ *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
  *   \version 1.2.5
  *   \date June 2013
