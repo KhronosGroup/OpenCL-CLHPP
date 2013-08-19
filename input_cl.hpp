@@ -2434,17 +2434,61 @@ public:
         cl_int error;
 
 #if !defined(__APPLE__) || !defined(__MACOS)
-        cl_context_properties prop[4] = {CL_CONTEXT_PLATFORM, 0, 0, 0 };	
+        cl_context_properties prop[4] = {CL_CONTEXT_PLATFORM, 0, 0, 0 };
+
         if (properties == NULL) {
-            prop[1] = (cl_context_properties)Platform::get(&error)();
+            // Get a valid platform ID as we cannot send in a blank one
+            VECTOR_CLASS<Platform> platforms;
+            error = Platform::get(&platforms);
             if (error != CL_SUCCESS) {
                 detail::errHandler(error, __CREATE_CONTEXT_FROM_TYPE_ERR);
                 if (err != NULL) {
                     *err = error;
-                    return;
+                }
+                return;
+            }
+
+            // Check the platforms we found for a device of our specified type
+            cl_context_properties platform_id = 0;
+            for (unsigned int i = 0; i < platforms.size(); i++) {
+
+                VECTOR_CLASS<Device> devices;
+
+#if defined(__CL_ENABLE_EXCEPTIONS)
+                try {
+#endif
+
+                    error = platforms[i].getDevices(type, &devices);
+
+#if defined(__CL_ENABLE_EXCEPTIONS)
+                } catch (Error) {}
+    // Catch if exceptions are enabled as we don't want to exit if first platform has no devices of type
+    // We do error checking next anyway, and can throw there if needed
+#endif
+
+                // Only squash CL_SUCCESS and CL_DEVICE_NOT_FOUND
+                if (error != CL_SUCCESS && error != CL_DEVICE_NOT_FOUND) {
+                    detail::errHandler(error, __CREATE_CONTEXT_FROM_TYPE_ERR);
+                    if (err != NULL) {
+                        *err = error;
+                    }
+                }
+
+                if (devices.size() > 0) {
+                    platform_id = (cl_context_properties)platforms[i]();
+                    break;
                 }
             }
 
+            if (platform_id == 0) {
+                detail::errHandler(CL_DEVICE_NOT_FOUND, __CREATE_CONTEXT_FROM_TYPE_ERR);
+                if (err != NULL) {
+                    *err = CL_DEVICE_NOT_FOUND;
+                }
+                return;
+            }
+
+            prop[1] = platform_id;
             properties = &prop[0];
         }
 #endif

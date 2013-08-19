@@ -334,6 +334,122 @@ void testContextGetDevices1_2()
     devices[1]() = NULL;
 }
 
+// This is used to get a list of all platforms, so expect two calls
+// First, return to say we have two platforms
+// Then return the two platform id_s
+static cl_int clGetPlatformIDs_testContextFromType(
+    cl_uint num_entries,
+    cl_platform_id *platforms,
+    cl_uint *num_platforms,
+    int num_calls)
+{
+    if (num_calls == 0)
+    {
+        TEST_ASSERT_NULL(platforms);
+        TEST_ASSERT_NOT_NULL(num_platforms);
+        *num_platforms = 2;
+        return CL_SUCCESS;
+    }
+    else if (num_calls == 1)
+    {
+        TEST_ASSERT_NOT_NULL(platforms);
+        TEST_ASSERT_EQUAL(2, num_entries);
+        platforms[0] = make_platform_id(0);
+        platforms[1] = make_platform_id(1);
+        return CL_SUCCESS;
+    }
+    else
+    {
+        TEST_FAIL_MESSAGE("clGetPlatformIDs called too many times");
+        return CL_INVALID_VALUE;
+    }
+}
+
+// Expect three calls to this
+// 1. Platform 1, we have no GPUs
+// 2. Platform 2, we have two GPUs
+// 3. Here are the two cl_device_id's
+static cl_int clGetDeviceIDs_testContextFromType(
+    cl_platform_id  platform,
+    cl_device_type  device_type,
+    cl_uint  num_entries,
+    cl_device_id  *devices,
+    cl_uint  *num_devices,
+    int num_calls)
+{
+    if (num_calls == 0)
+    {
+        TEST_ASSERT_EQUAL_PTR(make_platform_id(0), platform);
+        TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
+        TEST_ASSERT_NOT_NULL(num_devices);
+        return CL_DEVICE_NOT_FOUND;
+    }
+    else if (num_calls == 1)
+    {
+        TEST_ASSERT_EQUAL_PTR(make_platform_id(1), platform);
+        TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
+        TEST_ASSERT_NOT_NULL(num_devices);
+        *num_devices = 2;
+        return CL_SUCCESS;
+    }
+    else if (num_calls == 2)
+    {
+        TEST_ASSERT_EQUAL_PTR(make_platform_id(1), platform);
+        TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
+        TEST_ASSERT_EQUAL(2, num_entries);
+        TEST_ASSERT_NOT_NULL(devices);
+        devices[0] = make_device_id(0);
+        devices[1] = make_device_id(1);
+        return CL_SUCCESS;
+    }
+    else
+    {
+        TEST_FAIL_MESSAGE("clGetDeviceIDs called too many times");
+        return CL_INVALID_VALUE;
+    }
+}
+
+// Stub for clCreateContextFromType
+// - expect platform 1 with GPUs and non-null properties
+static cl_context clCreateContextFromType_testContextFromType(
+    const cl_context_properties  *properties,
+    cl_device_type  device_type,
+    void  (CL_CALLBACK *pfn_notify) (const char *errinfo,
+    const void  *private_info,
+    size_t  cb,
+    void  *user_data),
+    void  *user_data,
+    cl_int  *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_NOT_NULL(properties);
+    TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
+    TEST_ASSERT_EQUAL(CL_CONTEXT_PLATFORM, properties[0]);
+    TEST_ASSERT_EQUAL(make_platform_id(1), properties[1]);
+    return make_context(0);
+
+}
+
+void testContextFromType()
+{
+    clGetPlatformIDs_StubWithCallback(clGetPlatformIDs_testContextFromType);
+    clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_testContextFromType);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    // End of scope of vector of devices within constructor
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    clCreateContextFromType_StubWithCallback(clCreateContextFromType_testContextFromType);
+
+    cl::Context context(CL_DEVICE_TYPE_GPU);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context());
+
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+}
+
 /****************************************************************************
  * Tests for cl::CommandQueue
  ****************************************************************************/
