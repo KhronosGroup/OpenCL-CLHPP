@@ -12,7 +12,7 @@ Components:
     A simple example application using the very basic features of the header and generating cl.hpp dynamically through the build system.
 
   tests:
-    A (very small, incomplete) set of regression tests. Building the tests requires Python, Ruby, Unity and CMock. For the last two I've used Unity 2.0.113 and CMock 2.0.204, but other versions will presumably work too. At the moment there is no way to skip building the tests.
+    A (very small, incomplete) set of regression tests. Building the tests requires Python, Ruby, Unity and CMock. For the last two I've used Unity 2.0.113 (from SourceForge [1]) and CMock top-of-tree from Github [2] (the version 2.0.204 on Sourceforge does not work). The version of Unity on Github may well work too. At the moment there is no way to skip building the tests.
 
   CMake scripts:
     A build system that both generates the example and drives generation of cl.hpp.
@@ -26,3 +26,6 @@ make
 tests/test_clhpp
 
 After building, cl.hpp appears in build/include. This is the final version that may be moved (with versioning confirmation) into the Khronos/headers tree.
+
+[1] http://sourceforge.net/projects/unity/files/unity/unity2.0/
+[2] https://github.com/ThrowTheSwitch/CMock
