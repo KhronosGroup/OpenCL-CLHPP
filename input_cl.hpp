@@ -3090,6 +3090,7 @@ public:
 
     /*!
      * \brief Construct a Buffer from a host container via iterators.
+     * IteratorType must be random access.
      * If useHostPtr is specified iterators must represent contiguous data.
      */
     template< typename IteratorType >
@@ -3140,6 +3141,7 @@ public:
 
     /*!
      * \brief Construct a Buffer from a host container via iterators using a specified context.
+     * IteratorType must be random access.
      * If useHostPtr is specified iterators must represent contiguous data.
      */
     template< typename IteratorType >
