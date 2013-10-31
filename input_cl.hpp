@@ -5395,18 +5395,22 @@ public:
         Event* event = NULL,
         cl_int* err = NULL) const
     {
+        cl_event tmp;
         cl_int error;
         void * result = ::clEnqueueMapBuffer(
             object_, buffer(), blocking, flags, offset, size,
             (events != NULL) ? (cl_uint) events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
-            (cl_event*) event,
+            (event != NULL) ? &tmp : NULL,
             &error);
 
         detail::errHandler(error, __ENQUEUE_MAP_BUFFER_ERR);
         if (err != NULL) {
             *err = error;
         }
+        if (event != NULL && error == CL_SUCCESS)
+            *event = tmp;
+
         return result;
     }
 
@@ -5422,6 +5426,7 @@ public:
         Event* event = NULL,
         cl_int* err = NULL) const
     {
+        cl_event tmp;
         cl_int error;
         void * result = ::clEnqueueMapImage(
             object_, buffer(), blocking, flags,
@@ -5429,13 +5434,15 @@ public:
             row_pitch, slice_pitch,
             (events != NULL) ? (cl_uint) events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
-            (cl_event*) event,
+            (event != NULL) ? &tmp : NULL,
             &error);
 
         detail::errHandler(error, __ENQUEUE_MAP_IMAGE_ERR);
         if (err != NULL) {
               *err = error;
         }
+        if (event != NULL && error == CL_SUCCESS)
+            *event = tmp;
         return result;
     }
 
@@ -5647,9 +5654,17 @@ public:
     CL_EXT_PREFIX__VERSION_1_1_DEPRECATED 
     cl_int enqueueMarker(Event* event = NULL) const CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
     {
-        return detail::errHandler(
-            ::clEnqueueMarker(object_, (cl_event*) event),
+        cl_event tmp;
+        cl_int err = detail::errHandler(
+            ::clEnqueueMarker(
+                object_, 
+                (event != NULL) ? &tmp : NULL),
             __ENQUEUE_MARKER_ERR);
+
+        if (event != NULL && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
     }
 
     CL_EXT_PREFIX__VERSION_1_1_DEPRECATED
