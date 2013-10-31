@@ -1294,7 +1294,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_event_info, CL_EVENT_COMMAND_QUEUE, cl::CommandQueue) \
     F(cl_event_info, CL_EVENT_COMMAND_TYPE, cl_command_type) \
     F(cl_event_info, CL_EVENT_REFERENCE_COUNT, cl_uint) \
-    F(cl_event_info, CL_EVENT_COMMAND_EXECUTION_STATUS, cl_uint) \
+    F(cl_event_info, CL_EVENT_COMMAND_EXECUTION_STATUS, cl_int) \
     \
     F(cl_profiling_info, CL_PROFILING_COMMAND_QUEUED, cl_ulong) \
     F(cl_profiling_info, CL_PROFILING_COMMAND_SUBMIT, cl_ulong) \
