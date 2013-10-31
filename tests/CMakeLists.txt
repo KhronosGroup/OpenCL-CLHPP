@@ -42,15 +42,28 @@ set(TEST_CLHPP_HEADERS
     mocks/Mockcl.h)
 set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl.hpp PROPERTIES GENERATED 1)
 
-set(TEST_CLHPP_SOURCES
+set(TEST_CLHPP_SOURCES_COMMON
     ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
-    test_clhpp.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
     ${CMOCK_DIR}/src/cmock.c
     ${UNITY_DIR}/src/unity.c)
+
+set(TEST_CLHPP_SOURCES
+    ${TEST_CLHPP_SOURCES_COMMON}
+    test_clhpp.cpp)
 
 add_executable(test_clhpp ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
 add_executable(test_clhpp_deprecated_1_1 ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
 set_target_properties(test_clhpp_deprecated_1_1 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_1_APIS")
 add_dependencies(test_clhpp generate_clhpp)
 add_test(run_test_clhpp test_clhpp)
+add_test(run_test_clhpp_deprecated_1_1 test_clhpp_deprecated_1_1)
+
+if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
+    set(TEST_CLHPP_CXX11_SOURCES
+        ${TEST_CLHPP_SOURCES_COMMON}
+        test_clhpp_cxx11.cpp)
+    set_source_files_properties(test_clhpp_cxx11.cp PROPERTIES COMPILE_FLAGS "-std=c++11")
+    add_executable(test_clhpp_cxx11 ${TEST_CLHPP_CXX11_SOURCES} ${TEST_CLHPP_HEADERS})
+    add_test(run_test_clhpp_cxx11 test_clhpp_cxx11)
+endif()

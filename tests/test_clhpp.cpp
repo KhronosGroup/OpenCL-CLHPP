@@ -2,6 +2,8 @@
 #undef _UP
 
 #include <map>
+#include <vector>
+#include <utility>
 
 extern "C"
 {
@@ -45,6 +47,9 @@ static const int POOL_MAX = 5;
 static cl::Platform platformPool[POOL_MAX];
 static cl::Context contextPool[POOL_MAX];
 static cl::CommandQueue commandQueuePool[POOL_MAX];
+static cl::Buffer bufferPool[POOL_MAX];
+static cl::Image2D image2DPool[POOL_MAX];
+static cl::Image3D image3DPool[POOL_MAX];
 
 /****************************************************************************
  * Stub functions shared by multiple tests
@@ -237,6 +242,52 @@ MAKE_REFCOUNT_STUBS(cl_device_id, clRetainDevice, clReleaseDevice, deviceRefcoun
 MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcounts)
 MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
 
+/* The indirection through MAKE_MOVE_TESTS2 with a prefix parameter is to
+ * prevent the simple-minded parser from Unity from identifying tests from the
+ * macro value.
+ */
+#if __cplusplus >= 201103L
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, pool) \
+    void prefix ## MoveAssign ## type ## NonNull() \
+    { \
+        clRelease ## type ## _ExpectAndReturn(makeFunc(0), CL_SUCCESS); \
+        pool[0] = std::move(pool[1]); \
+        TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
+        TEST_ASSERT_NULL(pool[1]()); \
+    } \
+    \
+    void prefix ## MoveAssign ## type ## Null() \
+        pool[0]() = NULL; \
+        pool[0] = std::move(pool[1]); \
+        TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
+        TEST_ASSERT_NULL(pool[1]()); \
+    } \
+    \
+    void prefix ## MoveConstruct ## type ## NonNull() \
+    { \
+        cl::type tmp(std::move(pool[0])); \
+        TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp()); \
+        TEST_ASSERT_NULL(pool[0]()); \
+        tmp() = NULL; \
+    } \
+    \
+    void prefix ## MoveConstruct ## type ## Null() \
+    { \
+        cl::type empty; \
+        cl::type tmp(std::move(empty)); \
+        TEST_ASSERT_NULL(tmp()); \
+        TEST_ASSERT_NULL(empty()); \
+    }
+#else
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, pool) \
+    void prefix ## MoveAssign ## type ## NonNull() {} \
+    void prefix ## MoveAssign ## type ## Null() {} \
+    void prefix ## MoveConstruct ## type ## NonNull() {} \
+    void prefix ## MoveConstruct ## type ## Null() {}
+#endif
+#define MAKE_MOVE_TESTS(type, makeFunc, pool) \
+    MAKE_MOVE_TESTS2(test, type, makeFunc, pool)
+
 void setUp()
 {
     /* We reach directly into the objects rather than using assignment to
@@ -247,6 +298,9 @@ void setUp()
         platformPool[i]() = make_platform_id(i);
         contextPool[i]() = make_context(i);
         commandQueuePool[i]() = make_command_queue(i);
+        bufferPool[i]() = make_mem(i);
+        image2DPool[i]() = make_mem(i);
+        image3DPool[i]() = make_mem(i);
     }
 
     deviceRefcounts.reset();
@@ -262,6 +316,9 @@ void tearDown()
         platformPool[i]() = NULL;
         contextPool[i]() = NULL;
         commandQueuePool[i]() = NULL;
+        bufferPool[i]() = NULL;
+        image2DPool[i]() = NULL;
+        image3DPool[i]() = NULL;
     }
 }
 
@@ -275,7 +332,14 @@ void testCopyContextNonNull()
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
 
     contextPool[0] = contextPool[1];
+    TEST_ASSERT_EQUAL_PTR(make_context(1), contextPool[0]());
 }
+
+void testMoveAssignContextNonNull();
+void testMoveAssignContextNull();
+void testMoveConstructContextNonNull();
+void testMoveConstructContextNull();
+MAKE_MOVE_TESTS(Context, make_context, contextPool)
 
 /// Stub for querying CL_CONTEXT_DEVICES that returns two devices
 static cl_int clGetContextInfo_testContextGetDevices(
@@ -453,6 +517,12 @@ void testContextFromType()
 /****************************************************************************
  * Tests for cl::CommandQueue
  ****************************************************************************/
+
+void testMoveAssignCommandQueueNonNull();
+void testMoveAssignCommandQueueNull();
+void testMoveConstructCommandQueueNonNull();
+void testMoveConstructCommandQueueNull();
+MAKE_MOVE_TESTS(CommandQueue, make_command_queue, commandQueuePool);
 
 // Stub for clGetCommandQueueInfo that returns context 0
 static cl_int clGetCommandQueueInfo_testCommandQueueGetContext(
@@ -692,6 +762,14 @@ void testAssignDeviceNull()
     d = (cl_device_id) NULL;
 }
 
+// TODO: these tests should be augmented to check that referenceCountable is
+// correctly moved
+void testMoveAssignDeviceNonNull();
+void testMoveAssignDeviceNull();
+void testMoveConstructDeviceNonNull();
+void testMoveConstructDeviceNull();
+MAKE_MOVE_TESTS(Device, make_device, devicePool);
+
 void testDestroyDevice1_1()
 {
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
@@ -713,6 +791,12 @@ void testDestroyDevice1_2()
 /****************************************************************************
  * Tests for cl::Buffer
  ****************************************************************************/
+
+void testMoveAssignBufferNonNull();
+void testMoveAssignBufferNull();
+void testMoveConstructBufferNonNull();
+void testMoveConstructBufferNull();
+MAKE_MOVE_TESTS(Buffer, make_mem, bufferPool);
 
 // Stub of clCreateBuffer for testBufferConstructorContextInterator
 // - return the first memory location
@@ -932,6 +1016,12 @@ void testConstructImageFromBuffer()
  * Tests for cl::Image2D
  ****************************************************************************/
 
+void testMoveAssignImage2DNonNull();
+void testMoveAssignImage2DNull();
+void testMoveConstructImage2DNonNull();
+void testMoveConstructImage2DNull();
+MAKE_MOVE_TESTS(Image2D, make_mem, image2DPool);
+
 static cl_mem clCreateImage2D_testCreateImage2D_1_1(
     cl_context context,
     cl_mem_flags flags,
@@ -1041,6 +1131,12 @@ void testCreateImage2D_1_2()
 /****************************************************************************
  * Tests for cl::Image3D
  ****************************************************************************/
+
+void testMoveAssignImage3DNonNull();
+void testMoveAssignImage3DNull();
+void testMoveConstructImage3DNonNull();
+void testMoveConstructImage3DNull();
+MAKE_MOVE_TESTS(Image3D, make_mem, image3DPool);
 
 static cl_mem clCreateImage3D_testCreateImage3D_1_1(
     cl_context context,

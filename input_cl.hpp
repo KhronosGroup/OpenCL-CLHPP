@@ -1061,7 +1061,7 @@ namespace detail {
     }
 
     inline void fence() { _mm_mfence(); }
-}; // namespace detail
+} // namespace detail
 
     
 /*! \brief class used to interface between C++ and
@@ -1761,13 +1761,35 @@ public:
         if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
     }
 
+#if __cplusplus >= 201103L
+    Wrapper(Wrapper<cl_type>&& rhs) noexcept
+    {
+        object_ = rhs.object_;
+        rhs.object_ = NULL;
+    }
+#endif
+
     Wrapper<cl_type>& operator = (const Wrapper<cl_type>& rhs)
     {
-        if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
-        object_ = rhs.object_;
-        if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+        if (this != &rhs) {
+            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            object_ = rhs.object_;
+            if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+        }
         return *this;
     }
+
+#if __cplusplus >= 201103L
+    Wrapper<cl_type>& operator = (Wrapper<cl_type>&& rhs)
+    {
+        if (this != &rhs) {
+            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            object_ = rhs.object_;
+            rhs.object_ = NULL;
+        }
+        return *this;
+    }
+#endif
 
     Wrapper<cl_type>& operator = (const cl_type &rhs)
     {
@@ -1839,14 +1861,40 @@ public:
         if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
     }
 
-    Wrapper<cl_type>& operator = (const Wrapper<cl_type>& rhs)
+#if __cplusplus >= 201103L
+    Wrapper(Wrapper<cl_type>& rhs) noexcept
     {
-        if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
         object_ = rhs.object_;
         referenceCountable_ = rhs.referenceCountable_;
-        if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+        rhs.object_ = NULL;
+        rhs.referenceCountable_ = false;
+    }
+#endif
+
+    Wrapper<cl_type>& operator = (const Wrapper<cl_type>& rhs)
+    {
+        if (this != &rhs) {
+            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            object_ = rhs.object_;
+            referenceCountable_ = rhs.referenceCountable_;
+            if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+        }
         return *this;
     }
+
+#if __cplusplus >= 201103L
+    Wrapper<cl_type>& operator = (Wrapper<cl_type>&& rhs)
+    {
+        if (this != &rhs) {
+            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            object_ = rhs.object_;
+            referenceCountable_ = rhs.referenceCountable_;
+            rhs.object_ = NULL;
+            rhs.referenceCountable_ = false;
+        }
+        return *this;
+    }
+#endif
 
     Wrapper<cl_type>& operator = (const cl_type &rhs)
     {
@@ -1932,12 +1980,6 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Device() : detail::Wrapper<cl_type>() { }
 
-    /*! \brief Copy constructor.
-     * 
-     *  This simply copies the device ID value, which is an inexpensive operation.
-     */
-    Device(const Device& device) : detail::Wrapper<cl_type>(device) { }
-
     /*! \brief Constructor from cl_device_id.
      * 
      *  This simply copies the device ID value, which is an inexpensive operation.
@@ -1949,18 +1991,6 @@ public:
      *  \see Context::getDefault()
      */
     static Device getDefault(cl_int * err = NULL);
-
-    /*! \brief Assignment operator from Device.
-     * 
-     *  This simply copies the device ID value, which is an inexpensive operation.
-     */
-    Device& operator = (const Device& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment operator from cl_device_id.
      * 
@@ -2073,29 +2103,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Platform() : detail::Wrapper<cl_type>()  { }
 
-    /*! \brief Copy constructor.
-     * 
-     *  This simply copies the platform ID value, which is an inexpensive operation.
-     */
-    Platform(const Platform& platform) : detail::Wrapper<cl_type>(platform) { }
-
     /*! \brief Constructor from cl_platform_id.
      * 
      *  This simply copies the platform ID value, which is an inexpensive operation.
      */
     Platform(const cl_platform_id &platform) : detail::Wrapper<cl_type>(platform) { }
-
-    /*! \brief Assignment operator from Platform.
-     * 
-     *  This simply copies the platform ID value, which is an inexpensive operation.
-     */
-    Platform& operator = (const Platform& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment operator from cl_platform_id.
      * 
@@ -2373,12 +2385,6 @@ private:
     static Context default_;
     static volatile cl_int default_error_;
 public:
-    /*! \brief Destructor.
-     *
-     *  This calls clReleaseContext() on the value held by this instance.
-     */
-    ~Context() { }
-
     /*! \brief Constructs a context including a list of specified devices.
      *
      *  Wraps clCreateContext().
@@ -2579,31 +2585,12 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Context() : detail::Wrapper<cl_type>() { }
 
-    /*! \brief Copy constructor.
-     * 
-     *  This calls clRetainContext() on the parameter's cl_context.
-     */
-    Context(const Context& context) : detail::Wrapper<cl_type>(context) { }
-
     /*! \brief Constructor from cl_context - takes ownership.
      * 
      *  This effectively transfers ownership of a refcount on the cl_context
      *  into the new Context object.
      */
     __CL_EXPLICIT_CONSTRUCTORS Context(const cl_context& context) : detail::Wrapper<cl_type>(context) { }
-
-    /*! \brief Assignment operator from Context.
-     * 
-     *  This calls clRetainContext() on the parameter and clReleaseContext() on
-     *  the previous value held by this instance.
-     */
-    Context& operator = (const Context& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment operator from cl_context - takes ownership.
      * 
@@ -2723,20 +2710,8 @@ __attribute__((weak)) volatile cl_int Context::default_error_ = CL_SUCCESS;
 class Event : public detail::Wrapper<cl_event>
 {
 public:
-    /*! \brief Destructor.
-     *
-     *  This calls clReleaseEvent() on the value held by this instance.
-     */
-    ~Event() { }
- 
     //! \brief Default constructor - initializes to NULL.
     Event() : detail::Wrapper<cl_type>() { }
-
-    /*! \brief Copy constructor.
-     * 
-     *  This calls clRetainEvent() on the parameter's cl_event.
-     */
-    Event(const Event& event) : detail::Wrapper<cl_type>(event) { }
 
     /*! \brief Constructor from cl_event - takes ownership.
      * 
@@ -2749,19 +2724,6 @@ public:
      *
      *  This effectively transfers ownership of a refcount on the rhs and calls
      *  clReleaseEvent() on the value previously held by this instance.
-     */
-    Event& operator = (const Event& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
-
-    /*! \brief Assignment operator from cl_event.
-     * 
-     *  This calls clRetainEvent() on the parameter and clReleaseEvent() on
-     *  the previous value held by this instance.
      */
     Event& operator = (const cl_event& rhs)
     {
@@ -2890,18 +2852,6 @@ public:
     //! \brief Default constructor - initializes to NULL.
     UserEvent() : Event() { }
 
-    //! \brief Copy constructor - performs shallow copy.
-    UserEvent(const UserEvent& event) : Event(event) { }
-
-    //! \brief Assignment Operator - performs shallow copy.
-    UserEvent& operator = (const UserEvent& rhs)
-    {
-        if (this != &rhs) {
-            Event::operator=(rhs);
-        }
-        return *this;
-    }
-
     /*! \brief Sets the execution status of a user event object.
      *
      *  Wraps clSetUserEventStatus().
@@ -2939,21 +2889,8 @@ WaitForEvents(const VECTOR_CLASS<Event>& events)
 class Memory : public detail::Wrapper<cl_mem>
 {
 public:
- 
-    /*! \brief Destructor.
-     *
-     *  This calls clReleaseMemObject() on the value held by this instance.
-     */
-    ~Memory() {}
-
     //! \brief Default constructor - initializes to NULL.
     Memory() : detail::Wrapper<cl_type>() { }
-
-    /*! \brief Copy constructor - performs shallow copy.
-     * 
-     *  This calls clRetainMemObject() on the parameter's cl_mem.
-     */
-    Memory(const Memory& memory) : detail::Wrapper<cl_type>(memory) { }
 
     /*! \brief Constructor from cl_mem - takes ownership.
      * 
@@ -2961,19 +2898,6 @@ public:
      *  into the new Memory object.
      */
     __CL_EXPLICIT_CONSTRUCTORS Memory(const cl_mem& memory) : detail::Wrapper<cl_type>(memory) { }
-
-    /*! \brief Assignment operator from Memory.
-     * 
-     *  This calls clRetainMemObject() on the parameter and clReleaseMemObject()
-     *  on the previous value held by this instance.
-     */
-    Memory& operator = (const Memory& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment operator from cl_mem - takes ownership.
      *
@@ -3173,29 +3097,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Buffer() : Memory() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Buffer(const Buffer& buffer) : Memory(buffer) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Buffer(const cl_mem& buffer) : Memory(buffer) { }
-
-    /*! \brief Assignment from Buffer - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Buffer& operator = (const Buffer& rhs)
-    {
-        if (this != &rhs) {
-            Memory::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3296,29 +3202,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     BufferD3D10() : Buffer() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferD3D10(const BufferD3D10& buffer) : Buffer(buffer) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS BufferD3D10(const cl_mem& buffer) : Buffer(buffer) { }
-
-    /*! \brief Assignment from BufferD3D10 - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferD3D10& operator = (const BufferD3D10& rhs)
-    {
-        if (this != &rhs) {
-            Buffer::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3370,29 +3258,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     BufferGL() : Buffer() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferGL(const BufferGL& buffer) : Buffer(buffer) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS BufferGL(const cl_mem& buffer) : Buffer(buffer) { }
-
-    /*! \brief Assignment from BufferGL - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferGL& operator = (const BufferGL& rhs)
-    {
-        if (this != &rhs) {
-            Buffer::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3453,29 +3323,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     BufferRenderGL() : Buffer() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferRenderGL(const BufferGL& buffer) : Buffer(buffer) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS BufferRenderGL(const cl_mem& buffer) : Buffer(buffer) { }
-
-    /*! \brief Assignment from BufferGL - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferRenderGL& operator = (const BufferRenderGL& rhs)
-    {
-        if (this != &rhs) {
-            Buffer::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3510,29 +3362,11 @@ protected:
     //! \brief Default constructor - initializes to NULL.
     Image() : Memory() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image(const Image& image) : Memory(image) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Image(const cl_mem& image) : Memory(image) { }
-
-    /*! \brief Assignment from Image - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image& operator = (const Image& rhs)
-    {
-        if (this != &rhs) {
-            Memory::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3615,29 +3449,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Image1D() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image1D(const Image1D& image1D) : Image(image1D) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Image1D(const cl_mem& image1D) : Image(image1D) { }
-
-    /*! \brief Assignment from Image1D - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image1D& operator = (const Image1D& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3688,17 +3504,7 @@ public:
 
     Image1DBuffer() { }
 
-    Image1DBuffer(const Image1DBuffer& image1D) : Image(image1D) { }
-
     __CL_EXPLICIT_CONSTRUCTORS Image1DBuffer(const cl_mem& image1D) : Image(image1D) { }
-
-    Image1DBuffer& operator = (const Image1DBuffer& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     Image1DBuffer& operator = (const cl_mem& rhs)
     {
@@ -3749,17 +3555,7 @@ public:
 
     Image1DArray() { }
 
-    Image1DArray(const Image1DArray& imageArray) : Image(imageArray) { }
-
     __CL_EXPLICIT_CONSTRUCTORS Image1DArray(const cl_mem& imageArray) : Image(imageArray) { }
-
-    Image1DArray& operator = (const Image1DArray& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     Image1DArray& operator = (const cl_mem& rhs)
     {
@@ -3851,29 +3647,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Image2D() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image2D(const Image2D& image2D) : Image(image2D) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Image2D(const cl_mem& image2D) : Image(image2D) { }
-
-    /*! \brief Assignment from Image2D - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image2D& operator = (const Image2D& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3932,29 +3710,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Image2DGL() : Image2D() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image2DGL(const Image2DGL& image) : Image2D(image) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Image2DGL(const cl_mem& image) : Image2D(image) { }
-
-    /*! \brief Assignment from Image2DGL - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image2DGL& operator = (const Image2DGL& rhs)
-    {
-        if (this != &rhs) {
-            Image2D::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -4015,17 +3775,7 @@ public:
 
     Image2DArray() { }
 
-    Image2DArray(const Image2DArray& imageArray) : Image(imageArray) { }
-
     __CL_EXPLICIT_CONSTRUCTORS Image2DArray(const cl_mem& imageArray) : Image(imageArray) { }
-
-    Image2DArray& operator = (const Image2DArray& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     Image2DArray& operator = (const cl_mem& rhs)
     {
@@ -4119,31 +3869,13 @@ public:
     }
 
     //! \brief Default constructor - initializes to NULL.
-    Image3D() { }
-
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image3D(const Image3D& image3D) : Image(image3D) { }
+    Image3D() : Image() { }
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Image3D(const cl_mem& image3D) : Image(image3D) { }
-
-    /*! \brief Assignment from Image3D - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image3D& operator = (const Image3D& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -4199,29 +3931,11 @@ public:
     //! \brief Default constructor - initializes to NULL.
     Image3DGL() : Image3D() { }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image3DGL(const Image3DGL& image) : Image3D(image) { }
-
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      *  See Memory for further details.
      */
     __CL_EXPLICIT_CONSTRUCTORS Image3DGL(const cl_mem& image) : Image3D(image) { }
-
-    /*! \brief Assignment from Image3DGL - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    Image3DGL& operator = (const Image3DGL& rhs)
-    {
-        if (this != &rhs) {
-            Image3D::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -4270,17 +3984,7 @@ public:
 
     ImageGL() : Image() { }
 
-    ImageGL(const ImageGL& image) : Image(image) { }
-
     __CL_EXPLICIT_CONSTRUCTORS ImageGL(const cl_mem& image) : Image(image) { }
-
-    ImageGL& operator = (const ImageGL& rhs)
-    {
-        if (this != &rhs) {
-            Image::operator=(rhs);
-        }
-        return *this;
-    }
 
     ImageGL& operator = (const cl_mem& rhs)
     {
@@ -4301,12 +4005,6 @@ public:
 class Sampler : public detail::Wrapper<cl_sampler>
 {
 public:
-    /*! \brief Destructor.
-     *
-     *  This calls clReleaseSampler() on the value held by this instance.
-     */
-    ~Sampler() { }
-
     //! \brief Default constructor - initializes to NULL.
     Sampler() { }
 
@@ -4335,31 +4033,12 @@ public:
         }
     }
 
-    /*! \brief Copy constructor - performs shallow copy.
-     * 
-     *  This calls clRetainSampler() on the parameter's cl_sampler.
-     */
-    Sampler(const Sampler& sampler) : detail::Wrapper<cl_type>(sampler) { }
-
     /*! \brief Constructor from cl_sampler - takes ownership.
      * 
      *  This effectively transfers ownership of a refcount on the cl_sampler
      *  into the new Sampler object.
      */
     Sampler(const cl_sampler& sampler) : detail::Wrapper<cl_type>(sampler) { }
-
-    /*! \brief Assignment operator from Sampler.
-     * 
-     *  This calls clRetainSampler() on the parameter and clReleaseSampler()
-     *  on the previous value held by this instance.
-     */
-    Sampler& operator = (const Sampler& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment operator from cl_sampler - takes ownership.
      *
@@ -4515,20 +4194,8 @@ class Kernel : public detail::Wrapper<cl_kernel>
 public:
     inline Kernel(const Program& program, const char* name, cl_int* err = NULL);
 
-    /*! \brief Destructor.
-     *
-     *  This calls clReleaseKernel() on the value held by this instance.
-     */
-    ~Kernel() { }
-
     //! \brief Default constructor - initializes to NULL.
     Kernel() { }
-
-    /*! \brief Copy constructor - performs shallow copy.
-     * 
-     *  This calls clRetainKernel() on the parameter's cl_kernel.
-     */
-    Kernel(const Kernel& kernel) : detail::Wrapper<cl_type>(kernel) { }
 
     /*! \brief Constructor from cl_kernel - takes ownership.
      * 
@@ -4536,19 +4203,6 @@ public:
      *  into the new Kernel object.
      */
     __CL_EXPLICIT_CONSTRUCTORS Kernel(const cl_kernel& kernel) : detail::Wrapper<cl_type>(kernel) { }
-
-    /*! \brief Assignment operator from Kernel.
-     * 
-     *  This calls clRetainKernel() on the parameter and clReleaseKernel()
-     *  on the previous value held by this instance.
-     */
-    Kernel& operator = (const Kernel& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     /*! \brief Assignment operator from cl_kernel - takes ownership.
      *
@@ -4858,17 +4512,7 @@ public:
 
     Program() { }
 
-    Program(const Program& program) : detail::Wrapper<cl_type>(program) { }
-
     __CL_EXPLICIT_CONSTRUCTORS Program(const cl_program& program) : detail::Wrapper<cl_type>(program) { }
-
-    Program& operator = (const Program& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     Program& operator = (const cl_program& rhs)
     {
@@ -4917,7 +4561,7 @@ public:
     }
 
 #if defined(CL_VERSION_1_2)
-	cl_int compile(
+    cl_int compile(
         const char* options = NULL,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
@@ -4928,9 +4572,9 @@ public:
                 0,
                 NULL,
                 options,
-				0,
-				NULL,
-				NULL,
+                0,
+                NULL,
+                NULL,
                 notifyFptr,
                 data),
                 __COMPILE_PROGRAM_ERR);
@@ -5252,17 +4896,7 @@ public:
 
     CommandQueue() { }
 
-    CommandQueue(const CommandQueue& commandQueue) : detail::Wrapper<cl_type>(commandQueue) { }
-
     CommandQueue(const cl_command_queue& commandQueue) : detail::Wrapper<cl_type>(commandQueue) { }
-
-    CommandQueue& operator = (const CommandQueue& rhs)
-    {
-        if (this != &rhs) {
-            detail::Wrapper<cl_type>::operator=(rhs);
-        }
-        return *this;
-    }
 
     CommandQueue& operator = (const cl_command_queue& rhs)
     {
