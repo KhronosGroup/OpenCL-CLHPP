@@ -39,6 +39,11 @@ static inline cl_command_queue make_command_queue(int index)
     return (cl_command_queue) (size_t) (0xc0c0c0c0 + index);
 }
 
+static inline cl_kernel make_kernel(int index)
+{
+    return (cl_kernel) (size_t) (0xcececece + index);
+}
+
 /* Pools of pre-allocated wrapped objects for tests. There is no device pool,
  * because there is no way to know whether the test wants the device to be
  * reference countable or not.
@@ -50,6 +55,7 @@ static cl::CommandQueue commandQueuePool[POOL_MAX];
 static cl::Buffer bufferPool[POOL_MAX];
 static cl::Image2D image2DPool[POOL_MAX];
 static cl::Image3D image3DPool[POOL_MAX];
+static cl::Kernel kernelPool[POOL_MAX];
 
 /****************************************************************************
  * Stub functions shared by multiple tests
@@ -301,6 +307,7 @@ void setUp()
         bufferPool[i]() = make_mem(i);
         image2DPool[i]() = make_mem(i);
         image3DPool[i]() = make_mem(i);
+        kernelPool[i]() = make_kernel(i);
     }
 
     deviceRefcounts.reset();
@@ -319,6 +326,7 @@ void tearDown()
         bufferPool[i]() = NULL;
         image2DPool[i]() = NULL;
         image3DPool[i]() = NULL;
+        kernelPool[i]() = NULL;
     }
 }
 
@@ -1248,6 +1256,46 @@ void testCreateImage3D_1_2()
 
     context() = NULL;
     image() = NULL;
+}
+
+/****************************************************************************
+ * Tests for cl::Kernel
+ ****************************************************************************/
+void testMoveAssignKernelNonNull();
+void testMoveAssignKernelNull();
+void testMoveConstructKernelNonNull();
+void testMoveConstructKernelNull();
+MAKE_MOVE_TESTS(Kernel, make_kernel, kernelPool);
+
+static cl_int scalarArg;
+static cl_int3 vectorArg;
+
+void testKernelSetArgScalar()
+{
+    scalarArg = 0xcafebabe;
+    clSetKernelArg_ExpectAndReturn(make_kernel(0), 3, 4, &scalarArg, CL_SUCCESS);
+    kernelPool[0].setArg(3, scalarArg);
+}
+
+void testKernelSetArgVector()
+{
+    vectorArg.s[0] = 0x12345678;
+    vectorArg.s[1] = 0x23456789;
+    vectorArg.s[2] = 0x87654321;
+    clSetKernelArg_ExpectAndReturn(make_kernel(0), 2, 16, &vectorArg, CL_SUCCESS);
+    kernelPool[0].setArg(2, vectorArg);
+}
+
+void testKernelSetArgMem()
+{
+    clSetKernelArg_ExpectAndReturn(make_kernel(0), 1, sizeof(cl_mem), &bufferPool[1](), CL_SUCCESS);
+    kernelPool[0].setArg(1, bufferPool[1]);
+}
+
+void testKernelSetArgLocal()
+{
+    clSetKernelArg_ExpectAndReturn(make_kernel(0), 2, 123, NULL, CL_SUCCESS);
+    kernelPool[0].setArg(2, cl::Local(123));
 }
 
 /****************************************************************************

@@ -4143,14 +4143,14 @@ template <typename T>
 struct KernelArgumentHandler
 {
     static ::size_t size(const T&) { return sizeof(T); }
-    static T* ptr(T& value) { return &value; }
+    static const T* ptr(const T& value) { return &value; }
 };
 
 template <>
 struct KernelArgumentHandler<LocalSpaceArg>
 {
     static ::size_t size(const LocalSpaceArg& value) { return value.size_; }
-    static void* ptr(LocalSpaceArg&) { return NULL; }
+    static const void* ptr(const LocalSpaceArg&) { return NULL; }
 };
 
 } 
@@ -4283,7 +4283,7 @@ public:
     }
 
     template <typename T>
-    cl_int setArg(cl_uint index, T value)
+    cl_int setArg(cl_uint index, const T &value)
     {
         return detail::errHandler(
             ::clSetKernelArg(
@@ -4294,7 +4294,7 @@ public:
             __SET_KERNEL_ARGS_ERR);
     }
 
-    cl_int setArg(cl_uint index, ::size_t size, void* argPtr)
+    cl_int setArg(cl_uint index, ::size_t size, const void* argPtr)
     {
         return detail::errHandler(
             ::clSetKernelArg(object_, index, size, argPtr),
