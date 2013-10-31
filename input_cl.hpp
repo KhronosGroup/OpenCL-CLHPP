@@ -2434,7 +2434,7 @@ public:
     {
         cl_int error;
 
-#if !defined(__APPLE__) || !defined(__MACOS)
+#if !defined(__APPLE__) && !defined(__MACOS)
         cl_context_properties prop[4] = {CL_CONTEXT_PLATFORM, 0, 0, 0 };
 
         if (properties == NULL) {
