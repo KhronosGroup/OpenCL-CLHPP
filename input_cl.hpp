@@ -676,7 +676,7 @@ typedef cl::string STRING_CLASS;
  *  \param N maximum size of the vector.
  */
 template <typename T, unsigned int N = __MAX_DEFAULT_VECTOR_SIZE>
-class CL_EXT_PREFIX__VERSION_1_1_DEPRECATED vector CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
+class CL_EXT_PREFIX__VERSION_1_1_DEPRECATED vector
 {
 private:
     T data_[N];
@@ -718,7 +718,7 @@ public:
      */
     void push_back (const T& x)
     { 
-        if (size() < N) {    
+        if (size() < N) {
             new (&data_[size_]) T(x);
             size_++;
         } else {
@@ -739,7 +739,7 @@ public:
             detail::errHandler(CL_MEM_OBJECT_ALLOCATION_FAILURE, __VECTOR_CAPACITY_ERR);
         }
     }
-  
+
     /*! \brief Constructs with a value copied from another.
      *
      *  \param vec the vector to copy.
@@ -747,7 +747,7 @@ public:
     vector(const vector<T, N>& vec) : 
         size_(vec.size_)
     {
-        if (size_ != 0) {	
+        if (size_ != 0) {
             assign(vec.begin(), vec.end());
         }
     } 
@@ -784,7 +784,7 @@ public:
         } else {
             clear();
         }
-    
+
         return *this;
     }
 
@@ -828,6 +828,28 @@ public:
     unsigned int capacity () const
     {
         return N;
+    }
+
+    //! \brief Resizes the vector to the given size
+    void resize(unsigned int newSize, T fill = T())
+    {
+        if (newSize > N)
+        {
+            detail::errHandler(CL_MEM_OBJECT_ALLOCATION_FAILURE, __VECTOR_CAPACITY_ERR);
+        }
+        else
+        {
+            while (size_ < newSize)
+            {
+                new (&data_[size_]) T(fill);
+                size_++;
+            }
+            while (size_ > newSize)
+            {
+                --size_;
+                data_[size_].~T();
+            }
+        }
     }
 
     /*! \brief Returns a reference to a given element.
@@ -1006,7 +1028,7 @@ public:
     {
         return data_[size_-1];
     }
-};  
+} CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED;
 #endif // #if !defined(__USE_DEV_VECTOR) && !defined(__NO_STD_VECTOR)
 
 
