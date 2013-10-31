@@ -2833,7 +2833,7 @@ public:
     {
         return detail::errHandler(
             ::clWaitForEvents(
-                (cl_uint) events.size(), (cl_event*)&events.front()),
+                (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : NULL),
             __WAIT_FOR_EVENTS_ERR);
     }
 };
@@ -2902,7 +2902,7 @@ WaitForEvents(const VECTOR_CLASS<Event>& events)
 {
     return detail::errHandler(
         ::clWaitForEvents(
-            (cl_uint) events.size(), (cl_event*)&events.front()),
+            (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : NULL),
         __WAIT_FOR_EVENTS_ERR);
 }
 
@@ -4789,7 +4789,7 @@ public:
         object_ = ::clCreateProgramWithBinary(
             context(), (cl_uint) devices.size(),
             deviceIDs,
-            lengths, images, binaryStatus != NULL
+            lengths, images, (binaryStatus != NULL && numDevices > 0)
                ? &binaryStatus->front()
                : NULL, &error);
 
@@ -5972,7 +5972,7 @@ public:
                 object_, userFptr, args.first, args.second,
                 (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
                 mems,
-                (mem_locs != NULL) ? (const void **) &mem_locs->front() : NULL,
+                (mem_locs != NULL && mem_locs->size() > 0) ? (const void **) &mem_locs->front() : NULL,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
                 (event != NULL) ? &tmp : NULL),
@@ -6003,7 +6003,7 @@ public:
             ::clEnqueueWaitForEvents(
                 object_,
                 (cl_uint) events.size(),
-                (const cl_event*) &events.front()),
+                events.size() > 0 ? (const cl_event*) &events.front() : NULL),
             __ENQUEUE_WAIT_FOR_EVENTS_ERR);
     }
 #endif // #if defined(CL_VERSION_1_1)
@@ -6018,7 +6018,7 @@ public:
              ::clEnqueueAcquireGLObjects(
                  object_,
                  (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
-                 (mem_objects != NULL) ? (const cl_mem *) &mem_objects->front(): NULL,
+                 (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
                  (events != NULL) ? (cl_uint) events->size() : 0,
                  (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
                  (event != NULL) ? &tmp : NULL),
@@ -6040,7 +6040,7 @@ public:
              ::clEnqueueReleaseGLObjects(
                  object_,
                  (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
-                 (mem_objects != NULL) ? (const cl_mem *) &mem_objects->front(): NULL,
+                 (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
                  (events != NULL) ? (cl_uint) events->size() : 0,
                  (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
                  (event != NULL) ? &tmp : NULL),
@@ -6083,7 +6083,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
              pfn_clEnqueueAcquireD3D10ObjectsKHR(
                  object_,
                  (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
-                 (mem_objects != NULL) ? (const cl_mem *) &mem_objects->front(): NULL,
+                 (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
                  (events != NULL) ? (cl_uint) events->size() : 0,
                  (events != NULL) ? (cl_event*) &events->front() : NULL,
                  (event != NULL) ? &tmp : NULL),
@@ -6116,9 +6116,9 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
             pfn_clEnqueueReleaseD3D10ObjectsKHR(
                 object_,
                 (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
-                (mem_objects != NULL) ? (const cl_mem *) &mem_objects->front(): NULL,
+                (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
                 (events != NULL) ? (cl_uint) events->size() : 0,
-                (events != NULL) ? (cl_event*) &events->front() : NULL,
+                (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
                 (event != NULL) ? &tmp : NULL),
             __ENQUEUE_RELEASE_GL_ERR);
 
