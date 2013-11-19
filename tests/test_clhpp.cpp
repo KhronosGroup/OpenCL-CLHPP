@@ -822,6 +822,8 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
     TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
     TEST_ASSERT_NULL(host_ptr);
+    if (errcode_ret)
+        errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
 
@@ -848,6 +850,15 @@ static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
     cl_event  *event,
     int num_calls);
 
+static cl_int clWaitForEvents_testCopyHostToBuffer(
+    cl_uint num_events,
+    const cl_event *event_list,
+    int num_calls);
+
+static cl_int clReleaseEvent_testCopyHostToBuffer(
+    cl_event event,
+    int num_calls);
+
 void testBufferConstructorContextIterator()
 {
     cl_mem expected = make_mem(0);
@@ -865,6 +876,8 @@ void testBufferConstructorContextIterator()
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
     clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);
+    clWaitForEvents_StubWithCallback(clWaitForEvents_testCopyHostToBuffer);
+    clReleaseEvent_StubWithCallback(clReleaseEvent_testCopyHostToBuffer);
     clReleaseCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
 
     std::vector<int> host(1024);
@@ -1302,6 +1315,10 @@ void testKernelSetArgLocal()
  * Tests for cl::copy
  ****************************************************************************/
 
+// This method should allocate some host accesible memory
+// so we must do this ourselves
+void *some_host_memory;
+
 static void * clEnqueueMapBuffer_testCopyHostToBuffer(
     cl_command_queue command_queue,
     cl_mem buffer,
@@ -1321,7 +1338,17 @@ static void * clEnqueueMapBuffer_testCopyHostToBuffer(
     TEST_ASSERT_EQUAL(CL_MAP_WRITE, map_flags);
     TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
 
-    return (void *) 0xdeadbeef;
+    some_host_memory = malloc(sizeof(int) * 1024);
+
+    // Set the return event
+    if (event)
+        *event = NULL;
+
+    // Set the return error code
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+
+    return some_host_memory;
 }
 
 static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
@@ -1335,14 +1362,31 @@ static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
 {
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), memobj);
-    TEST_ASSERT_EQUAL_PTR(0xdeadbeef, mapped_ptr);
+    TEST_ASSERT_EQUAL_PTR(some_host_memory, mapped_ptr);
+    TEST_ASSERT_NOT_NULL(event);
+    return CL_SUCCESS;
+}
+
+static cl_int clWaitForEvents_testCopyHostToBuffer(
+    cl_uint num_events,
+    const cl_event *event_list,
+    int num_calls)
+{
+    TEST_ASSERT_NOT_NULL(event_list);
+    TEST_ASSERT_EQUAL(1, num_events);
+    return CL_SUCCESS;
+}
+
+static cl_int clReleaseEvent_testCopyHostToBuffer(
+    cl_event event,
+    int num_calls)
+{
     TEST_ASSERT_NOT_NULL(event);
     return CL_SUCCESS;
 }
 
 void testCopyHostToBuffer()
 {
-
     cl_context context_expect = make_context(0);
     int context_refcount = 1;
     prepare_contextRefcounts(1, &context_expect, &context_refcount);
@@ -1361,8 +1405,20 @@ void testCopyHostToBuffer()
     clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
     clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);
 
+    clWaitForEvents_StubWithCallback(clWaitForEvents_testCopyHostToBuffer);
+    clReleaseEvent_StubWithCallback(clReleaseEvent_testCopyHostToBuffer);
+
     std::vector<int> host(1024);
+    for (int i = 0; i < 1024; i++)
+        host[i] = i;
+
     cl::copy(queue, host.begin(), host.end(), buffer);
+
+    // Check that the memory was copied to some_host_memory
+    TEST_ASSERT_EQUAL_MEMORY(&host[0], some_host_memory, sizeof(int) * 1024);
+
+    free(some_host_memory);
+
 }
 
 } // extern "C"
