@@ -253,16 +253,17 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
  * macro value.
  */
 #if __cplusplus >= 201103L
-#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, pool) \
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveAssign ## type ## NonNull() \
     { \
-        clRelease ## type ## _ExpectAndReturn(makeFunc(0), CL_SUCCESS); \
+        releaseFunc ## _ExpectAndReturn(makeFunc(0), CL_SUCCESS); \
         pool[0] = std::move(pool[1]); \
         TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
         TEST_ASSERT_NULL(pool[1]()); \
     } \
     \
     void prefix ## MoveAssign ## type ## Null() \
+    { \
         pool[0]() = NULL; \
         pool[0] = std::move(pool[1]); \
         TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
@@ -285,14 +286,14 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
         TEST_ASSERT_NULL(empty()); \
     }
 #else
-#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, pool) \
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveAssign ## type ## NonNull() {} \
     void prefix ## MoveAssign ## type ## Null() {} \
     void prefix ## MoveConstruct ## type ## NonNull() {} \
     void prefix ## MoveConstruct ## type ## Null() {}
 #endif
-#define MAKE_MOVE_TESTS(type, makeFunc, pool) \
-    MAKE_MOVE_TESTS2(test, type, makeFunc, pool)
+#define MAKE_MOVE_TESTS(type, makeFunc, releaseFunc, pool) \
+    MAKE_MOVE_TESTS2(test, type, makeFunc, releaseFunc, pool)
 
 void setUp()
 {
@@ -347,7 +348,7 @@ void testMoveAssignContextNonNull();
 void testMoveAssignContextNull();
 void testMoveConstructContextNonNull();
 void testMoveConstructContextNull();
-MAKE_MOVE_TESTS(Context, make_context, contextPool)
+MAKE_MOVE_TESTS(Context, make_context, clReleaseContext, contextPool)
 
 /// Stub for querying CL_CONTEXT_DEVICES that returns two devices
 static cl_int clGetContextInfo_testContextGetDevices(
@@ -530,7 +531,7 @@ void testMoveAssignCommandQueueNonNull();
 void testMoveAssignCommandQueueNull();
 void testMoveConstructCommandQueueNonNull();
 void testMoveConstructCommandQueueNull();
-MAKE_MOVE_TESTS(CommandQueue, make_command_queue, commandQueuePool);
+MAKE_MOVE_TESTS(CommandQueue, make_command_queue, clReleaseCommandQueue, commandQueuePool);
 
 // Stub for clGetCommandQueueInfo that returns context 0
 static cl_int clGetCommandQueueInfo_testCommandQueueGetContext(
@@ -770,13 +771,71 @@ void testAssignDeviceNull()
     d = (cl_device_id) NULL;
 }
 
-// TODO: these tests should be augmented to check that referenceCountable is
-// correctly moved
-void testMoveAssignDeviceNonNull();
-void testMoveAssignDeviceNull();
-void testMoveConstructDeviceNonNull();
-void testMoveConstructDeviceNull();
-MAKE_MOVE_TESTS(Device, make_device, devicePool);
+// These tests do not use the MAKE_MOVE_TESTS helper because they need to
+// check whether the device is reference-countable, and to check that
+// the reference-countable flag is correctly moved.
+void testMoveAssignDeviceNonNull()
+{
+#if __cplusplus >= 201103L
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    // Release called when trg overwritten
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    cl::Device src(make_device_id(0));
+    cl::Device trg(make_device_id(1));
+    trg = std::move(src);
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), trg());
+    TEST_ASSERT_NULL(src());
+
+    // Prevent destructor from interfering with the test
+    trg() = NULL;
+#endif
+}
+
+void testMoveAssignDeviceNull()
+{
+#if __cplusplus >= 201103L
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    cl::Device trg;
+    cl::Device src(make_device_id(1));
+    trg = std::move(src);
+    TEST_ASSERT_EQUAL_PTR(make_device_id(1), trg());
+    TEST_ASSERT_NULL(src());
+
+    // Prevent destructor from interfering with the test
+    trg() = NULL;
+#endif
+}
+
+void testMoveConstructDeviceNonNull()
+{
+#if __cplusplus >= 201103L
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    cl::Device src(make_device_id(0));
+    cl::Device trg(std::move(src));
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), trg());
+    TEST_ASSERT_NULL(src());
+
+    // Prevent destructor from interfering with the test
+    trg() = NULL;
+#endif
+}
+
+void testMoveConstructDeviceNull()
+{
+#if __cplusplus >= 201103L
+    cl::Device empty;
+    cl::Device trg(std::move(empty));
+    TEST_ASSERT_NULL(trg());
+    TEST_ASSERT_NULL(empty());
+#endif
+}
 
 void testDestroyDevice1_1()
 {
@@ -804,7 +863,7 @@ void testMoveAssignBufferNonNull();
 void testMoveAssignBufferNull();
 void testMoveConstructBufferNonNull();
 void testMoveConstructBufferNull();
-MAKE_MOVE_TESTS(Buffer, make_mem, bufferPool);
+MAKE_MOVE_TESTS(Buffer, make_mem, clReleaseMemObject, bufferPool);
 
 // Stub of clCreateBuffer for testBufferConstructorContextInterator
 // - return the first memory location
@@ -1041,8 +1100,9 @@ void testMoveAssignImage2DNonNull();
 void testMoveAssignImage2DNull();
 void testMoveConstructImage2DNonNull();
 void testMoveConstructImage2DNull();
-MAKE_MOVE_TESTS(Image2D, make_mem, image2DPool);
+MAKE_MOVE_TESTS(Image2D, make_mem, clReleaseMemObject, image2DPool);
 
+#ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
 static cl_mem clCreateImage2D_testCreateImage2D_1_1(
     cl_context context,
     cl_mem_flags flags,
@@ -1071,6 +1131,7 @@ static cl_mem clCreateImage2D_testCreateImage2D_1_1(
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
+#endif
 
 void testCreateImage2D_1_1()
 {
@@ -1157,8 +1218,9 @@ void testMoveAssignImage3DNonNull();
 void testMoveAssignImage3DNull();
 void testMoveConstructImage3DNonNull();
 void testMoveConstructImage3DNull();
-MAKE_MOVE_TESTS(Image3D, make_mem, image3DPool);
+MAKE_MOVE_TESTS(Image3D, make_mem, clReleaseMemObject, image3DPool);
 
+#ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
 static cl_mem clCreateImage3D_testCreateImage3D_1_1(
     cl_context context,
     cl_mem_flags flags,
@@ -1191,6 +1253,7 @@ static cl_mem clCreateImage3D_testCreateImage3D_1_1(
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
+#endif
 
 void testCreateImage3D_1_1()
 {
@@ -1278,7 +1341,7 @@ void testMoveAssignKernelNonNull();
 void testMoveAssignKernelNull();
 void testMoveConstructKernelNonNull();
 void testMoveConstructKernelNull();
-MAKE_MOVE_TESTS(Kernel, make_kernel, kernelPool);
+MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool);
 
 static cl_int scalarArg;
 static cl_int3 vectorArg;

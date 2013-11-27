@@ -63,7 +63,7 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
     set(TEST_CLHPP_CXX11_SOURCES
         ${TEST_CLHPP_SOURCES_COMMON}
         test_clhpp_cxx11.cpp)
-    set_source_files_properties(test_clhpp_cxx11.cp PROPERTIES COMPILE_FLAGS "-std=c++11")
+    set_source_files_properties(test_clhpp_cxx11.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
     add_executable(test_clhpp_cxx11 ${TEST_CLHPP_CXX11_SOURCES} ${TEST_CLHPP_HEADERS})
     add_test(run_test_clhpp_cxx11 test_clhpp_cxx11)
 endif()

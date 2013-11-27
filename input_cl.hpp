@@ -1862,7 +1862,7 @@ public:
     }
 
 #if __cplusplus >= 201103L
-    Wrapper(Wrapper<cl_type>& rhs) noexcept
+    Wrapper(Wrapper<cl_type>&& rhs) noexcept
     {
         object_ = rhs.object_;
         referenceCountable_ = rhs.referenceCountable_;
