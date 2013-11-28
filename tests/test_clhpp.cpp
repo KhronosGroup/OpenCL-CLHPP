@@ -332,6 +332,37 @@ void tearDown()
 }
 
 /****************************************************************************
+ * Tests for atomic wrappers
+ ****************************************************************************/
+
+void testCompareExchange()
+{
+    /* This just tests that a compare-and-swap happens - there is no reliable
+     * way to ensure that it is atomic and performs a memory barrier.
+     */
+
+    // Test success case
+    volatile int dest = 123;
+    int old = cl::detail::compare_exchange(&dest, 456, 123);
+    TEST_ASSERT_EQUAL(456, dest);
+    TEST_ASSERT_EQUAL(123, old);
+
+    // Test failure case
+    dest = 234;
+    old = cl::detail::compare_exchange(&dest, 345, 456);
+    TEST_ASSERT_EQUAL(234, dest);
+    TEST_ASSERT_EQUAL(234, old);
+}
+
+void testFence()
+{
+    /* No reliable way to test that it actually does what it says on the tin.
+     * Just test that it can be called without exploding.
+     */
+    cl::detail::fence();
+}
+
+/****************************************************************************
  * Tests for cl::Context
  ****************************************************************************/
 

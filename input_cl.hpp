@@ -147,22 +147,17 @@
 
 #ifdef _WIN32
 
-#include <windows.h>
 #include <malloc.h>
-#include <iterator>
-#include <intrin.h>
 
-#if defined(__CL_ENABLE_EXCEPTIONS)
-#include <exception>
-#endif // #if defined(__CL_ENABLE_EXCEPTIONS)
-
-#pragma push_macro("max")
-#undef max
 #if defined(USE_DX_INTEROP)
 #include <CL/cl_d3d10.h>
 #include <CL/cl_dx9_media_sharing.h>
 #endif
 #endif // _WIN32
+
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif // _MSC_VER
 
 // 
 #if defined(USE_CL_DEVICE_FISSION)
@@ -170,11 +165,8 @@
 #endif
 
 #if defined(__APPLE__) || defined(__MACOSX)
-#include <OpenGL/OpenGL.h>
 #include <OpenCL/opencl.h>
-#include <libkern/OSAtomic.h>
 #else
-#include <GL/gl.h>
 #include <CL/opencl.h>
 #endif // !__APPLE__
 
@@ -202,6 +194,11 @@
 
 #include <utility>
 #include <limits>
+#include <iterator>
+
+#if defined(__CL_ENABLE_EXCEPTIONS)
+#include <exception>
+#endif // #if defined(__CL_ENABLE_EXCEPTIONS)
 
 #if !defined(__NO_STD_VECTOR)
 #include <vector>
@@ -213,9 +210,6 @@
 
 #if defined(linux) || defined(__APPLE__) || defined(__MACOSX)
 #include <alloca.h>
-
-#include <emmintrin.h>
-#include <xmmintrin.h>
 #endif // linux
 
 #include <cstring>
@@ -1045,22 +1039,26 @@ namespace detail {
     */
     inline int compare_exchange(volatile int * dest, int exchange, int comparand)
     {
-#ifdef _WIN32
-        return (int)(InterlockedCompareExchange(
-           (volatile long*)dest, 
-           (long)exchange, 
-           (long)comparand));
-#elif defined(__APPLE__) || defined(__MACOSX)
-		return OSAtomicOr32Orig((uint32_t)exchange, (volatile uint32_t*)dest);
-#else // !_WIN32 || defined(__APPLE__) || defined(__MACOSX)
+#ifdef _MSC_VER
+        return (int)(_InterlockedCompareExchange(
+            (volatile long*)dest,
+            (long)exchange,
+            (long)comparand));
+#else // !_MSC_VER
         return (__sync_val_compare_and_swap(
-            dest, 
-            comparand, 
+            dest,
+            comparand,
             exchange));
-#endif // !_WIN32
+#endif // !_MSC_VER
     }
 
-    inline void fence() { _mm_mfence(); }
+    inline void fence() {
+#ifdef _MSC_VER
+        _ReadWriteBarrier();
+#else
+        __sync_synchronize();
+#endif
+    }
 } // namespace detail
 
     
@@ -3239,7 +3237,7 @@ public:
     BufferGL(
         const Context& context,
         cl_mem_flags flags,
-        GLuint bufobj,
+        cl_GLuint bufobj,
         cl_int * err = NULL)
     {
         cl_int error;
@@ -3277,7 +3275,7 @@ public:
     //! \brief Wrapper for clGetGLObjectInfo().
     cl_int getObjectInfo(
         cl_gl_object_type *type,
-        GLuint * gl_object_name)
+        cl_GLuint * gl_object_name)
     {
         return detail::errHandler(
             ::clGetGLObjectInfo(object_,type,gl_object_name),
@@ -3304,7 +3302,7 @@ public:
     BufferRenderGL(
         const Context& context,
         cl_mem_flags flags,
-        GLuint bufobj,
+        cl_GLuint bufobj,
         cl_int * err = NULL)
     {
         cl_int error;
@@ -3342,7 +3340,7 @@ public:
     //! \brief Wrapper for clGetGLObjectInfo().
     cl_int getObjectInfo(
         cl_gl_object_type *type,
-        GLuint * gl_object_name)
+        cl_GLuint * gl_object_name)
     {
         return detail::errHandler(
             ::clGetGLObjectInfo(object_,type,gl_object_name),
@@ -3686,9 +3684,9 @@ public:
     Image2DGL(
         const Context& context,
         cl_mem_flags flags,
-        GLenum target,
-        GLint  miplevel,
-        GLuint texobj,
+        cl_GLenum target,
+        cl_GLint  miplevel,
+        cl_GLuint texobj,
         cl_int * err = NULL)
     {
         cl_int error;
@@ -3908,9 +3906,9 @@ public:
     Image3DGL(
         const Context& context,
         cl_mem_flags flags,
-        GLenum target,
-        GLint  miplevel,
-        GLuint texobj,
+        cl_GLenum target,
+        cl_GLint  miplevel,
+        cl_GLuint texobj,
         cl_int * err = NULL)
     {
         cl_int error;
@@ -3962,9 +3960,9 @@ public:
     ImageGL(
         const Context& context,
         cl_mem_flags flags,
-        GLenum target,
-        GLint  miplevel,
-        GLuint texobj,
+        cl_GLenum target,
+        cl_GLint  miplevel,
+        cl_GLuint texobj,
         cl_int * err = NULL)
     {
         cl_int error;
@@ -7251,9 +7249,5 @@ public:
 #undef __DEFAULT_INITIALIZED
 
 } // namespace cl
-
-#ifdef _WIN32
-#pragma pop_macro("max")
-#endif // _WIN32
 
 #endif // CL_HPP_
