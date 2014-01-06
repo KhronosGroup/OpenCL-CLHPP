@@ -6470,7 +6470,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, NDRange global) : 
+    EnqueueArgs(const CommandQueue &queue, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6479,7 +6479,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, NDRange global, NDRange local) : 
+    EnqueueArgs(const CommandQueue &queue, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6488,7 +6488,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(const CommandQueue &queue, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -6497,7 +6497,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, Event e, NDRange global) : 
+    EnqueueArgs(const CommandQueue &queue, Event e, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6506,7 +6506,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(CommandQueue &queue, Event e, NDRange global, NDRange local) : 
+    EnqueueArgs(const CommandQueue &queue, Event e, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6515,7 +6515,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(CommandQueue &queue, Event e, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(const CommandQueue &queue, Event e, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -6524,7 +6524,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global) : 
+    EnqueueArgs(const CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6534,7 +6534,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global, NDRange local) : 
+    EnqueueArgs(const CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6544,7 +6544,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(const CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
