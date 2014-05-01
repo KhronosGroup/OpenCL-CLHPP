@@ -219,7 +219,7 @@
 #include <string>
 #endif 
 
-#if defined(linux) || defined(__APPLE__) || defined(__MACOSX)
+#if defined(__ANDROID__) || defined(linux) || defined(__APPLE__) || defined(__MACOSX)
 #include <alloca.h>
 #endif // linux
 
@@ -4663,7 +4663,7 @@ inline Program linkProgram(
     void* data = NULL,
     cl_int* err = NULL) 
 {
-    cl_int err_local = CL_SUCCESS;
+    cl_int error_local = CL_SUCCESS;
 
     cl_program programs[2] = { input1(), input2() };
 
@@ -4678,11 +4678,11 @@ inline Program linkProgram(
         programs,
         notifyFptr,
         data,
-        &err_local);
+        &error_local);
 
-    detail::errHandler(err_local,__COMPILE_PROGRAM_ERR);
+    detail::errHandler(error_local,__COMPILE_PROGRAM_ERR);
     if (err != NULL) {
-        *err = err_local;
+        *err = error_local;
     }
 
     return Program(prog);
@@ -4695,7 +4695,7 @@ inline Program linkProgram(
     void* data = NULL,
     cl_int* err = NULL) 
 {
-    cl_int err_local = CL_SUCCESS;
+    cl_int error_local = CL_SUCCESS;
 
     cl_program * programs = (cl_program*) alloca(inputPrograms.size() * sizeof(cl_program));
 
@@ -4714,11 +4714,11 @@ inline Program linkProgram(
         programs,
         notifyFptr,
         data,
-        &err_local);
+        &error_local);
 
-    detail::errHandler(err_local,__COMPILE_PROGRAM_ERR);
+    detail::errHandler(error_local,__COMPILE_PROGRAM_ERR);
     if (err != NULL) {
-        *err = err_local;
+        *err = error_local;
     }
 
     return Program(prog);
