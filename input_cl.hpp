@@ -170,6 +170,17 @@
 #include <CL/opencl.h>
 #endif // !__APPLE__
 
+#if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
+#define CL_HPP_RVALUE_REFERENCES_SUPPORTED
+#endif
+
+#if (__cplusplus >= 201103L)
+#define CL_HPP_NOEXCEPT noexcept
+#else
+#define CL_HPP_NOEXCEPT
+#endif
+
+
 // To avoid accidentally taking ownership of core OpenCL types
 // such as cl_kernel constructors are made explicit
 // under OpenCL 1.2
@@ -1695,7 +1706,7 @@ static cl_uint getVersion(const char *versionInfo)
         ++index;
     }
     ++index;
-    while(versionInfo[index] != ' ' ) {
+    while(versionInfo[index] != ' ' &&  versionInfo[index] != '\0') {
         lowVersion *= 10;
         lowVersion += versionInfo[index]-'0';
         ++index;
@@ -1759,8 +1770,8 @@ public:
         if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
     }
 
-#if __cplusplus >= 201103L
-    Wrapper(Wrapper<cl_type>&& rhs) noexcept
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    Wrapper(Wrapper<cl_type>&& rhs) CL_HPP_NOEXCEPT
     {
         object_ = rhs.object_;
         rhs.object_ = NULL;
@@ -1777,7 +1788,7 @@ public:
         return *this;
     }
 
-#if __cplusplus >= 201103L
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     Wrapper<cl_type>& operator = (Wrapper<cl_type>&& rhs)
     {
         if (this != &rhs) {
@@ -1859,8 +1870,8 @@ public:
         if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
     }
 
-#if __cplusplus >= 201103L
-    Wrapper(Wrapper<cl_type>&& rhs) noexcept
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    Wrapper(Wrapper<cl_type>&& rhs) CL_HPP_NOEXCEPT
     {
         object_ = rhs.object_;
         referenceCountable_ = rhs.referenceCountable_;
@@ -1880,7 +1891,7 @@ public:
         return *this;
     }
 
-#if __cplusplus >= 201103L
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     Wrapper<cl_type>& operator = (Wrapper<cl_type>&& rhs)
     {
         if (this != &rhs) {
@@ -6470,7 +6481,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CommandQueue &queue, NDRange global) : 
+    EnqueueArgs(CommandQueue &queue, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6479,7 +6490,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CommandQueue &queue, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6488,7 +6499,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CommandQueue &queue, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -6497,7 +6508,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CommandQueue &queue, Event e, NDRange global) : 
+    EnqueueArgs(CommandQueue &queue, Event e, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6506,7 +6517,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(const CommandQueue &queue, Event e, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, Event e, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6515,7 +6526,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(const CommandQueue &queue, Event e, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, Event e, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -6524,7 +6535,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(const CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global) : 
+    EnqueueArgs(CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6534,7 +6545,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6544,7 +6555,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, const VECTOR_CLASS<Event> &events, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -7247,6 +7258,9 @@ public:
 #undef __DEFAULT_NOT_INITIALIZED 
 #undef __DEFAULT_BEING_INITIALIZED 
 #undef __DEFAULT_INITIALIZED
+
+#undef CL_HPP_RVALUE_REFERENCES_SUPPORTED
+#undef CL_HPP_NOEXCEPT
 
 } // namespace cl
 
