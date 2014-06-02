@@ -172,6 +172,8 @@
 
 #if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
 #define CL_HPP_RVALUE_REFERENCES_SUPPORTED
+#define CL_HPP_CPP11_ATOMICS_SUPPORTED
+#include <atomic>
 #endif
 
 #if (__cplusplus >= 201103L)
@@ -1048,8 +1050,16 @@ namespace detail {
     /*
      * Compare and exchange primitives are needed for handling of defaults
     */
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+	inline int compare_exchange(std::atomic<int> * dest, int exchange, int comparand)
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     inline int compare_exchange(volatile int * dest, int exchange, int comparand)
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     {
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+		std::atomic_compare_exchange_strong(dest, &comparand, exchange);
+		return comparand;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 #ifdef _MSC_VER
         return (int)(_InterlockedCompareExchange(
             (volatile long*)dest,
@@ -1061,14 +1071,19 @@ namespace detail {
             comparand,
             exchange));
 #endif // !_MSC_VER
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     }
 
     inline void fence() {
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+		std::atomic_thread_fence(std::memory_order_seq_cst);
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 #ifdef _MSC_VER
         _ReadWriteBarrier();
 #else
         __sync_synchronize();
 #endif
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     }
 } // namespace detail
 
@@ -2390,7 +2405,11 @@ class Context
     : public detail::Wrapper<cl_context>
 {
 private:
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+	static std::atomic<int> default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     static volatile int default_initialized_;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     static Context default_;
     static volatile cl_int default_error_;
 public:
@@ -2698,15 +2717,24 @@ inline Device Device::getDefault(cl_int * err)
 }
 
 
+
 #ifdef _WIN32
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+__declspec(selectany) std::atomic<int> Context::default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __declspec(selectany) volatile int Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __declspec(selectany) Context Context::default_;
 __declspec(selectany) volatile cl_int Context::default_error_ = CL_SUCCESS;
-#else
+#else // !_WIN32
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+__attribute__((weak)) std::atomic<int> Context::default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __attribute__((weak)) volatile int Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __attribute__((weak)) Context Context::default_;
 __attribute__((weak)) volatile cl_int Context::default_error_ = CL_SUCCESS;
-#endif
+#endif // !_WIN32
 
 /*! \brief Class interface for cl_event.
  *
@@ -4764,7 +4792,11 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 class CommandQueue : public detail::Wrapper<cl_command_queue>
 {
 private:
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+	static std::atomic<int> default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     static volatile int default_initialized_;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     static CommandQueue default_;
     static volatile cl_int default_error_;
 public:
@@ -5834,14 +5866,22 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
 };
 
 #ifdef _WIN32
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+__declspec(selectany) std::atomic<int> CommandQueue::default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __declspec(selectany) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __declspec(selectany) CommandQueue CommandQueue::default_;
 __declspec(selectany) volatile cl_int CommandQueue::default_error_ = CL_SUCCESS;
-#else
+#else // !_WIN32
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+__attribute__((weak)) std::atomic<int> CommandQueue::default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __attribute__((weak)) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 __attribute__((weak)) CommandQueue CommandQueue::default_;
 __attribute__((weak)) volatile cl_int CommandQueue::default_error_ = CL_SUCCESS;
-#endif
+#endif // !_WIN32
 
 template< typename IteratorType >
 Buffer::Buffer(
