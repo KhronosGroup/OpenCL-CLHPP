@@ -1052,38 +1052,34 @@ namespace detail {
     */
 
 #ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-	inline int compare_exchange(std::atomic<int> * dest, int exchange, int comparand)
+    inline int compare_exchange(std::atomic<int> * dest, int exchange, int comparand)
 #else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     inline int compare_exchange(volatile int * dest, int exchange, int comparand)
 #endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     {
 #ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-		std::atomic_compare_exchange_strong(dest, &comparand, exchange);
-		return comparand;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-#ifdef _MSC_VER
+        std::atomic_compare_exchange_strong(dest, &comparand, exchange);
+        return comparand;
+#elif _MSC_VER
         return (int)(_InterlockedCompareExchange(
             (volatile long*)dest,
             (long)exchange,
             (long)comparand));
-#else // !_MSC_VER
+#else // !_MSC_VER && !CL_HPP_CPP11_ATOMICS_SUPPORTED
         return (__sync_val_compare_and_swap(
             dest,
             comparand,
             exchange));
-#endif // !_MSC_VER
 #endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     }
 
     inline void fence() {
 #ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-		std::atomic_thread_fence(std::memory_order_seq_cst);
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-#ifdef _MSC_VER
+        std::atomic_thread_fence(std::memory_order_seq_cst);
+#elif _MSC_VER // !CL_HPP_CPP11_ATOMICS_SUPPORTED
         _ReadWriteBarrier();
-#else
+#else // !_MSC_VER && !CL_HPP_CPP11_ATOMICS_SUPPORTED
         __sync_synchronize();
-#endif
 #endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     }
 } // namespace detail
@@ -2408,7 +2404,7 @@ class Context
 private:
 
 #ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-	static std::atomic<int> default_initialized_;
+    static std::atomic<int> default_initialized_;
 #else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     static volatile int default_initialized_;
 #endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
@@ -4351,7 +4347,7 @@ public:
 
     Program(
         const STRING_CLASS& source,
-		bool build = false,
+        bool build = false,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -4794,7 +4790,7 @@ class CommandQueue : public detail::Wrapper<cl_command_queue>
 {
 private:
 #ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-	static std::atomic<int> default_initialized_;
+    static std::atomic<int> default_initialized_;
 #else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
     static volatile int default_initialized_;
 #endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
@@ -7084,8 +7080,8 @@ struct make_kernel :
     >
 {
 public:
-	typedef detail::KernelFunctorGlobal<             
-		       T0,   T1,   T2,   T3,
+    typedef detail::KernelFunctorGlobal<             
+               T0,   T1,   T2,   T3,
                T4,   T5,   T6,   T7,
                T8,   T9,   T10,   T11,
                T12,   T13,   T14,   T15,
