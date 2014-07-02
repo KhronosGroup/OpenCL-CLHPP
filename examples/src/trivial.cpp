@@ -9,11 +9,21 @@ const int numElements = 32;
 
 int main(void)
 {
-
-    cl::Program vectorAddProgram(
-        std::string(
-            "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)];}")
-        , true);
+	cl::Program addProgram(
+		std::string(
+		"int add(int a, int b) { return a + b; }")
+		, false);
+	cl::Program vectorWrapper(
+		std::string(
+		"int add(int a, int b); kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = add(inputA[get_global_id(0)], inputB[get_global_id(0)]);}")
+		, false);
+	std::vector<cl::Program> programs;
+	addProgram.compile();
+	vectorWrapper.compile();		
+	
+	programs.push_back(addProgram);
+	programs.push_back(vectorWrapper);
+	cl::Program vectorAddProgram = cl::linkProgram(programs);
 
     auto vectorAddKernel = 
         cl::make_kernel<
@@ -21,6 +31,7 @@ int main(void)
             cl::Buffer&,
             cl::Buffer&
             >( vectorAddProgram, "vectorAdd" );
+
 
     std::vector<int> inputA(numElements, 1);
     std::vector<int> inputB(numElements, 2);

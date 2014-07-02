@@ -4730,8 +4730,12 @@ inline Program linkProgram(
         }
     } 
 
+	Context ctx;
+	if(inputPrograms.size() > 0) {
+		ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>();
+	}
     cl_program prog = ::clLinkProgram(
-        Context::getDefault()(),
+        ctx(),
         0,
         NULL,
         options,
