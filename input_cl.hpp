@@ -4730,10 +4730,10 @@ inline Program linkProgram(
         }
     } 
 
-	Context ctx;
-	if(inputPrograms.size() > 0) {
-		ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>();
-	}
+    Context ctx;
+    if(inputPrograms.size() > 0) {
+        ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>();
+    }
     cl_program prog = ::clLinkProgram(
         ctx(),
         0,
