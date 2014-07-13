@@ -396,7 +396,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __BUILD_PROGRAM_ERR                 __ERR_STR(clBuildProgram)
 #if defined(CL_VERSION_1_2)
 #define __COMPILE_PROGRAM_ERR                  __ERR_STR(clCompileProgram)
-
+#define __LINK_PROGRAM_ERR                  __ERR_STR(clLinkProgram)
 #endif // #if defined(CL_VERSION_1_2)
 #define __CREATE_KERNELS_IN_PROGRAM_ERR     __ERR_STR(clCreateKernelsInProgram)
 
@@ -4692,7 +4692,10 @@ inline Program linkProgram(
 
     cl_program programs[2] = { input1(), input2() };
 
-    Context ctx = input1.getInfo<CL_PROGRAM_CONTEXT>();
+    Context ctx = input1.getInfo<CL_PROGRAM_CONTEXT>(&error_local);
+    if(error_local!=CL_SUCCESS) {
+        detail::errHandler(error_local, __LINK_PROGRAM_ERR);
+    }
 
     cl_program prog = ::clLinkProgram(
         ctx(),
@@ -4732,7 +4735,10 @@ inline Program linkProgram(
 
     Context ctx;
     if(inputPrograms.size() > 0) {
-        ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>();
+        ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>(&error_local);
+        if(error_local!=CL_SUCCESS) {
+            detail::errHandler(error_local, __LINK_PROGRAM_ERR);
+        }
     }
     cl_program prog = ::clLinkProgram(
         ctx(),
