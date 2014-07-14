@@ -342,7 +342,11 @@ void testCompareExchange()
      */
 
     // Test success case
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+    std::atomic<int> dest(123);
+#else
     volatile int dest = 123;
+#endif
     int old = cl::detail::compare_exchange(&dest, 456, 123);
     TEST_ASSERT_EQUAL(456, dest);
     TEST_ASSERT_EQUAL(123, old);
