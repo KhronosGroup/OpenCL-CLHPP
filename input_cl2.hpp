@@ -155,10 +155,6 @@
 #endif
 #endif // _WIN32
 
-#if defined(_MSC_VER)
-#include <intrin.h>
-#endif // _MSC_VER
-
 // 
 #if defined(USE_CL_DEVICE_FISSION)
 #include <CL/cl_ext.h>
@@ -170,18 +166,17 @@
 #include <CL/opencl.h>
 #endif // !__APPLE__
 
-#if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
-#define CL_HPP_RVALUE_REFERENCES_SUPPORTED
-#define CL_HPP_CPP11_ATOMICS_SUPPORTED
-#include <atomic>
-#endif
-
 #if (__cplusplus >= 201103L)
 #define CL_HPP_NOEXCEPT noexcept
 #else
 #define CL_HPP_NOEXCEPT
 #endif
 
+#if defined(_MSC_VER)
+# define CL_HPP_DEFINE_STATIC_MEMBER __declspec(selectany)
+#else
+# define CL_HPP_DEFINE_STATIC_MEMBER __attribute__((weak))
+#endif // !_MSC_VER
 
 // To avoid accidentally taking ownership of core OpenCL types
 // such as cl_kernel constructors are made explicit
@@ -208,6 +203,7 @@
 #include <utility>
 #include <limits>
 #include <iterator>
+#include <mutex>
 
 #if defined(__CL_ENABLE_EXCEPTIONS)
 #include <exception>
@@ -1038,52 +1034,6 @@ public:
 } CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED;
 #endif // #if !defined(__USE_DEV_VECTOR) && !defined(__NO_STD_VECTOR)
 
-
-
-
-
-namespace detail {
-#define __DEFAULT_NOT_INITIALIZED 1 
-#define __DEFAULT_BEING_INITIALIZED 2
-#define __DEFAULT_INITIALIZED 4
-
-    /*
-     * Compare and exchange primitives are needed for handling of defaults
-    */
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-    inline int compare_exchange(std::atomic<int> * dest, int exchange, int comparand)
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-    inline int compare_exchange(volatile int * dest, int exchange, int comparand)
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-    {
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-        std::atomic_compare_exchange_strong(dest, &comparand, exchange);
-        return comparand;
-#elif _MSC_VER
-        return (int)(_InterlockedCompareExchange(
-            (volatile long*)dest,
-            (long)exchange,
-            (long)comparand));
-#else // !_MSC_VER && !CL_HPP_CPP11_ATOMICS_SUPPORTED
-        return (__sync_val_compare_and_swap(
-            dest,
-            comparand,
-            exchange));
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-    }
-
-    inline void fence() {
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-        std::atomic_thread_fence(std::memory_order_seq_cst);
-#elif _MSC_VER // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-        _ReadWriteBarrier();
-#else // !_MSC_VER && !CL_HPP_CPP11_ATOMICS_SUPPORTED
-        __sync_synchronize();
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-    }
-} // namespace detail
-
-    
 /*! \brief class used to interface between C++ and
  *  OpenCL C calls that require arrays of size_t values, whose
  *  size is known statically.
@@ -2401,13 +2351,36 @@ class Context
     : public detail::Wrapper<cl_context>
 {
 private:
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-    static std::atomic<int> default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-    static volatile int default_initialized_;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
+    static std::once_flag default_initialized_;
     static Context default_;
-    static volatile cl_int default_error_;
+    static cl_int default_error_;
+
+    /*! \brief Create the default context.
+     *
+     * This sets @c default_ and @c default_error_. It does not throw
+     * @c cl::Error.
+     */
+    static void makeDefault() {
+        /* Throwing an exception from a call_once invocation does not do
+         * what we wish, so we catch it and save the error.
+         */
+#if defined(__CL_ENABLE_EXCEPTIONS)
+        try
+#endif
+        {
+            default_ = Context(
+                CL_DEVICE_TYPE_DEFAULT,
+                NULL,
+                NULL,
+                NULL,
+                &default_error_);
+        }
+#if defined(__CL_ENABLE_EXCEPTIONS)
+        catch (cl::Error &e) {
+            default_error_ = e.err();
+        }
+#endif
+    }
 public:
     /*! \brief Constructs a context including a list of specified devices.
      *
@@ -2558,52 +2531,14 @@ public:
      *
      *  \note All calls to this function return the same cl_context as the first.
      */
-    static Context getDefault(cl_int * err = NULL) 
+    static Context getDefault(cl_int * err = NULL)
     {
-        int state = detail::compare_exchange(
-            &default_initialized_, 
-            __DEFAULT_BEING_INITIALIZED, __DEFAULT_NOT_INITIALIZED);
-        
-        if (state & __DEFAULT_INITIALIZED) {
-            if (err != NULL) {
-                *err = default_error_;
-            }
-            return default_;
-        }
-
-        if (state & __DEFAULT_BEING_INITIALIZED) {
-              // Assume writes will propagate eventually...
-              while(default_initialized_ != __DEFAULT_INITIALIZED) {
-                  detail::fence();
-              }
-
-            if (err != NULL) {
-                *err = default_error_;
-            }
-            return default_;
-        }
-
-        cl_int error;
-        default_ = Context(
-            CL_DEVICE_TYPE_DEFAULT,
-            NULL,
-            NULL,
-            NULL,
-            &error);
-
-        detail::fence();
-
-        default_error_ = error;
-        // Assume writes will propagate eventually...
-        default_initialized_ = __DEFAULT_INITIALIZED;
-
-        detail::fence();
-
+        std::call_once(default_initialized_, makeDefault);
+        detail::errHandler(default_error_);
         if (err != NULL) {
             *err = default_error_;
         }
         return default_;
-
     }
 
     //! \brief Default constructor - initializes to NULL.
@@ -2714,23 +2649,9 @@ inline Device Device::getDefault(cl_int * err)
 
 
 
-#ifdef _WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) std::atomic<int> Context::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) volatile int Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) Context Context::default_;
-__declspec(selectany) volatile cl_int Context::default_error_ = CL_SUCCESS;
-#else // !_WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) std::atomic<int> Context::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) volatile int Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) Context Context::default_;
-__attribute__((weak)) volatile cl_int Context::default_error_ = CL_SUCCESS;
-#endif // !_WIN32
+CL_HPP_DEFINE_STATIC_MEMBER std::once_flag Context::default_initialized_;
+CL_HPP_DEFINE_STATIC_MEMBER Context Context::default_;
+CL_HPP_DEFINE_STATIC_MEMBER cl_int Context::default_error_ = CL_SUCCESS;
 
 /*! \brief Class interface for cl_event.
  *
@@ -4798,15 +4719,44 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 class CommandQueue : public detail::Wrapper<cl_command_queue>
 {
 private:
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-    static std::atomic<int> default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-    static volatile int default_initialized_;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
+    static std::once_flag default_initialized_;
     static CommandQueue default_;
-    static volatile cl_int default_error_;
+    static cl_int default_error_;
+
+    /*! \brief Create the default command queue returned by @ref getDefault.
+     *
+     * It sets default_error_ to indicate success or failure. It does not throw
+     * @c cl::Error.
+     */
+    static void makeDefault()
+    {
+        /* We don't want to throw an error from this function, so we have to
+         * catch and set the error flag.
+         */
+#if defined(__CL_ENABLE_EXCEPTIONS)
+        try
+#endif
+        {
+            int error;
+            Context context = Context::getDefault(&error);
+
+            if (error != CL_SUCCESS) {
+                default_error_ = error;
+            }
+            else {
+                Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
+                default_ = CommandQueue(context, device, 0, &default_error_);
+            }
+        }
+#if defined(__CL_ENABLE_EXCEPTIONS)
+        catch (cl::Error &e) {
+            default_error_ = e.err();
+        }
+#endif
+    }
+
 public:
-   CommandQueue(
+    CommandQueue(
         cl_command_queue_properties properties,
         cl_int* err = NULL)
     {
@@ -4882,63 +4832,12 @@ public:
 
     static CommandQueue getDefault(cl_int * err = NULL) 
     {
-        int state = detail::compare_exchange(
-            &default_initialized_, 
-            __DEFAULT_BEING_INITIALIZED, __DEFAULT_NOT_INITIALIZED);
-        
-        if (state & __DEFAULT_INITIALIZED) {
-            if (err != NULL) {
-                *err = default_error_;
-            }
-            return default_;
-        }
-
-        if (state & __DEFAULT_BEING_INITIALIZED) {
-              // Assume writes will propagate eventually...
-              while(default_initialized_ != __DEFAULT_INITIALIZED) {
-                  detail::fence();
-              }
-
-            if (err != NULL) {
-                *err = default_error_;
-            }
-            return default_;
-        }
-
-        cl_int error;
-
-        Context context = Context::getDefault(&error);
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-
-        if (error != CL_SUCCESS) {
-            if (err != NULL) {
-                *err = error;
-            }
-        }
-        else {
-            Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
-
-            default_ = CommandQueue(context, device, 0, &error);
-
-            detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-            if (err != NULL) {
-                *err = error;
-            }
-        }
-
-        detail::fence();
-
-        default_error_ = error;
-        // Assume writes will propagate eventually...
-        default_initialized_ = __DEFAULT_INITIALIZED;
-
-        detail::fence();
-
+        std::call_once(default_initialized_, makeDefault);
+        detail::errHandler(default_error_, __CREATE_COMMAND_QUEUE_ERR);
         if (err != NULL) {
             *err = default_error_;
         }
         return default_;
-
     }
 
     CommandQueue() { }
@@ -5871,23 +5770,9 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     }
 };
 
-#ifdef _WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) std::atomic<int> CommandQueue::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) CommandQueue CommandQueue::default_;
-__declspec(selectany) volatile cl_int CommandQueue::default_error_ = CL_SUCCESS;
-#else // !_WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) std::atomic<int> CommandQueue::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) CommandQueue CommandQueue::default_;
-__attribute__((weak)) volatile cl_int CommandQueue::default_error_ = CL_SUCCESS;
-#endif // !_WIN32
+CL_HPP_DEFINE_STATIC_MEMBER std::once_flag CommandQueue::default_initialized_;
+CL_HPP_DEFINE_STATIC_MEMBER CommandQueue CommandQueue::default_;
+CL_HPP_DEFINE_STATIC_MEMBER cl_int CommandQueue::default_error_ = CL_SUCCESS;
 
 template< typename IteratorType >
 Buffer::Buffer(
