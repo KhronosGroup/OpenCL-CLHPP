@@ -3048,6 +3048,14 @@ public:
     Buffer(const Context &context, IteratorType startIterator, IteratorType endIterator,
         bool readOnly, bool useHostPtr = false, cl_int* err = NULL);
 
+    /*!
+    * \brief Construct a Buffer from a host container via iterators using a specified queue.
+    * If useHostPtr is specified iterators must be random access.
+    */
+    template< typename IteratorType >
+    Buffer(const CommandQueue &queue, IteratorType startIterator, IteratorType endIterator,
+        bool readOnly, bool useHostPtr = false, cl_int* err = NULL);
+
     //! \brief Default constructor - initializes to NULL.
     Buffer() : Memory() { }
 
@@ -5817,6 +5825,54 @@ Buffer::Buffer(
             *err = error;
         }
 
+        error = cl::copy(queue, startIterator, endIterator, *this);
+        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+}
+
+template< typename IteratorType >
+Buffer::Buffer(
+    const CommandQueue &queue,
+    IteratorType startIterator,
+    IteratorType endIterator,
+    bool readOnly,
+    bool useHostPtr,
+    cl_int* err)
+{
+    typedef typename std::iterator_traits<IteratorType>::value_type DataType;
+    cl_int error;
+
+    cl_mem_flags flags = 0;
+    if (readOnly) {
+        flags |= CL_MEM_READ_ONLY;
+    }
+    else {
+        flags |= CL_MEM_READ_WRITE;
+    }
+    if (useHostPtr) {
+        flags |= CL_MEM_USE_HOST_PTR;
+    }
+
+    ::size_t size = sizeof(DataType)*(endIterator - startIterator);
+
+    Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
+
+    if (useHostPtr) {
+        object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+    }
+    else {
+        object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
+    }
+
+    detail::errHandler(error, __CREATE_BUFFER_ERR);
+    if (err != NULL) {
+        *err = error;
+    }
+
+    if (!useHostPtr) {
         error = cl::copy(queue, startIterator, endIterator, *this);
         detail::errHandler(error, __CREATE_BUFFER_ERR);
         if (err != NULL) {

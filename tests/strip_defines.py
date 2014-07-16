@@ -12,6 +12,7 @@ if len(sys.argv) != 3:
     sys.exit(1)
 with open(sys.argv[1], 'r') as inf:
     text = inf.read()
-text = re.sub(r'\bCL_(?:API_SUFFIX|EXT|CALLBACK)[A-Z0-9_]*\b', '', text)
+text = re.sub(r'\bCL_(?:API_ENTRY|API_SUFFIX|EXT|CALLBACK)[A-Z0-9_]*\b', '', text)
+text2 = re.sub(r'\*\[\]', '\*\*', text)
 with open(sys.argv[2], 'w') as outf:
-    outf.write(text)
+    outf.write(text2)

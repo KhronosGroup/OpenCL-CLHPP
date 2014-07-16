@@ -1,17 +1,10 @@
-#include <CL/cl.hpp>
+#include <CL/cl2.hpp>
 #undef _UP
 
 #include <map>
 #include <vector>
 #include <utility>
-
-// cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
-#if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
-#define CL_HPP_RVALUE_REFERENCES_SUPPORTED
-#define CL_HPP_CPP11_ATOMICS_SUPPORTED
 #include <atomic>
-#endif
-
 
 extern "C"
 {
@@ -68,9 +61,10 @@ static cl::Kernel kernelPool[POOL_MAX];
 /****************************************************************************
  * Stub functions shared by multiple tests
  ****************************************************************************/
+
 /**
-* Stub implementation of clGetCommandQueueInfo that returns the first context.
-*/
+ * Stub implementation of clGetCommandQueueInfo that returns the first context.
+ */
 static cl_int clGetCommandQueueInfo_context(
     cl_command_queue id,
     cl_command_queue_info param_name,
@@ -196,6 +190,24 @@ static cl_int clGetPlatformInfo_version_1_2(
     return clGetPlatformInfo_version(
         id, param_name, param_value_size, param_value,
         param_value_size_ret, "OpenCL 1.2 Mock");
+}
+
+/**
+* A stub for clGetPlatformInfo that will only support querying
+* CL_PLATFORM_VERSION, and will return version 1.2.
+*/
+static cl_int clGetPlatformInfo_version_2_0(
+    cl_platform_id id,
+    cl_platform_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    return clGetPlatformInfo_version(
+        id, param_name, param_value_size, param_value,
+        param_value_size_ret, "OpenCL 2.0 Mock");
 }
 
 /* Simulated reference counts. The table points to memory held by the caller.
@@ -360,41 +372,6 @@ void tearDown()
         image3DPool[i]() = NULL;
         kernelPool[i]() = NULL;
     }
-}
-
-/****************************************************************************
- * Tests for atomic wrappers
- ****************************************************************************/
-
-void testCompareExchange()
-{
-    /* This just tests that a compare-and-swap happens - there is no reliable
-     * way to ensure that it is atomic and performs a memory barrier.
-     */
-
-    // Test success case
-#if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
-    std::atomic<int> dest = 123;
-#else // #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
-    volatile int dest = 123;
-#endif // #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
-    int old = cl::detail::compare_exchange(&dest, 456, 123);
-    TEST_ASSERT_EQUAL(456, dest);
-    TEST_ASSERT_EQUAL(123, old);
-
-    // Test failure case
-    dest = 234;
-    old = cl::detail::compare_exchange(&dest, 345, 456);
-    TEST_ASSERT_EQUAL(234, dest);
-    TEST_ASSERT_EQUAL(234, old);
-}
-
-void testFence()
-{
-    /* No reliable way to test that it actually does what it says on the tin.
-     * Just test that it can be called without exploding.
-     */
-    cl::detail::fence();
 }
 
 /****************************************************************************
@@ -1021,7 +998,7 @@ void testBufferConstructorQueueIterator()
     cl_mem expected = make_mem(0);
 
     cl::CommandQueue queue(make_command_queue(0));
-
+    
     clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_context);
