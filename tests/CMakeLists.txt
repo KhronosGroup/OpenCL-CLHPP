@@ -54,7 +54,7 @@ set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl.hpp PROPERTIES GEN
 set(TEST_CL2HPP_HEADERS
     ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp
     mocks/Mockcl.h)
-	set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
+    set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
 
 set(TEST_CLHPP_SOURCES_COMMON
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
@@ -84,9 +84,10 @@ add_test(run_test_cl2hpp test_cl2hpp)
 if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
     set(TEST_CLHPP_CXX11_SOURCES
         ${TEST_CLHPP_SOURCES_COMMON}
-	    ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
+        ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
         test_clhpp_cxx11.cpp)
     set_source_files_properties(test_clhpp_cxx11.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
+    set_source_files_properties(test_cl2hpp.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
     add_executable(test_clhpp_cxx11 ${TEST_CLHPP_CXX11_SOURCES} ${TEST_CLHPP_HEADERS})
     add_test(run_test_clhpp_cxx11 test_clhpp_cxx11)
 endif()
