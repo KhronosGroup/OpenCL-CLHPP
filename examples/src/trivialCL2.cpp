@@ -1,5 +1,5 @@
-#define __CL_ENABLE_EXCEPTIONS
-//#define __NO_STD_STRING
+#define CL_HPP_ENABLE_EXCEPTIONS
+//#define CL_HPP_NO_STD_STRING
 #define  _VARIADIC_MAX 10
 #include <CL/cl2.hpp>
 #include <iostream>

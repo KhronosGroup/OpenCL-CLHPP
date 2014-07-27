@@ -1,6 +1,8 @@
 #ifdef TEST_CL2
 # include <CL/cl2.hpp>
 # define TEST_RVALUE_REFERENCES
+# define VECTOR_CLASS CL_HPP_VECTOR_CLASS
+# define STRING_CLASS CL_HPP_STRING_CLASS
 #else
 # include <CL/cl.hpp>
 // cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
