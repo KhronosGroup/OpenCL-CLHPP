@@ -1,17 +1,23 @@
-#include <CL/cl.hpp>
+#ifdef TEST_CL2
+# include <CL/cl2.hpp>
+# define TEST_RVALUE_REFERENCES
+#else
+# include <CL/cl.hpp>
+// cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
+# if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
+#  define TEST_RVALUE_REFERENCES
+#  define TEST_CPP11_ATOMICS
+# endif // (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
+#endif // !CL_HPP_TEST_CL2
+
 #undef _UP
 
 #include <map>
 #include <vector>
 #include <utility>
-
-// cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
-#if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
-#define CL_HPP_RVALUE_REFERENCES_SUPPORTED
-#define CL_HPP_CPP11_ATOMICS_SUPPORTED
-#include <atomic>
+#ifdef TEST_CPP11_ATOMICS
+# include <atomic>
 #endif
-
 
 extern "C"
 {
@@ -68,9 +74,10 @@ static cl::Kernel kernelPool[POOL_MAX];
 /****************************************************************************
  * Stub functions shared by multiple tests
  ****************************************************************************/
+
 /**
-* Stub implementation of clGetCommandQueueInfo that returns the first context.
-*/
+ * Stub implementation of clGetCommandQueueInfo that returns the first context.
+ */
 static cl_int clGetCommandQueueInfo_context(
     cl_command_queue id,
     cl_command_queue_info param_name,
@@ -198,6 +205,24 @@ static cl_int clGetPlatformInfo_version_1_2(
         param_value_size_ret, "OpenCL 1.2 Mock");
 }
 
+/**
+ * A stub for clGetPlatformInfo that will only support querying
+ * CL_PLATFORM_VERSION, and will return version 2.0.
+ */
+static cl_int clGetPlatformInfo_version_2_0(
+    cl_platform_id id,
+    cl_platform_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    return clGetPlatformInfo_version(
+        id, param_name, param_value_size, param_value,
+        param_value_size_ret, "OpenCL 2.0 Mock");
+}
+
 /* Simulated reference counts. The table points to memory held by the caller.
  * This makes things simpler in the common case of only one object to be
  * reference counted.
@@ -283,7 +308,7 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
  * prevent the simple-minded parser from Unity from identifying tests from the
  * macro value.
  */
-#if __cplusplus >= 201103L
+#ifdef TEST_RVALUE_REFERENCES
 #define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveAssign ## type ## NonNull() \
     { \
@@ -322,7 +347,7 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
     void prefix ## MoveAssign ## type ## Null() {} \
     void prefix ## MoveConstruct ## type ## NonNull() {} \
     void prefix ## MoveConstruct ## type ## Null() {}
-#endif
+#endif // !TEST_RVALUE_REFERENCES
 #define MAKE_MOVE_TESTS(type, makeFunc, releaseFunc, pool) \
     MAKE_MOVE_TESTS2(test, type, makeFunc, releaseFunc, pool)
 
@@ -368,16 +393,17 @@ void tearDown()
 
 void testCompareExchange()
 {
+#ifndef TEST_CL2
     /* This just tests that a compare-and-swap happens - there is no reliable
      * way to ensure that it is atomic and performs a memory barrier.
      */
 
     // Test success case
-#if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
+#ifdef TEST_CPP11_ATOMICS
     std::atomic<int> dest(123);
-#else // #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
+#else // #if defined(TEST_CPP11_ATOMICS)
     volatile int dest = 123;
-#endif // #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
+#endif // #if defined(TEST_CPP11_ATOMICS)
     int old = cl::detail::compare_exchange(&dest, 456, 123);
     TEST_ASSERT_EQUAL(456, dest);
     TEST_ASSERT_EQUAL(123, old);
@@ -387,14 +413,17 @@ void testCompareExchange()
     old = cl::detail::compare_exchange(&dest, 345, 456);
     TEST_ASSERT_EQUAL(234, dest);
     TEST_ASSERT_EQUAL(234, old);
+#endif // !TEST_CL2
 }
 
 void testFence()
 {
+#ifndef TEST_CL2
     /* No reliable way to test that it actually does what it says on the tin.
      * Just test that it can be called without exploding.
      */
     cl::detail::fence();
+#endif // !TEST_CL2
 }
 
 /****************************************************************************
@@ -842,7 +871,7 @@ void testAssignDeviceNull()
 // the reference-countable flag is correctly moved.
 void testMoveAssignDeviceNonNull()
 {
-#if __cplusplus >= 201103L
+#ifdef TEST_RVALUE_REFERENCES
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
 
@@ -862,7 +891,7 @@ void testMoveAssignDeviceNonNull()
 
 void testMoveAssignDeviceNull()
 {
-#if __cplusplus >= 201103L
+#ifdef TEST_RVALUE_REFERENCES
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
 
@@ -879,7 +908,7 @@ void testMoveAssignDeviceNull()
 
 void testMoveConstructDeviceNonNull()
 {
-#if __cplusplus >= 201103L
+#ifdef TEST_RVALUE_REFERENCES
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
 
@@ -895,7 +924,7 @@ void testMoveConstructDeviceNonNull()
 
 void testMoveConstructDeviceNull()
 {
-#if __cplusplus >= 201103L
+#ifdef TEST_RVALUE_REFERENCES
     cl::Device empty;
     cl::Device trg(std::move(empty));
     TEST_ASSERT_NULL(trg());

@@ -20,13 +20,6 @@ add_custom_command(
     DEPENDS test_clhpp.cpp cmock.yml)
 
 
-add_custom_command(
-    OUTPUT test_cl2hpp_Runner.c
-    COMMAND ruby ${UNITY_DIR}/auto/generate_test_runner.rb test_cl2hpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating test runner"
-    DEPENDS test_cl2hpp.cpp cmock.yml)
-
 include_directories(
     ${CLCPP_BINARY_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/mocks
@@ -54,7 +47,7 @@ set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl.hpp PROPERTIES GEN
 set(TEST_CL2HPP_HEADERS
     ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp
     mocks/Mockcl.h)
-    set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
+set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
 
 set(TEST_CLHPP_SOURCES_COMMON
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
@@ -68,7 +61,7 @@ set(TEST_CLHPP_SOURCES
 
 set(TEST_CL2HPP_SOURCES
     ${TEST_CLHPP_SOURCES_COMMON}
-    ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
+    ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
     test_cl2hpp.cpp)
 
 add_executable(test_clhpp ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
