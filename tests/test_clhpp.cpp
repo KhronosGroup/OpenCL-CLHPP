@@ -374,7 +374,7 @@ void testCompareExchange()
 
     // Test success case
 #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
-    std::atomic<int> dest = 123;
+    std::atomic<int> dest(123);
 #else // #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
     volatile int dest = 123;
 #endif // #if defined(CL_HPP_CPP11_ATOMICS_SUPPORTED)
