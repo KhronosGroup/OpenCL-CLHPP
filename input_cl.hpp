@@ -3130,24 +3130,11 @@ public:
 
     /*!
     * \brief Construct a Buffer from a host container via iterators using a specified queue.
-    * If useHostPtr is specified iterators must be random access.
+    * If useHostPtr is specified iterators must represent contiguous data.
     */
     template< typename IteratorType >
     Buffer(const CommandQueue &queue, IteratorType startIterator, IteratorType endIterator,
         bool readOnly, bool useHostPtr = false, cl_int* err = NULL);
-
-    /*!
-    * \brief Construct a Buffer from a host container via iterators.
-    * If useHostPtr is specified iterators must be random access.
-    */
-    template< typename IteratorType >
-    Buffer(
-        const CommandQueue &queue,
-        IteratorType startIterator,
-        IteratorType endIterator,
-        bool readOnly,
-        bool useHostPtr = false,
-        cl_int* err = NULL);
 
     //! \brief Default constructor - initializes to NULL.
     Buffer() : Memory() { }
