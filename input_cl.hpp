@@ -2023,6 +2023,20 @@ public:
         return *this;
     }
 
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     */
+    Device(Device&& dev) : detail::Wrapper<cl_type>(std::move(dev)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Device& operator = (Device &&dev)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(dev));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+
     //! \brief Wrapper for clGetDeviceInfo().
     template <typename T>
     cl_int getInfo(cl_device_info name, T* param) const
@@ -2556,6 +2570,20 @@ public:
         }
     }
 
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Context(Context&& ctx) : detail::Wrapper<cl_type>(std::move(ctx)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Context& operator = (Context &&ctx)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(ctx));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+
     /*! \brief Returns a singleton context including all devices of CL_DEVICE_TYPE_DEFAULT.
      *
      *  \note All calls to this function return the same cl_context as the first.
@@ -2944,6 +2972,20 @@ public:
         return *this;
     }
 
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Memory(Memory&& mem) : detail::Wrapper<cl_type>(std::move(mem)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Memory& operator = (Memory &&mem)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(mem));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+
     //! \brief Wrapper for clGetMemObjectInfo().
     template <typename T>
     cl_int getInfo(cl_mem_info name, T* param) const
@@ -3154,6 +3196,20 @@ public:
         Memory::operator=(rhs);
         return *this;
     }
+    
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Buffer(Buffer&& buf) : Memory(std::move(buf)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Buffer& operator = (Buffer &&buf)
+    {
+        Memory::operator=(std::move(buf));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 
 #if defined(CL_VERSION_1_1)
     /*! \brief Creates a new buffer object from this.
@@ -3420,6 +3476,20 @@ protected:
         return *this;
     }
 
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image(Image&& img) : Memory(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image& operator = (Image &&img)
+    {
+        Memory::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+
 public:
     //! \brief Wrapper for clGetImageInfo().
     template <typename T>
@@ -3506,6 +3576,20 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image1D(Image1D&& img) : Image(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image1D& operator = (Image1D &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 
 /*! \class Image1DBuffer
@@ -3553,6 +3637,20 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image1DBuffer(Image1DBuffer&& img) : Image(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image1DBuffer& operator = (Image1DBuffer &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 
 /*! \class Image1DArray
@@ -3604,6 +3702,20 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image1DArray(Image1DArray&& img) : Image(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image1DArray& operator = (Image1DArray &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif // #if defined(CL_VERSION_1_2)
 
@@ -3704,6 +3816,20 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image2D(Image2D&& img) : Image(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image2D& operator = (Image2D &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 
 
@@ -3767,6 +3893,20 @@ public:
         Image2D::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image2DGL(Image2DGL&& img) : Image2D(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image2DGL& operator = (Image2DGL &&img)
+    {
+        Image2D::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif // #if !defined(CL_VERSION_1_2)
 
@@ -3824,6 +3964,20 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image2DArray(Image2DArray&& img) : Image(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image2DArray& operator = (Image2DArray &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif // #if defined(CL_VERSION_1_2)
 
@@ -3928,6 +4082,20 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image3D(Image3D&& img) : Image(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image3D& operator = (Image3D &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 
 #if !defined(CL_VERSION_1_2)
@@ -3988,6 +4156,20 @@ public:
         Image3D::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Image3DGL(Image3DGL&& img) : Image3D(std::move(img)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Image3DGL& operator = (Image3DGL &&img)
+    {
+        Image3D::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif // #if !defined(CL_VERSION_1_2)
 
@@ -4092,6 +4274,20 @@ public:
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Sampler(Sampler&& sam) : detail::Wrapper<cl_type>(std::move(sam)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Sampler& operator = (Sampler &&sam)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(sam));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 
     //! \brief Wrapper for clGetSamplerInfo().
     template <typename T>
@@ -4256,6 +4452,20 @@ public:
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Kernel(Kernel&& kernel) : detail::Wrapper<cl_type>(std::move(kernel)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Kernel& operator = (Kernel &&kernel)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(kernel));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 
     template <typename T>
     cl_int getInfo(cl_kernel_info name, T* param) const
@@ -4561,6 +4771,20 @@ public:
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    Program(Program&& program) : detail::Wrapper<cl_type>(std::move(program)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    Program& operator = (Program &&program)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(program));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 
     cl_int build(
         const VECTOR_CLASS<Device>& devices,
@@ -4888,6 +5112,20 @@ public:
             *err = error;
         }
     }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    */
+    CommandQueue(CommandQueue&& queue) : detail::Wrapper<cl_type>(std::move(queue)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    */
+    CommandQueue& operator = (CommandQueue &&queue)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(queue));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 
     static CommandQueue getDefault(cl_int * err = NULL) 
     {
