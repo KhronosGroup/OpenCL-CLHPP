@@ -1049,27 +1049,27 @@ void testBufferConstructorContextIterator()
 
 void testBufferConstructorQueueIterator()
 {
+    cl_context expected_context = make_context(0);
+    int context_refcount = 1;
     cl_mem expected = make_mem(0);
 
     cl::CommandQueue queue(make_command_queue(0));
 
-    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
-    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    prepare_contextRefcounts(1, &expected_context, &context_refcount);
     clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_context);
-    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clCreateBuffer_StubWithCallback(clCreateBuffer_testBufferConstructorContextIterator);
 
     clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
     clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);
     clWaitForEvents_StubWithCallback(clWaitForEvents_testCopyHostToBuffer);
     clReleaseEvent_StubWithCallback(clReleaseEvent_testCopyHostToBuffer);
-    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 
     std::vector<int> host(1024);
 
     cl::Buffer buffer(queue, host.begin(), host.end(), true);
 
     TEST_ASSERT_EQUAL_PTR(expected, buffer());
+    TEST_ASSERT_EQUAL(1, context_refcount);
 
     // Tidy up at end of test
     clReleaseMemObject_ExpectAndReturn(expected, CL_SUCCESS);
