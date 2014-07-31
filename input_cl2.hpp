@@ -529,11 +529,11 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_BARRIER_WAIT_LIST_ERR               CL_HPP_ERR_STR_(clEnqueueBarrierWithWaitList)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
-#if !defined(CL_HPP_STRING_CLASS)
+#if !defined(CL_HPP_NO_STD_STRING)
 typedef std::string CL_HPP_STRING_CLASS;
 #endif
 
-#if !defined(CL_HPP_VECTOR_CLASS)
+#if !defined(CL_HPP_NO_STD_VECTOR)
 #define CL_HPP_VECTOR_CLASS std::vector
 #endif
 
