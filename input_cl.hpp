@@ -2023,13 +2023,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Device(const Device& dev) : detail::Wrapper<cl_type>(dev) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Device& operator = (const Device &dev)
+    {
+        detail::Wrapper<cl_type>::operator=(dev);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
      */
-    Device(Device&& dev) : detail::Wrapper<cl_type>(std::move(dev)) {}
+    Device(Device&& dev) : detail::Wrapper<cl_type>(std::move(dev)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Device& operator = (Device &&dev)
     {
         detail::Wrapper<cl_type>::operator=(std::move(dev));
@@ -2570,13 +2586,29 @@ public:
         }
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Context(const Context& ctx) : detail::Wrapper<cl_type>(ctx) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Context& operator = (const Context &ctx)
+    {
+        detail::Wrapper<cl_type>::operator=(ctx);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Context(Context&& ctx) : detail::Wrapper<cl_type>(std::move(ctx)) {}
+     * Required for MSVC.
+     */
+    Context(Context&& ctx) : detail::Wrapper<cl_type>(std::move(ctx)) CL_HPP_NOEXCEPT{}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Context& operator = (Context &&ctx)
     {
         detail::Wrapper<cl_type>::operator=(std::move(ctx));
@@ -2972,13 +3004,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Memory(const Memory& mem) : detail::Wrapper<cl_type>(mem) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Memory& operator = (const Memory &mem)
+    {
+        detail::Wrapper<cl_type>::operator=(mem);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Memory(Memory&& mem) : detail::Wrapper<cl_type>(std::move(mem)) {}
+     * Required for MSVC.
+     */
+    Memory(Memory&& mem) : detail::Wrapper<cl_type>(std::move(mem)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Memory& operator = (Memory &&mem)
     {
         detail::Wrapper<cl_type>::operator=(std::move(mem));
@@ -3197,13 +3245,29 @@ public:
         return *this;
     }
     
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Buffer(const Buffer& buf) : Memory(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Buffer& operator = (const Buffer &buf)
+    {
+        Memory::operator=(buf);
+        return *this;
+    }
+    
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Buffer(Buffer&& buf) : Memory(std::move(buf)) {}
+     * Required for MSVC.
+     */
+    Buffer(Buffer&& buf) : Memory(std::move(buf)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Buffer& operator = (Buffer &&buf)
     {
         Memory::operator=(std::move(buf));
@@ -3315,6 +3379,36 @@ public:
         Buffer::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferD3D10(const BufferD3D10& buf) : Buffer(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferD3D10& operator = (const BufferD3D10 &buf)
+    {
+        Buffer::operator=(buf);
+        return *this;
+    }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferD3D10(BufferD3D10&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferD3D10& operator = (BufferD3D10 &&buf)
+    {
+        Buffer::operator=(std::move(buf));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif
 
@@ -3371,6 +3465,36 @@ public:
         Buffer::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferGL(const BufferGL& buf) : Buffer(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferGL& operator = (const BufferGL &buf)
+    {
+        Buffer::operator=(buf);
+        return *this;
+    }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferGL(BufferGL&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferGL& operator = (BufferGL &&buf)
+    {
+        Buffer::operator=(std::move(buf));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 
     //! \brief Wrapper for clGetGLObjectInfo().
     cl_int getObjectInfo(
@@ -3437,6 +3561,36 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferRenderGL(const BufferRenderGL& buf) : Buffer(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferRenderGL& operator = (const BufferRenderGL &buf)
+    {
+        Buffer::operator=(buf);
+        return *this;
+    }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferRenderGL(BufferRenderGL&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferRenderGL& operator = (BufferRenderGL &&buf)
+    {
+        Buffer::operator=(std::move(buf));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+
     //! \brief Wrapper for clGetGLObjectInfo().
     cl_int getObjectInfo(
         cl_gl_object_type *type,
@@ -3476,13 +3630,29 @@ protected:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image(const Image& img) : Memory(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image& operator = (const Image &img)
+    {
+        Memory::operator=(img);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image(Image&& img) : Memory(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image(Image&& img) : Memory(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image& operator = (Image &&img)
     {
         Memory::operator=(std::move(img));
@@ -3577,13 +3747,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1D(const Image1D& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1D& operator = (const Image1D &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image1D(Image1D&& img) : Image(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image1D(Image1D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image1D& operator = (Image1D &&img)
     {
         Image::operator=(std::move(img));
@@ -3637,14 +3823,30 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+    
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DBuffer(const Image1DBuffer& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DBuffer& operator = (const Image1DBuffer &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
 
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image1DBuffer(Image1DBuffer&& img) : Image(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image1DBuffer(Image1DBuffer&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image1DBuffer& operator = (Image1DBuffer &&img)
     {
         Image::operator=(std::move(img));
@@ -3702,14 +3904,30 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+    
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DArray(const Image1DArray& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DArray& operator = (const Image1DArray &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
 
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image1DArray(Image1DArray&& img) : Image(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image1DArray(Image1DArray&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image1DArray& operator = (Image1DArray &&img)
     {
         Image::operator=(std::move(img));
@@ -3817,13 +4035,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2D(const Image2D& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2D& operator = (const Image2D &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image2D(Image2D&& img) : Image(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image2D(Image2D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT{}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image2D& operator = (Image2D &&img)
     {
         Image::operator=(std::move(img));
@@ -3894,13 +4128,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DGL(const Image2DGL& img) : Image2D(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DGL& operator = (const Image2DGL &img)
+    {
+        Image2D::operator=(img);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image2DGL(Image2DGL&& img) : Image2D(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image2DGL(Image2DGL&& img) : Image2D(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image2DGL& operator = (Image2DGL &&img)
     {
         Image2D::operator=(std::move(img));
@@ -3964,14 +4214,30 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+    
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DArray(const Image2DArray& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DArray& operator = (const Image2DArray &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
 
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image2DArray(Image2DArray&& img) : Image(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image2DArray(Image2DArray&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image2DArray& operator = (Image2DArray &&img)
     {
         Image::operator=(std::move(img));
@@ -4083,13 +4349,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3D(const Image3D& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3D& operator = (const Image3D &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image3D(Image3D&& img) : Image(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image3D(Image3D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image3D& operator = (Image3D &&img)
     {
         Image::operator=(std::move(img));
@@ -4157,13 +4439,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3DGL(const Image3DGL& img) : Image3D(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3DGL& operator = (const Image3DGL &img)
+    {
+        Image3D::operator=(img);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Image3DGL(Image3DGL&& img) : Image3D(std::move(img)) {}
+     * Required for MSVC.
+     */
+    Image3DGL(Image3DGL&& img) : Image3D(std::move(img)) CL_HPP_NOEXCEPT{}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Image3DGL& operator = (Image3DGL &&img)
     {
         Image3D::operator=(std::move(img));
@@ -4215,6 +4513,36 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL(const ImageGL& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL& operator = (const ImageGL &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL(ImageGL&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL& operator = (ImageGL &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif // #if defined(CL_VERSION_1_2)
 
@@ -4275,13 +4603,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Sampler(const Sampler& sam) : detail::Wrapper<cl_type>(sam) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Sampler& operator = (const Sampler &sam)
+    {
+        detail::Wrapper<cl_type>::operator=(sam);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Sampler(Sampler&& sam) : detail::Wrapper<cl_type>(std::move(sam)) {}
+     * Required for MSVC.
+     */
+    Sampler(Sampler&& sam) : detail::Wrapper<cl_type>(std::move(sam)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Sampler& operator = (Sampler &&sam)
     {
         detail::Wrapper<cl_type>::operator=(std::move(sam));
@@ -4453,13 +4797,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Kernel(const Kernel& kernel) : detail::Wrapper<cl_type>(kernel) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Kernel& operator = (const Kernel &kernel)
+    {
+        detail::Wrapper<cl_type>::operator=(kernel);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Kernel(Kernel&& kernel) : detail::Wrapper<cl_type>(std::move(kernel)) {}
+     * Required for MSVC.
+     */
+    Kernel(Kernel&& kernel) : detail::Wrapper<cl_type>(std::move(kernel)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Kernel& operator = (Kernel &&kernel)
     {
         detail::Wrapper<cl_type>::operator=(std::move(kernel));
@@ -4772,13 +5132,29 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Program(const Program& program) : detail::Wrapper<cl_type>(program) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Program& operator = (const Program &program)
+    {
+        detail::Wrapper<cl_type>::operator=(program);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    Program(Program&& program) : detail::Wrapper<cl_type>(std::move(program)) {}
+     * Required for MSVC.
+     */
+    Program(Program&& program) : detail::Wrapper<cl_type>(std::move(program)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     Program& operator = (Program &&program)
     {
         detail::Wrapper<cl_type>::operator=(std::move(program));
@@ -5113,13 +5489,29 @@ public:
         }
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    CommandQueue(const CommandQueue& queue) : detail::Wrapper<cl_type>(queue) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    CommandQueue& operator = (const CommandQueue &queue)
+    {
+        detail::Wrapper<cl_type>::operator=(queue);
+        return *this;
+    }
+
 #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
     /*! \brief Move constructor to forward move to the superclass correctly.
-    */
-    CommandQueue(CommandQueue&& queue) : detail::Wrapper<cl_type>(std::move(queue)) {}
+     * Required for MSVC.
+     */
+    CommandQueue(CommandQueue&& queue) : detail::Wrapper<cl_type>(std::move(queue)) CL_HPP_NOEXCEPT {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
-    */
+     * Required for MSVC.
+     */
     CommandQueue& operator = (CommandQueue &&queue)
     {
         detail::Wrapper<cl_type>::operator=(std::move(queue));
@@ -7183,7 +7575,7 @@ public:
         SetArg<60, T60>::set(kernel_, t60);
         SetArg<61, T61>::set(kernel_, t61);
         SetArg<62, T62>::set(kernel_, t62);
-        SetArg<63, T63>::set(kernel_, t63);
+        SetArg<63, T63>::set(kernImageGL(const Image3DGL& img)el_, t63);
         SetArg<64, T64>::set(kernel_, t64);
         SetArg<65, T65>::set(kernel_, t65);
         SetArg<66, T66>::set(kernel_, t66);
