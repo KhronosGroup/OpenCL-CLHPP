@@ -23,18 +23,20 @@
 
 /*! \file
  *
- *   \brief C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33) and 
- *       OpenCL 1.2 (rev 15)    
- *   \author Benedict R. Gaster, Laurent Morichetti and Lee Howes
+ *   \brief C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), 
+ *       OpenCL 1.2 (rev 15) and OpenCL 2.0 (rev 23)
+ *   \author Lee Howes and Bruce Merry
  *   
- *   Additions and fixes from:
- *       Brian Cole, March 3rd 2010 and April 2012 
+ *   Derived from the OpenCL 1.x C++ bindings written by 
+ *   Benedict R. Gaster, Laurent Morichetti and Lee Howes
+ *   With additions and fixes from:
+ *       Brian Cole, March 3rd 2010 and April 2012
  *       Matt Gruenke, April 2012.
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 1.2.6
- *   \date August 2013
+ *   \version 2.0.1
+ *   \date August 2014
  *
  *   Optional extension support
  *
@@ -63,81 +65,25 @@
  * The OpenCL C++ Wrapper API 1.2 (revision 09)
  *  http://www.khronos.org/registry/cl/specs/opencl-cplusplus-1.2.pdf
  *
+ * \section compatibility Compatibility
+ * TODO: Describe support for OpenCL 1.1 and 1.2 platforms.
+ *
+ * \section parameterization Parameters
+ * This header may be parameterized by a set of preprocessor macros.
+ * CL_HPP_NO_STD_STRING
+ * CL_HPP_NO_STD_VECTOR
+ * CL_HPP_ENABLE_DEVICE_FISSION - Enables device fission for OpenCL 1.2 platforms
+ * CL_HPP_ENABLE_EXCEPTIONS
+ *
  * \section example Example
  *
  * The following example shows a general use case for the C++
- * bindings, including support for the optional exception feature.
- * See the following sections for decriptions of these features.
- *
+ * bindings, including support for the optional exception feature and
+ * also the supplied vector and string classes, see following sections for
+ * decriptions of these features.
+ * 
  * \code
- * #define CL_HPP_ENABLE_EXCEPTIONS
- * #define CL_HPP_TARGET_OPENCL_VERSION 120
- * 
- * #if defined(__APPLE__) || defined(__MACOSX)
- * #include <OpenCL/cl2.hpp>
- * #else
- * #include <CL/cl2.hpp>
- * #endif
- * #include <cstdio>
- * #include <cstdlib>
- * #include <iostream>
- * 
- *  const char * helloStr  = "__kernel void "
- *                           "hello(void) "
- *                           "{ "
- *                           "  "
- *                           "} ";
- * 
- *  int
- *  main(void)
- *  {
- *     cl_int err = CL_SUCCESS;
- *     try {
- *
- *       std::vector<cl::Platform> platforms;
- *       cl::Platform::get(&platforms);
- *       if (platforms.size() == 0) {
- *           std::cout << "Platform size 0\n";
- *           return -1;
- *       }
- *
- *       cl_context_properties properties[] = 
- *          { CL_CONTEXT_PLATFORM, (cl_context_properties)(platforms[0])(), 0};
- *       cl::Context context(CL_DEVICE_TYPE_CPU, properties); 
- * 
- *       std::vector<cl::Device> devices = context.getInfo<CL_CONTEXT_DEVICES>();
- * 
- *       cl::Program::Sources source(1,
- *           std::make_pair(helloStr,strlen(helloStr)));
- *       cl::Program program_ = cl::Program(context, source);
- *       program_.build(devices);
- * 
- *       cl::Kernel kernel(program_, "hello", &err);
- * 
- *       cl::Event event;
- *       cl::CommandQueue queue(context, devices[0], 0, &err);
- *       queue.enqueueNDRangeKernel(
- *           kernel, 
- *           cl::NullRange, 
- *           cl::NDRange(4,4),
- *           cl::NullRange,
- *           NULL,
- *           &event); 
- * 
- *       event.wait();
- *     }
- *     catch (cl::Error err) {
- *        std::cerr 
- *           << "ERROR: "
- *           << err.what()
- *           << "("
- *           << err.err()
- *           << ")"
- *           << std::endl;
- *     }
- * 
- *    return EXIT_SUCCESS;
- *  }
+ *  TODO: REDO EXAMPLE
  * 
  * \endcode
  *
@@ -169,13 +115,11 @@
 # warning "__NO_STD_STRING is deprecated. Define CL_HPP_NO_STD_STRING instead"
 # define CL_HPP_NO_STD_STRING
 #endif
-#if !defined(CL_HPP_VECTOR_CLASS) && defined(VECTOR_CLASS)
-# warning "VECTOR_CLASS is deprecated. Define CL_HPP_VECTOR_CLASS instead"
-# define CL_HPP_VECTOR_CLASS VECTOR_CLASS
+#if defined(VECTOR_CLASS)
+# warning "VECTOR_CLASS is deprecated. Alias cl::vector_class instead"
 #endif
-#if !defined(CL_HPP_STRING_CLASS) && defined(STRING_CLASS)
-# warning "STRING_CLASS is deprecated. Define CL_HPP_STRING_CLASS instead"
-# define CL_HPP_STRING_CLASS STRING_CLASS
+#if defined(STRING_CLASS)
+# warning "STRING_CLASS is deprecated. Alias cl::string_class instead."
 #endif
 #if !defined(CL_HPP_USER_OVERRIDE_ERROR_STRINGS) && defined(__CL_USER_OVERRIDE_ERROR_STRINGS)
 # warning "__CL_USER_OVERRIDE_ERROR_STRINGS is deprecated. Define CL_HPP_USER_OVERRIDE_ERROR_STRINGS instead"
@@ -237,6 +181,18 @@
 #endif
 #endif // _WIN32
 
+#if defined(_MSC_VER)
+#include <intrin.h>
+#endif // _MSC_VER 
+ 
+ // Check for a valid C++ version
+
+// Need to do both tests here because for some reason __cplusplus is not 
+// updated in visual studio
+#if (!defined(_MSC_VER) && __cplusplus < 201103L) || (_MSC_VER < 1700)
+#error Visual studio 2013 or another C++11-supporting compiler required
+#endif
+
 // 
 #if defined(CL_HPP_USE_CL_DEVICE_FISSION)
 #include <CL/cl_ext.h>
@@ -263,7 +219,7 @@
 // Define deprecated prefixes and suffixes to ensure compilation
 // in case they are not pre-defined
 #if !defined(CL_EXT_PREFIX__VERSION_1_1_DEPRECATED)
-#define CL_EXT_PREFIX__VERSION_1_1_DEPRECATED
+#define CL_EXT_PREFIX__VERSION_1_1_DEPRECATED  
 #endif // #if !defined(CL_EXT_PREFIX__VERSION_1_1_DEPRECATED)
 #if !defined(CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED)
 #define CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
@@ -285,11 +241,15 @@
 
 #if !defined(CL_HPP_NO_STD_VECTOR)
 #include <vector>
+template < class T, class Alloc = std::allocator<T> >
+using vector_class = std::vector<T, Alloc>;
 #endif
 
 #if !defined(CL_HPP_NO_STD_STRING)
 #include <string>
+using string_class = std::string;
 #endif 
+
 
 #if defined(__ANDROID__) || defined(linux) || defined(__APPLE__) || defined(__MACOSX)
 #include <alloca.h>
@@ -529,14 +489,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_BARRIER_WAIT_LIST_ERR               CL_HPP_ERR_STR_(clEnqueueBarrierWithWaitList)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
-#if !defined(CL_HPP_NO_STD_STRING)
-typedef std::string CL_HPP_STRING_CLASS;
-#endif
-
-#if !defined(CL_HPP_NO_STD_VECTOR)
-#define CL_HPP_VECTOR_CLASS std::vector
-#endif
-
+    
 /*! \brief class used to interface between C++ and
  *  OpenCL C calls that require arrays of size_t values, whose
  *  size is known statically.
@@ -585,9 +538,9 @@ inline cl_int getInfoHelper(Functor f, cl_uint name, T* param, long)
     return f(name, sizeof(T), param, NULL);
 }
 
-// Specialized getInfoHelper for CL_HPP_VECTOR_CLASS params
+// Specialized getInfoHelper for vector_class params
 template <typename Func, typename T>
-inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_VECTOR_CLASS<T>* param, long)
+inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -612,7 +565,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_VECTOR_CLASS<T>* param,
  * template will provide a better match.
  */
 template <typename Func, typename T>
-inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_VECTOR_CLASS<T>* param, int, typename T::cl_type = 0)
+inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, int, typename T::cl_type = 0)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -643,7 +596,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_VECTOR_CLASS<T>* param,
 
 // Specialized for getInfo<CL_PROGRAM_BINARIES>
 template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_VECTOR_CLASS<char *>* param, int)
+inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<char *>* param, int)
 {
     cl_int err = f(name, param->size() * sizeof(char *), &(*param)[0], NULL);
 
@@ -654,9 +607,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_VECTOR_CLASS<char *>* p
     return CL_SUCCESS;
 }
 
-// Specialized GetInfoHelper for CL_HPP_STRING_CLASS params
+// Specialized GetInfoHelper for string_class params
 template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, CL_HPP_STRING_CLASS* param, long)
+inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -725,18 +678,18 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 }
 
 #define CL_HPP_PARAM_NAME_INFO_1_0_(F) \
-    F(cl_platform_info, CL_PLATFORM_PROFILE, CL_HPP_STRING_CLASS) \
-    F(cl_platform_info, CL_PLATFORM_VERSION, CL_HPP_STRING_CLASS) \
-    F(cl_platform_info, CL_PLATFORM_NAME, CL_HPP_STRING_CLASS) \
-    F(cl_platform_info, CL_PLATFORM_VENDOR, CL_HPP_STRING_CLASS) \
-    F(cl_platform_info, CL_PLATFORM_EXTENSIONS, CL_HPP_STRING_CLASS) \
+    F(cl_platform_info, CL_PLATFORM_PROFILE, string_class) \
+    F(cl_platform_info, CL_PLATFORM_VERSION, string_class) \
+    F(cl_platform_info, CL_PLATFORM_NAME, string_class) \
+    F(cl_platform_info, CL_PLATFORM_VENDOR, string_class) \
+    F(cl_platform_info, CL_PLATFORM_EXTENSIONS, string_class) \
     \
     F(cl_device_info, CL_DEVICE_TYPE, cl_device_type) \
     F(cl_device_info, CL_DEVICE_VENDOR_ID, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_COMPUTE_UNITS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_GROUP_SIZE, ::size_t) \
-    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, CL_HPP_VECTOR_CLASS< ::size_t>) \
+    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, vector_class< ::size_t>) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT, cl_uint) \
@@ -775,16 +728,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_EXECUTION_CAPABILITIES, cl_device_exec_capabilities) \
     F(cl_device_info, CL_DEVICE_QUEUE_PROPERTIES, cl_command_queue_properties) \
     F(cl_device_info, CL_DEVICE_PLATFORM, cl_platform_id) \
-    F(cl_device_info, CL_DEVICE_NAME, CL_HPP_STRING_CLASS) \
-    F(cl_device_info, CL_DEVICE_VENDOR, CL_HPP_STRING_CLASS) \
-    F(cl_device_info, CL_DRIVER_VERSION, CL_HPP_STRING_CLASS) \
-    F(cl_device_info, CL_DEVICE_PROFILE, CL_HPP_STRING_CLASS) \
-    F(cl_device_info, CL_DEVICE_VERSION, CL_HPP_STRING_CLASS) \
-    F(cl_device_info, CL_DEVICE_EXTENSIONS, CL_HPP_STRING_CLASS) \
+    F(cl_device_info, CL_DEVICE_NAME, string_class) \
+    F(cl_device_info, CL_DEVICE_VENDOR, string_class) \
+    F(cl_device_info, CL_DRIVER_VERSION, string_class) \
+    F(cl_device_info, CL_DEVICE_PROFILE, string_class) \
+    F(cl_device_info, CL_DEVICE_VERSION, string_class) \
+    F(cl_device_info, CL_DEVICE_EXTENSIONS, string_class) \
     \
     F(cl_context_info, CL_CONTEXT_REFERENCE_COUNT, cl_uint) \
-    F(cl_context_info, CL_CONTEXT_DEVICES, CL_HPP_VECTOR_CLASS<Device>) \
-    F(cl_context_info, CL_CONTEXT_PROPERTIES, CL_HPP_VECTOR_CLASS<cl_context_properties>) \
+    F(cl_context_info, CL_CONTEXT_DEVICES, vector_class<Device>) \
+    F(cl_context_info, CL_CONTEXT_PROPERTIES, vector_class<cl_context_properties>) \
     \
     F(cl_event_info, CL_EVENT_COMMAND_QUEUE, cl::CommandQueue) \
     F(cl_event_info, CL_EVENT_COMMAND_TYPE, cl_command_type) \
@@ -821,16 +774,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_REFERENCE_COUNT, cl_uint) \
     F(cl_program_info, CL_PROGRAM_CONTEXT, cl::Context) \
     F(cl_program_info, CL_PROGRAM_NUM_DEVICES, cl_uint) \
-    F(cl_program_info, CL_PROGRAM_DEVICES, CL_HPP_VECTOR_CLASS<Device>) \
-    F(cl_program_info, CL_PROGRAM_SOURCE, CL_HPP_STRING_CLASS) \
-    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, CL_HPP_VECTOR_CLASS< ::size_t>) \
-    F(cl_program_info, CL_PROGRAM_BINARIES, CL_HPP_VECTOR_CLASS<char *>) \
+    F(cl_program_info, CL_PROGRAM_DEVICES, vector_class<Device>) \
+    F(cl_program_info, CL_PROGRAM_SOURCE, string_class) \
+    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, vector_class< ::size_t>) \
+    F(cl_program_info, CL_PROGRAM_BINARIES, vector_class<char *>) \
     \
     F(cl_program_build_info, CL_PROGRAM_BUILD_STATUS, cl_build_status) \
-    F(cl_program_build_info, CL_PROGRAM_BUILD_OPTIONS, CL_HPP_STRING_CLASS) \
-    F(cl_program_build_info, CL_PROGRAM_BUILD_LOG, CL_HPP_STRING_CLASS) \
+    F(cl_program_build_info, CL_PROGRAM_BUILD_OPTIONS, string_class) \
+    F(cl_program_build_info, CL_PROGRAM_BUILD_LOG, string_class) \
     \
-    F(cl_kernel_info, CL_KERNEL_FUNCTION_NAME, CL_HPP_STRING_CLASS) \
+    F(cl_kernel_info, CL_KERNEL_FUNCTION_NAME, string_class) \
     F(cl_kernel_info, CL_KERNEL_NUM_ARGS, cl_uint) \
     F(cl_kernel_info, CL_KERNEL_REFERENCE_COUNT, cl_uint) \
     F(cl_kernel_info, CL_KERNEL_CONTEXT, cl::Context) \
@@ -858,7 +811,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_DOUBLE_FP_CONFIG, cl_device_fp_config) \
     F(cl_device_info, CL_DEVICE_HALF_FP_CONFIG, cl_device_fp_config) \
     F(cl_device_info, CL_DEVICE_HOST_UNIFIED_MEMORY, cl_bool) \
-    F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, CL_HPP_STRING_CLASS) \
+    F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, string_class) \
     \
     F(cl_mem_info, CL_MEM_ASSOCIATED_MEMOBJECT, cl::Memory) \
     F(cl_mem_info, CL_MEM_OFFSET, ::size_t) \
@@ -872,31 +825,31 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_image_info, CL_IMAGE_BUFFER, cl::Buffer) \
     \
     F(cl_program_info, CL_PROGRAM_NUM_KERNELS, ::size_t) \
-    F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, CL_HPP_STRING_CLASS) \
+    F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, string_class) \
     \
     F(cl_program_build_info, CL_PROGRAM_BINARY_TYPE, cl_program_binary_type) \
     \
-    F(cl_kernel_info, CL_KERNEL_ATTRIBUTES, CL_HPP_STRING_CLASS) \
+    F(cl_kernel_info, CL_KERNEL_ATTRIBUTES, string_class) \
     \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_ADDRESS_QUALIFIER, cl_kernel_arg_address_qualifier) \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_ACCESS_QUALIFIER, cl_kernel_arg_access_qualifier) \
-    F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_NAME, CL_HPP_STRING_CLASS) \
-    F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, CL_HPP_STRING_CLASS) \
+    F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_NAME, string_class) \
+    F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string_class) \
     \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl_device_id) \
-    F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, CL_HPP_VECTOR_CLASS<cl_device_partition_property>) \
-    F(cl_device_info, CL_DEVICE_PARTITION_TYPE, CL_HPP_VECTOR_CLASS<cl_device_partition_property>)  \
+    F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, vector_class<cl_device_partition_property>) \
+    F(cl_device_info, CL_DEVICE_PARTITION_TYPE, vector_class<cl_device_partition_property>)  \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, ::size_t) \
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
-    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, CL_HPP_STRING_CLASS)
+    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, string_class)
 
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
-    F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, CL_HPP_VECTOR_CLASS<cl_device_partition_property_ext>) \
-    F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, CL_HPP_VECTOR_CLASS<cl_device_partition_property_ext>) \
+    F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, vector_class<cl_device_partition_property_ext>) \
+    F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, vector_class<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
-    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, CL_HPP_VECTOR_CLASS<cl_device_partition_property_ext>)
+    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, vector_class<cl_device_partition_property_ext>)
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -923,7 +876,7 @@ CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
 #endif // CL_HPP_USE_CL_DEVICE_FISSION
 
 #ifdef CL_PLATFORM_ICD_SUFFIX_KHR
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_platform_info, CL_PLATFORM_ICD_SUFFIX_KHR, CL_HPP_STRING_CLASS)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_platform_info, CL_PLATFORM_ICD_SUFFIX_KHR, string_class)
 #endif
 
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
@@ -931,7 +884,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_PROFILING_TIMER_OFFSET_AM
 #endif
 
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, CL_HPP_VECTOR_CLASS< ::size_t>)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, vector_class< ::size_t>)
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD, cl_uint)
@@ -1308,24 +1261,24 @@ protected:
     }
 
 public:
-    Wrapper() : object_(NULL), referenceCountable_(false)
-    {
+    Wrapper() : object_(NULL), referenceCountable_(false) 
+    { 
     }
-
-    Wrapper(const cl_type &obj) : object_(obj), referenceCountable_(false)
+    
+    Wrapper(const cl_type &obj) : object_(obj), referenceCountable_(false) 
     {
-        referenceCountable_ = isReferenceCountable(obj);
+        referenceCountable_ = isReferenceCountable(obj); 
     }
 
     ~Wrapper()
     {
         if (object_ != NULL) { release(); }
     }
-
+    
     Wrapper(const Wrapper<cl_type>& rhs)
     {
         object_ = rhs.object_;
-        referenceCountable_ = isReferenceCountable(object_);
+        referenceCountable_ = isReferenceCountable(object_); 
         if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
     }
 
@@ -1377,7 +1330,7 @@ protected:
     friend inline cl_int getInfoHelper(Func, cl_uint, U*, int, typename U::cl_type);
 
     template<typename Func, typename U>
-    friend inline cl_int getInfoHelper(Func, cl_uint, CL_HPP_VECTOR_CLASS<U>*, int, typename U::cl_type);
+    friend inline cl_int getInfoHelper(Func, cl_uint, vector_class<U>*, int, typename U::cl_type);
 
     cl_int retain() const
     {
@@ -1466,6 +1419,34 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    Device(const Device& dev) : detail::Wrapper<cl_type>(dev) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    Device& operator = (const Device &dev)
+    {
+        detail::Wrapper<cl_type>::operator=(dev);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    Device(Device&& dev) : detail::Wrapper<cl_type>(std::move(dev)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    Device& operator = (Device &&dev)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(dev));
+        return *this;
+    }
+
     //! \brief Wrapper for clGetDeviceInfo().
     template <typename T>
     cl_int getInfo(cl_device_info name, T* param) const
@@ -1496,7 +1477,7 @@ public:
     //! \brief Wrapper for clCreateSubDevices().
     cl_int createSubDevices(
         const cl_device_partition_property * properties,
-        CL_HPP_VECTOR_CLASS<Device>* devices)
+        vector_class<Device>* devices)
     {
         cl_uint n = 0;
         cl_int err = clCreateSubDevices(object_, properties, 0, NULL, &n);
@@ -1520,7 +1501,7 @@ public:
  */
     cl_int createSubDevices(
         const cl_device_partition_property_ext * properties,
-        CL_HPP_VECTOR_CLASS<Device>* devices)
+        vector_class<Device>* devices)
     {
         typedef CL_API_ENTRY cl_int 
             ( CL_API_CALL * PFN_clCreateSubDevicesEXT)(
@@ -1581,7 +1562,7 @@ public:
     }
 
     //! \brief Wrapper for clGetPlatformInfo().
-    cl_int getInfo(cl_platform_info name, CL_HPP_STRING_CLASS* param) const
+    cl_int getInfo(cl_platform_info name, string_class* param) const
     {
         return detail::errHandler(
             detail::getInfo(&::clGetPlatformInfo, object_, name, param),
@@ -1608,7 +1589,7 @@ public:
      */
     cl_int getDevices(
         cl_device_type type,
-        CL_HPP_VECTOR_CLASS<Device>* devices) const
+        vector_class<Device>* devices) const
     {
         cl_uint n = 0;
         if( devices == NULL ) {
@@ -1657,7 +1638,7 @@ public:
         cl_d3d10_device_source_khr d3d_device_source,
         void *                     d3d_object,
         cl_d3d10_device_set_khr    d3d_device_set,
-        CL_HPP_VECTOR_CLASS<Device>* devices) const
+        vector_class<Device>* devices) const
     {
         typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clGetDeviceIDsFromD3D10KHR)(
             cl_platform_id platform, 
@@ -1711,7 +1692,7 @@ public:
      *  Wraps clGetPlatformIDs().
      */
     static cl_int get(
-        CL_HPP_VECTOR_CLASS<Platform>* platforms)
+        vector_class<Platform>* platforms)
     {
         cl_uint n = 0;
 
@@ -1878,7 +1859,7 @@ public:
      *  Wraps clCreateContext().
      */
     Context(
-        const CL_HPP_VECTOR_CLASS<Device>& devices,
+        const vector_class<Device>& devices,
         cl_context_properties* properties = NULL,
         void (CL_CALLBACK * notifyFptr)(
             const char *,
@@ -1955,7 +1936,7 @@ public:
 
         if (properties == NULL) {
             // Get a valid platform ID as we cannot send in a blank one
-            CL_HPP_VECTOR_CLASS<Platform> platforms;
+            vector_class<Platform> platforms;
             error = Platform::get(&platforms);
             if (error != CL_SUCCESS) {
                 detail::errHandler(error, __CREATE_CONTEXT_FROM_TYPE_ERR);
@@ -1969,7 +1950,7 @@ public:
             cl_context_properties platform_id = 0;
             for (unsigned int i = 0; i < platforms.size(); i++) {
 
-                CL_HPP_VECTOR_CLASS<Device> devices;
+                vector_class<Device> devices;
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
                 try {
@@ -2018,11 +1999,40 @@ public:
         }
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Context(const Context& ctx) : detail::Wrapper<cl_type>(ctx) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Context& operator = (const Context &ctx)
+    {
+        detail::Wrapper<cl_type>::operator=(ctx);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Context(Context&& ctx) : detail::Wrapper<cl_type>(std::move(ctx)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Context& operator = (Context &&ctx)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(ctx));
+        return *this;
+    }
+
+
     /*! \brief Returns a singleton context including all devices of CL_DEVICE_TYPE_DEFAULT.
      *
      *  \note All calls to this function return the same cl_context as the first.
      */
-    static Context getDefault(cl_int * err = NULL)
+    static Context getDefault(cl_int * err = NULL) 
     {
         std::call_once(default_initialized_, makeDefault);
         detail::errHandler(default_error_);
@@ -2083,7 +2093,7 @@ public:
     cl_int getSupportedImageFormats(
         cl_mem_flags flags,
         cl_mem_object_type type,
-        CL_HPP_VECTOR_CLASS<ImageFormat>* formats) const
+        vector_class<ImageFormat>* formats) const
     {
         cl_uint numEntries;
         cl_int err = ::clGetSupportedImageFormats(
@@ -2258,7 +2268,7 @@ public:
      *  Wraps clWaitForEvents().
      */
     static cl_int
-    waitForEvents(const CL_HPP_VECTOR_CLASS<Event>& events)
+    waitForEvents(const vector_class<Event>& events)
     {
         return detail::errHandler(
             ::clWaitForEvents(
@@ -2315,7 +2325,7 @@ public:
  *  Wraps clWaitForEvents().
  */
 inline static cl_int
-WaitForEvents(const CL_HPP_VECTOR_CLASS<Event>& events)
+WaitForEvents(const vector_class<Event>& events)
 {
     return detail::errHandler(
         ::clWaitForEvents(
@@ -2354,6 +2364,35 @@ public:
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Memory(const Memory& mem) : detail::Wrapper<cl_type>(mem) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Memory& operator = (const Memory &mem)
+    {
+        detail::Wrapper<cl_type>::operator=(mem);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Memory(Memory&& mem) : detail::Wrapper<cl_type>(std::move(mem)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Memory& operator = (Memory &&mem)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(mem));
+        return *this;
+    }
+
 
     //! \brief Wrapper for clGetMemObjectInfo().
     template <typename T>
@@ -2538,7 +2577,7 @@ public:
     template< typename IteratorType >
     Buffer(const Context &context, IteratorType startIterator, IteratorType endIterator,
         bool readOnly, bool useHostPtr = false, cl_int* err = NULL);
-
+    
     /*!
     * \brief Construct a Buffer from a host container via iterators using a specified queue.
     * If useHostPtr is specified iterators must be random access.
@@ -2551,18 +2590,46 @@ public:
     Buffer() : Memory() { }
 
     /*! \brief Constructor from cl_mem - takes ownership.
-     *
-     *  See Memory for further details.
-     */
+    *
+    *  See Memory for further details.
+    */
     explicit Buffer(const cl_mem& buffer) : Memory(buffer) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
+    *
+    *  See Memory for further details.
+    */
     Buffer& operator = (const cl_mem& rhs)
     {
         Memory::operator=(rhs);
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Buffer(const Buffer& buf) : Memory(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Buffer& operator = (const Buffer &buf)
+    {
+        Memory::operator=(buf);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Buffer(Buffer&& buf) : Memory(std::move(buf)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Buffer& operator = (Buffer &&buf)
+    {
+        Memory::operator=(std::move(buf));
         return *this;
     }
 
@@ -2592,7 +2659,7 @@ public:
         }
 
         return result;
-    }
+    }		
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 };
 
@@ -2670,6 +2737,34 @@ public:
         Buffer::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferD3D10(const BufferD3D10& buf) : Buffer(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferD3D10& operator = (const BufferD3D10 &buf)
+    {
+        Buffer::operator=(buf);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferD3D10(BufferD3D10&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferD3D10& operator = (BufferD3D10 &&buf)
+    {
+        Buffer::operator=(std::move(buf));
+        return *this;
+    }
 };
 #endif
 
@@ -2724,6 +2819,34 @@ public:
     BufferGL& operator = (const cl_mem& rhs)
     {
         Buffer::operator=(rhs);
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferGL(const BufferGL& buf) : Buffer(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferGL& operator = (const BufferGL &buf)
+    {
+        Buffer::operator=(buf);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferGL(BufferGL&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferGL& operator = (BufferGL &&buf)
+    {
+        Buffer::operator=(std::move(buf));
         return *this;
     }
 
@@ -2792,6 +2915,34 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferRenderGL(const BufferRenderGL& buf) : Buffer(buf) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferRenderGL& operator = (const BufferRenderGL &buf)
+    {
+        Buffer::operator=(buf);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferRenderGL(BufferRenderGL&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    BufferRenderGL& operator = (BufferRenderGL &&buf)
+    {
+        Buffer::operator=(std::move(buf));
+        return *this;
+    }
+
     //! \brief Wrapper for clGetGLObjectInfo().
     cl_int getObjectInfo(
         cl_gl_object_type *type,
@@ -2830,6 +2981,35 @@ protected:
         Memory::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image(const Image& img) : Memory(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image& operator = (const Image &img)
+    {
+        Memory::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image(Image&& img) : Memory(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image& operator = (Image &&img)
+    {
+        Memory::operator=(std::move(img));
+        return *this;
+    }
+
 
 public:
     //! \brief Wrapper for clGetImageInfo().
@@ -2917,6 +3097,35 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1D(const Image1D& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1D& operator = (const Image1D &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1D(Image1D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1D& operator = (Image1D &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+
 };
 
 /*! \class Image1DBuffer
@@ -2964,6 +3173,35 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DBuffer(const Image1DBuffer& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DBuffer& operator = (const Image1DBuffer &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DBuffer(Image1DBuffer&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DBuffer& operator = (Image1DBuffer &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+
 };
 
 /*! \class Image1DArray
@@ -3015,6 +3253,35 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DArray(const Image1DArray& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DArray& operator = (const Image1DArray &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DArray(Image1DArray&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image1DArray& operator = (Image1DArray &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+
 };
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 
@@ -3115,6 +3382,35 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2D(const Image2D& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2D& operator = (const Image2D &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2D(Image2D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2D& operator = (Image2D &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
+
 };
 
 
@@ -3170,7 +3466,7 @@ public:
     explicit Image2DGL(const cl_mem& image) : Image2D(image) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
-     *
+     *c
      *  See Memory for further details.
      */
     Image2DGL& operator = (const cl_mem& rhs)
@@ -3178,6 +3474,35 @@ public:
         Image2D::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DGL(const Image2DGL& img) : Image2D(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DGL& operator = (const Image2DGL &img)
+    {
+        Image2D::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DGL(Image2DGL&& img) : Image2D(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DGL& operator = (Image2DGL &&img)
+    {
+        Image2D::operator=(std::move(img));
+        return *this;
+    }
+
 };
 #endif // CL_USE_DEPRECATED_OPENCL_1_1_APIS
 
@@ -3233,6 +3558,34 @@ public:
     Image2DArray& operator = (const cl_mem& rhs)
     {
         Image::operator=(rhs);
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DArray(const Image2DArray& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DArray& operator = (const Image2DArray &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DArray(Image2DArray&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image2DArray& operator = (Image2DArray &&img)
+    {
+        Image::operator=(std::move(img));
         return *this;
     }
 };
@@ -3339,6 +3692,34 @@ public:
         Image::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3D(const Image3D& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3D& operator = (const Image3D &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3D(Image3D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3D& operator = (Image3D &&img)
+    {
+        Image::operator=(std::move(img));
+        return *this;
+    }
 };
 
 #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
@@ -3399,6 +3780,34 @@ public:
         Image3D::operator=(rhs);
         return *this;
     }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3DGL(const Image3DGL& img) : Image3D(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3DGL& operator = (const Image3DGL &img)
+    {
+        Image3D::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3DGL(Image3DGL&& img) : Image3D(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Image3DGL& operator = (Image3DGL &&img)
+    {
+        Image3D::operator=(std::move(img));
+        return *this;
+    }
 };
 #endif // CL_USE_DEPRECATED_OPENCL_1_1_APIS
 
@@ -3442,6 +3851,34 @@ public:
     ImageGL& operator = (const cl_mem& rhs)
     {
         Image::operator=(rhs);
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL(const ImageGL& img) : Image(img) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL& operator = (const ImageGL &img)
+    {
+        Image::operator=(img);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL(ImageGL&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    ImageGL& operator = (ImageGL &&img)
+    {
+        Image::operator=(std::move(img));
         return *this;
     }
 };
@@ -3501,6 +3938,34 @@ public:
     Sampler& operator = (const cl_sampler& rhs)
     {
         detail::Wrapper<cl_type>::operator=(rhs);
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Sampler(const Sampler& sam) : detail::Wrapper<cl_type>(sam) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Sampler& operator = (const Sampler &sam)
+    {
+        detail::Wrapper<cl_type>::operator=(sam);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Sampler(Sampler&& sam) : detail::Wrapper<cl_type>(std::move(sam)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Sampler& operator = (Sampler &&sam)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(sam));
         return *this;
     }
 
@@ -3655,6 +4120,34 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Kernel(const Kernel& kernel) : detail::Wrapper<cl_type>(kernel) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Kernel& operator = (const Kernel &kernel)
+    {
+        detail::Wrapper<cl_type>::operator=(kernel);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Kernel(Kernel&& kernel) : detail::Wrapper<cl_type>(std::move(kernel)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Kernel& operator = (Kernel &&kernel)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(kernel));
+        return *this;
+    }
+
     template <typename T>
     cl_int getInfo(cl_kernel_info name, T* param) const
     {
@@ -3748,11 +4241,11 @@ public:
 class Program : public detail::Wrapper<cl_program>
 {
 public:
-    typedef CL_HPP_VECTOR_CLASS<std::pair<const void*, ::size_t> > Binaries;
-    typedef CL_HPP_VECTOR_CLASS<std::pair<const char*, ::size_t> > Sources;
+    typedef vector_class<std::pair<const void*, ::size_t> > Binaries;
+    typedef vector_class<std::pair<const char*, ::size_t> > Sources;
 
     Program(
-        const CL_HPP_STRING_CLASS& source,
+        const string_class& source,
         bool build = false,
         cl_int* err = NULL)
     {
@@ -3788,7 +4281,7 @@ public:
 
     Program(
         const Context& context,
-        const CL_HPP_STRING_CLASS& source,
+        const string_class& source,
         bool build = false,
         cl_int* err = NULL)
     {
@@ -3866,9 +4359,9 @@ public:
      */
     Program(
         const Context& context,
-        const CL_HPP_VECTOR_CLASS<Device>& devices,
+        const vector_class<Device>& devices,
         const Binaries& binaries,
-        CL_HPP_VECTOR_CLASS<cl_int>* binaryStatus = NULL,
+        vector_class<cl_int>* binaryStatus = NULL,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -3923,8 +4416,8 @@ public:
      */
     Program(
         const Context& context,
-        const CL_HPP_VECTOR_CLASS<Device>& devices,
-        const CL_HPP_STRING_CLASS& kernelNames,
+        const vector_class<Device>& devices,
+        const string_class& kernelNames,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -3960,8 +4453,36 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Program(const Program& program) : detail::Wrapper<cl_type>(program) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Program& operator = (const Program &program)
+    {
+        detail::Wrapper<cl_type>::operator=(program);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Program(Program&& program) : detail::Wrapper<cl_type>(std::move(program)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Program& operator = (Program &&program)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(program));
+        return *this;
+    }
+
     cl_int build(
-        const CL_HPP_VECTOR_CLASS<Device>& devices,
+        const vector_class<Device>& devices,
         const char* options = NULL,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
@@ -4065,7 +4586,7 @@ public:
         return param;
     }
 
-    cl_int createKernels(CL_HPP_VECTOR_CLASS<Kernel>* kernels)
+    cl_int createKernels(vector_class<Kernel>* kernels)
     {
         cl_uint numKernels;
         cl_int err = ::clCreateKernelsInProgram(object_, 0, NULL, &numKernels);
@@ -4123,7 +4644,7 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
-    CL_HPP_VECTOR_CLASS<Program> inputPrograms,
+    vector_class<Program> inputPrograms,
     const char* options = NULL,
     void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
     void* data = NULL,
@@ -4145,9 +4666,9 @@ inline Program linkProgram(
         if(error_local!=CL_SUCCESS) {
             detail::errHandler(error_local, __LINK_PROGRAM_ERR);
         }
-    }
-    cl_program prog = ::clLinkProgram(
-        ctx(),
+	}
+	cl_program prog = ::clLinkProgram(
+		ctx(),
         0,
         NULL,
         options,
@@ -4167,11 +4688,11 @@ inline Program linkProgram(
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
 template<>
-inline CL_HPP_VECTOR_CLASS<char *> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
+inline vector_class<char *> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
 {
-    CL_HPP_VECTOR_CLASS< ::size_t> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
-    CL_HPP_VECTOR_CLASS<char *> binaries;
-    for (CL_HPP_VECTOR_CLASS< ::size_t>::iterator s = sizes.begin(); s != sizes.end(); ++s) 
+    vector_class< ::size_t> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
+    vector_class<char *> binaries;
+    for (vector_class< ::size_t>::iterator s = sizes.begin(); s != sizes.end(); ++s) 
     {
         char *ptr = NULL;
         if (*s != 0) 
@@ -4242,7 +4763,7 @@ private:
     }
 
 public:
-    CommandQueue(
+   CommandQueue(
         cl_command_queue_properties properties,
         cl_int* err = NULL)
     {
@@ -4277,7 +4798,7 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        CL_HPP_VECTOR_CLASS<cl::Device> devices;
+        vector_class<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -4336,6 +4857,34 @@ public:
         return *this;
     }
 
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    CommandQueue(const CommandQueue& queue) : detail::Wrapper<cl_type>(queue) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    CommandQueue& operator = (const CommandQueue &queue)
+    {
+        detail::Wrapper<cl_type>::operator=(queue);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    CommandQueue(CommandQueue&& queue) : detail::Wrapper<cl_type>(std::move(queue)) CL_HPP_NOEXCEPT_{}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    CommandQueue& operator = (CommandQueue &&queue)
+    {
+        detail::Wrapper<cl_type>::operator=(std::move(queue));
+        return *this;
+    }
+
     template <typename T>
     cl_int getInfo(cl_command_queue_info name, T* param) const
     {
@@ -4364,7 +4913,7 @@ public:
         ::size_t offset,
         ::size_t size,
         void* ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4389,7 +4938,7 @@ public:
         ::size_t offset,
         ::size_t size,
         const void* ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4414,7 +4963,7 @@ public:
         ::size_t src_offset,
         ::size_t dst_offset,
         ::size_t size,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4443,7 +4992,7 @@ public:
         ::size_t host_row_pitch,
         ::size_t host_slice_pitch,
         void *ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4482,7 +5031,7 @@ public:
         ::size_t host_row_pitch,
         ::size_t host_slice_pitch,
         void *ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4520,7 +5069,7 @@ public:
         ::size_t src_slice_pitch,
         ::size_t dst_row_pitch,
         ::size_t dst_slice_pitch,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4560,7 +5109,7 @@ public:
         PatternType pattern,
         ::size_t offset,
         ::size_t size,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4592,7 +5141,7 @@ public:
         ::size_t row_pitch,
         ::size_t slice_pitch,
         void* ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4619,7 +5168,7 @@ public:
         ::size_t row_pitch,
         ::size_t slice_pitch,
         void* ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4644,7 +5193,7 @@ public:
         const size_t<3>& src_origin,
         const size_t<3>& dst_origin,
         const size_t<3>& region,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4676,7 +5225,7 @@ public:
         cl_float4 fillColor,
         const size_t<3>& origin,
         const size_t<3>& region,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4710,7 +5259,7 @@ public:
         cl_int4 fillColor,
         const size_t<3>& origin,
         const size_t<3>& region,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4744,7 +5293,7 @@ public:
         cl_uint4 fillColor,
         const size_t<3>& origin,
         const size_t<3>& region,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4773,7 +5322,7 @@ public:
         const size_t<3>& src_origin,
         const size_t<3>& region,
         ::size_t dst_offset,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4798,7 +5347,7 @@ public:
         ::size_t src_offset,
         const size_t<3>& dst_origin,
         const size_t<3>& region,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4823,7 +5372,7 @@ public:
         cl_map_flags flags,
         ::size_t offset,
         ::size_t size,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL) const
     {
@@ -4854,7 +5403,7 @@ public:
         const size_t<3>& region,
         ::size_t * row_pitch,
         ::size_t * slice_pitch,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL) const
     {
@@ -4881,7 +5430,7 @@ public:
     cl_int enqueueUnmapMemObject(
         const Memory& memory,
         void* mapped_ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -4912,7 +5461,7 @@ public:
      * have completed.
      */
     cl_int enqueueMarkerWithWaitList(
-        const CL_HPP_VECTOR_CLASS<Event> *events = 0,
+        const vector_class<Event> *events = 0,
         Event *event = 0)
     {
         cl_event tmp;
@@ -4942,7 +5491,7 @@ public:
      * before this command to command_queue, have completed.
      */
     cl_int enqueueBarrierWithWaitList(
-        const CL_HPP_VECTOR_CLASS<Event> *events = 0,
+        const vector_class<Event> *events = 0,
         Event *event = 0)
     {
         cl_event tmp;
@@ -4965,9 +5514,9 @@ public:
      * should be associated.
      */
     cl_int enqueueMigrateMemObjects(
-        const CL_HPP_VECTOR_CLASS<Memory> &memObjects,
+        const vector_class<Memory> &memObjects,
         cl_mem_migration_flags flags,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL
         )
     {
@@ -5002,7 +5551,7 @@ public:
         const NDRange& offset,
         const NDRange& global,
         const NDRange& local = NullRange,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -5025,7 +5574,7 @@ public:
 
     cl_int enqueueTask(
         const Kernel& kernel,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -5046,9 +5595,9 @@ public:
     cl_int enqueueNativeKernel(
         void (CL_CALLBACK *userFptr)(void *),
         std::pair<void*, ::size_t> args,
-        const CL_HPP_VECTOR_CLASS<Memory>* mem_objects = NULL,
-        const CL_HPP_VECTOR_CLASS<const void*>* mem_locs = NULL,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Memory>* mem_objects = NULL,
+        const vector_class<const void*>* mem_locs = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_mem * mems = (mem_objects != NULL && mem_objects->size() > 0) 
@@ -5100,7 +5649,7 @@ public:
     }
 
     CL_EXT_PREFIX__VERSION_1_1_DEPRECATED
-    cl_int enqueueWaitForEvents(const CL_HPP_VECTOR_CLASS<Event>& events) const CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
+    cl_int enqueueWaitForEvents(const vector_class<Event>& events) const CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
     {
         return detail::errHandler(
             ::clEnqueueWaitForEvents(
@@ -5112,8 +5661,8 @@ public:
 #endif // defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
     cl_int enqueueAcquireGLObjects(
-         const CL_HPP_VECTOR_CLASS<Memory>* mem_objects = NULL,
-         const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+         const vector_class<Memory>* mem_objects = NULL,
+         const vector_class<Event>* events = NULL,
          Event* event = NULL) const
      {
         cl_event tmp;
@@ -5134,8 +5683,8 @@ public:
      }
 
     cl_int enqueueReleaseGLObjects(
-         const CL_HPP_VECTOR_CLASS<Memory>* mem_objects = NULL,
-         const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+         const vector_class<Memory>* mem_objects = NULL,
+         const vector_class<Event>* events = NULL,
          Event* event = NULL) const
      {
         cl_event tmp;
@@ -5166,8 +5715,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     const cl_event* event_wait_list, cl_event* event);
 
     cl_int enqueueAcquireD3D10Objects(
-         const CL_HPP_VECTOR_CLASS<Memory>* mem_objects = NULL,
-         const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+         const vector_class<Memory>* mem_objects = NULL,
+         const vector_class<Event>* events = NULL,
          Event* event = NULL) const
     {
         static PFN_clEnqueueAcquireD3D10ObjectsKHR pfn_clEnqueueAcquireD3D10ObjectsKHR = NULL;
@@ -5199,8 +5748,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
      }
 
     cl_int enqueueReleaseD3D10Objects(
-         const CL_HPP_VECTOR_CLASS<Memory>* mem_objects = NULL,
-         const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+         const vector_class<Memory>* mem_objects = NULL,
+         const vector_class<Event>* events = NULL,
          Event* event = NULL) const
     {
         static PFN_clEnqueueReleaseD3D10ObjectsKHR pfn_clEnqueueReleaseD3D10ObjectsKHR = NULL;
@@ -5365,7 +5914,7 @@ inline cl_int enqueueReadBuffer(
     ::size_t offset,
     ::size_t size,
     void* ptr,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5384,7 +5933,7 @@ inline cl_int enqueueWriteBuffer(
         ::size_t offset,
         ::size_t size,
         const void* ptr,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL)
 {
     cl_int error;
@@ -5403,7 +5952,7 @@ inline void* enqueueMapBuffer(
         cl_map_flags flags,
         ::size_t offset,
         ::size_t size,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL)
 {
@@ -5431,7 +5980,7 @@ inline void* enqueueMapBuffer(
 inline cl_int enqueueUnmapMemObject(
     const Memory& memory,
     void* mapped_ptr,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5462,7 +6011,7 @@ inline cl_int enqueueCopyBuffer(
         ::size_t src_offset,
         ::size_t dst_offset,
         ::size_t size,
-        const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+        const vector_class<Event>* events = NULL,
         Event* event = NULL)
 {
     cl_int error;
@@ -5589,7 +6138,7 @@ inline cl_int enqueueReadBufferRect(
     ::size_t host_row_pitch,
     ::size_t host_slice_pitch,
     void *ptr,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5625,7 +6174,7 @@ inline cl_int enqueueWriteBufferRect(
     ::size_t host_row_pitch,
     ::size_t host_slice_pitch,
     void *ptr,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5660,7 +6209,7 @@ inline cl_int enqueueCopyBufferRect(
     ::size_t src_slice_pitch,
     ::size_t dst_row_pitch,
     ::size_t dst_slice_pitch,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5693,7 +6242,7 @@ inline cl_int enqueueReadImage(
     ::size_t row_pitch,
     ::size_t slice_pitch,
     void* ptr,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL) 
 {
     cl_int error;
@@ -5723,7 +6272,7 @@ inline cl_int enqueueWriteImage(
     ::size_t row_pitch,
     ::size_t slice_pitch,
     void* ptr,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5751,7 +6300,7 @@ inline cl_int enqueueCopyImage(
     const size_t<3>& src_origin,
     const size_t<3>& dst_origin,
     const size_t<3>& region,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5777,7 +6326,7 @@ inline cl_int enqueueCopyImageToBuffer(
     const size_t<3>& src_origin,
     const size_t<3>& region,
     ::size_t dst_offset,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5803,7 +6352,7 @@ inline cl_int enqueueCopyBufferToImage(
     ::size_t src_offset,
     const size_t<3>& dst_origin,
     const size_t<3>& region,
-    const CL_HPP_VECTOR_CLASS<Event>* events = NULL,
+    const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -5849,18 +6398,13 @@ inline cl_int finish(void)
     return queue.finish();
 }
 
-// Kernel Functor support
-// New interface as of September 2011
-// Requires the C++11 std::tr1::function (note do not support TR1)
-// Visual Studio 2010 and GCC 4.2
-
 struct EnqueueArgs
 {
     CommandQueue queue_;
     const NDRange offset_;
     const NDRange global_;
     const NDRange local_;
-    CL_HPP_VECTOR_CLASS<Event> events_;
+    vector_class<Event> events_;
 
     EnqueueArgs(NDRange global) : 
       queue_(CommandQueue::getDefault()),
@@ -5916,7 +6460,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(const CL_HPP_VECTOR_CLASS<Event> &events, NDRange global) : 
+    EnqueueArgs(const vector_class<Event> &events, NDRange global) : 
       queue_(CommandQueue::getDefault()),
       offset_(NullRange), 
       global_(global),
@@ -5926,7 +6470,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CL_HPP_VECTOR_CLASS<Event> &events, NDRange global, NDRange local) : 
+    EnqueueArgs(const vector_class<Event> &events, NDRange global, NDRange local) : 
       queue_(CommandQueue::getDefault()),
       offset_(NullRange), 
       global_(global),
@@ -5936,7 +6480,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(const CL_HPP_VECTOR_CLASS<Event> &events, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(const vector_class<Event> &events, NDRange offset, NDRange global, NDRange local) : 
       queue_(CommandQueue::getDefault()),
       offset_(offset), 
       global_(global),
@@ -6000,7 +6544,7 @@ struct EnqueueArgs
         events_.push_back(e);
     }
 
-    EnqueueArgs(CommandQueue &queue, const CL_HPP_VECTOR_CLASS<Event> &events, NDRange global) : 
+    EnqueueArgs(CommandQueue &queue, const vector_class<Event> &events, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6010,7 +6554,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, const CL_HPP_VECTOR_CLASS<Event> &events, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, const vector_class<Event> &events, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -6020,7 +6564,7 @@ struct EnqueueArgs
 
     }
 
-    EnqueueArgs(CommandQueue &queue, const CL_HPP_VECTOR_CLASS<Event> &events, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, const vector_class<Event> &events, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -6031,606 +6575,136 @@ struct EnqueueArgs
     }
 };
 
-namespace detail {
-
-class NullType {};
-
-template<int index, typename T0>
-struct SetArg
-{
-    static void set (Kernel kernel, T0 arg)
-    {
-        kernel.setArg(index, arg);
-    }
-};  
-
-template<int index>
-struct SetArg<index, NullType>
-{
-    static void set (Kernel, NullType)
-    { 
-    }
-};
-
-template <
-   typename T0,   typename T1,   typename T2,   typename T3,
-   typename T4,   typename T5,   typename T6,   typename T7,
-   typename T8,   typename T9,   typename T10,   typename T11,
-   typename T12,   typename T13,   typename T14,   typename T15,
-   typename T16,   typename T17,   typename T18,   typename T19,
-   typename T20,   typename T21,   typename T22,   typename T23,
-   typename T24,   typename T25,   typename T26,   typename T27,
-   typename T28,   typename T29,   typename T30,   typename T31
-//@@@@EXCESSIVE-ARG-START
-   ,
-   typename T32,   typename T33,   typename T34,   typename T35,
-   typename T36,   typename T37,   typename T38,   typename T39,
-   typename T40,   typename T41,   typename T42,   typename T43,
-   typename T44,   typename T45,   typename T46,   typename T47,
-   typename T48,   typename T49,   typename T50,   typename T51,
-   typename T52,   typename T53,   typename T54,   typename T55,
-   typename T56,   typename T57,   typename T58,   typename T59,
-   typename T60,   typename T61,   typename T62,   typename T63,
-   typename T64,   typename T65,   typename T66,   typename T67,
-   typename T68,   typename T69,   typename T70,   typename T71,
-   typename T72,   typename T73,   typename T74,   typename T75,
-   typename T76,   typename T77,   typename T78,   typename T79,
-   typename T80,   typename T81,   typename T82,   typename T83,
-   typename T84,   typename T85,   typename T86,   typename T87,
-   typename T88,   typename T89,   typename T90,   typename T91,
-   typename T92,   typename T93,   typename T94,   typename T95,
-   typename T96,   typename T97,   typename T98,   typename T99,
-   typename T100,   typename T101,   typename T102,   typename T103,
-   typename T104,   typename T105,   typename T106,   typename T107,
-   typename T108,   typename T109,   typename T110,   typename T111,
-   typename T112,   typename T113,   typename T114,   typename T115,
-   typename T116,   typename T117,   typename T118,   typename T119,
-   typename T120,   typename T121,   typename T122,   typename T123,
-   typename T124,   typename T125,   typename T126,   typename T127
-//@@@@EXCESSIVE-ARG-END
->
-class KernelFunctorGlobal
-{
-private:
-    Kernel kernel_;
-
-public:
-   KernelFunctorGlobal(
-        Kernel kernel) :
-            kernel_(kernel)
-    {}
-
-   KernelFunctorGlobal(
-        const Program& program,
-        const CL_HPP_STRING_CLASS name,
-        cl_int * err = NULL) :
-            kernel_(program, name.c_str(), err)
-    {}
-
-    Event operator() (
-        const EnqueueArgs& args,
-        T0 t0,
-        T1 t1 = NullType(),
-        T2 t2 = NullType(),
-        T3 t3 = NullType(),
-        T4 t4 = NullType(),
-        T5 t5 = NullType(),
-        T6 t6 = NullType(),
-        T7 t7 = NullType(),
-        T8 t8 = NullType(),
-        T9 t9 = NullType(),
-        T10 t10 = NullType(),
-        T11 t11 = NullType(),
-        T12 t12 = NullType(),
-        T13 t13 = NullType(),
-        T14 t14 = NullType(),
-        T15 t15 = NullType(),
-        T16 t16 = NullType(),
-        T17 t17 = NullType(),
-        T18 t18 = NullType(),
-        T19 t19 = NullType(),
-        T20 t20 = NullType(),
-        T21 t21 = NullType(),
-        T22 t22 = NullType(),
-        T23 t23 = NullType(),
-        T24 t24 = NullType(),
-        T25 t25 = NullType(),
-        T26 t26 = NullType(),
-        T27 t27 = NullType(),
-        T28 t28 = NullType(),
-        T29 t29 = NullType(),
-        T30 t30 = NullType(),
-        T31 t31 = NullType()
-//@@@@EXCESSIVE-ARG-START
-,
-        T32 t32 = NullType(),
-        T33 t33 = NullType(),
-        T34 t34 = NullType(),
-        T35 t35 = NullType(),
-        T36 t36 = NullType(),
-        T37 t37 = NullType(),
-        T38 t38 = NullType(),
-        T39 t39 = NullType(),
-        T40 t40 = NullType(),
-        T41 t41 = NullType(),
-        T42 t42 = NullType(),
-        T43 t43 = NullType(),
-        T44 t44 = NullType(),
-        T45 t45 = NullType(),
-        T46 t46 = NullType(),
-        T47 t47 = NullType(),
-        T48 t48 = NullType(),
-        T49 t49 = NullType(),
-        T50 t50 = NullType(),
-        T51 t51 = NullType(),
-        T52 t52 = NullType(),
-        T53 t53 = NullType(),
-        T54 t54 = NullType(),
-        T55 t55 = NullType(),
-        T56 t56 = NullType(),
-        T57 t57 = NullType(),
-        T58 t58 = NullType(),
-        T59 t59 = NullType(),
-        T60 t60 = NullType(),
-        T61 t61 = NullType(),
-        T62 t62 = NullType(),
-        T63 t63 = NullType(),
-        T64 t64 = NullType(),
-        T65 t65 = NullType(),
-        T66 t66 = NullType(),
-        T67 t67 = NullType(),
-        T68 t68 = NullType(),
-        T69 t69 = NullType(),
-        T70 t70 = NullType(),
-        T71 t71 = NullType(),
-        T72 t72 = NullType(),
-        T73 t73 = NullType(),
-        T74 t74 = NullType(),
-        T75 t75 = NullType(),
-        T76 t76 = NullType(),
-        T77 t77 = NullType(),
-        T78 t78 = NullType(),
-        T79 t79 = NullType(),
-        T80 t80 = NullType(),
-        T81 t81 = NullType(),
-        T82 t82 = NullType(),
-        T83 t83 = NullType(),
-        T84 t84 = NullType(),
-        T85 t85 = NullType(),
-        T86 t86 = NullType(),
-        T87 t87 = NullType(),
-        T88 t88 = NullType(),
-        T89 t89 = NullType(),
-        T90 t90 = NullType(),
-        T91 t91 = NullType(),
-        T92 t92 = NullType(),
-        T93 t93 = NullType(),
-        T94 t94 = NullType(),
-        T95 t95 = NullType(),
-        T96 t96 = NullType(),
-        T97 t97 = NullType(),
-        T98 t98 = NullType(),
-        T99 t99 = NullType(),
-        T100 t100 = NullType(),
-        T101 t101 = NullType(),
-        T102 t102 = NullType(),
-        T103 t103 = NullType(),
-        T104 t104 = NullType(),
-        T105 t105 = NullType(),
-        T106 t106 = NullType(),
-        T107 t107 = NullType(),
-        T108 t108 = NullType(),
-        T109 t109 = NullType(),
-        T110 t110 = NullType(),
-        T111 t111 = NullType(),
-        T112 t112 = NullType(),
-        T113 t113 = NullType(),
-        T114 t114 = NullType(),
-        T115 t115 = NullType(),
-        T116 t116 = NullType(),
-        T117 t117 = NullType(),
-        T118 t118 = NullType(),
-        T119 t119 = NullType(),
-        T120 t120 = NullType(),
-        T121 t121 = NullType(),
-        T122 t122 = NullType(),
-        T123 t123 = NullType(),
-        T124 t124 = NullType(),
-        T125 t125 = NullType(),
-        T126 t126 = NullType(),
-        T127 t127 = NullType()
-//@@@@EXCESSIVE-ARG-END
-        )
-    {
-        Event event;
-        SetArg<0, T0>::set(kernel_, t0);
-        SetArg<1, T1>::set(kernel_, t1);
-        SetArg<2, T2>::set(kernel_, t2);
-        SetArg<3, T3>::set(kernel_, t3);
-        SetArg<4, T4>::set(kernel_, t4);
-        SetArg<5, T5>::set(kernel_, t5);
-        SetArg<6, T6>::set(kernel_, t6);
-        SetArg<7, T7>::set(kernel_, t7);
-        SetArg<8, T8>::set(kernel_, t8);
-        SetArg<9, T9>::set(kernel_, t9);
-        SetArg<10, T10>::set(kernel_, t10);
-        SetArg<11, T11>::set(kernel_, t11);
-        SetArg<12, T12>::set(kernel_, t12);
-        SetArg<13, T13>::set(kernel_, t13);
-        SetArg<14, T14>::set(kernel_, t14);
-        SetArg<15, T15>::set(kernel_, t15);
-        SetArg<16, T16>::set(kernel_, t16);
-        SetArg<17, T17>::set(kernel_, t17);
-        SetArg<18, T18>::set(kernel_, t18);
-        SetArg<19, T19>::set(kernel_, t19);
-        SetArg<20, T20>::set(kernel_, t20);
-        SetArg<21, T21>::set(kernel_, t21);
-        SetArg<22, T22>::set(kernel_, t22);
-        SetArg<23, T23>::set(kernel_, t23);
-        SetArg<24, T24>::set(kernel_, t24);
-        SetArg<25, T25>::set(kernel_, t25);
-        SetArg<26, T26>::set(kernel_, t26);
-        SetArg<27, T27>::set(kernel_, t27);
-        SetArg<28, T28>::set(kernel_, t28);
-        SetArg<29, T29>::set(kernel_, t29);
-        SetArg<30, T30>::set(kernel_, t30);
-        SetArg<31, T31>::set(kernel_, t31);
-//@@@@EXCESSIVE-ARG-START
-        SetArg<32, T32>::set(kernel_, t32);
-        SetArg<33, T33>::set(kernel_, t33);
-        SetArg<34, T34>::set(kernel_, t34);
-        SetArg<35, T35>::set(kernel_, t35);
-        SetArg<36, T36>::set(kernel_, t36);
-        SetArg<37, T37>::set(kernel_, t37);
-        SetArg<38, T38>::set(kernel_, t38);
-        SetArg<39, T39>::set(kernel_, t39);
-        SetArg<40, T40>::set(kernel_, t40);
-        SetArg<41, T41>::set(kernel_, t41);
-        SetArg<42, T42>::set(kernel_, t42);
-        SetArg<43, T43>::set(kernel_, t43);
-        SetArg<44, T44>::set(kernel_, t44);
-        SetArg<45, T45>::set(kernel_, t45);
-        SetArg<46, T46>::set(kernel_, t46);
-        SetArg<47, T47>::set(kernel_, t47);
-        SetArg<48, T48>::set(kernel_, t48);
-        SetArg<49, T49>::set(kernel_, t49);
-        SetArg<50, T50>::set(kernel_, t50);
-        SetArg<51, T51>::set(kernel_, t51);
-        SetArg<52, T52>::set(kernel_, t52);
-        SetArg<53, T53>::set(kernel_, t53);
-        SetArg<54, T54>::set(kernel_, t54);
-        SetArg<55, T55>::set(kernel_, t55);
-        SetArg<56, T56>::set(kernel_, t56);
-        SetArg<57, T57>::set(kernel_, t57);
-        SetArg<58, T58>::set(kernel_, t58);
-        SetArg<59, T59>::set(kernel_, t59);
-        SetArg<60, T60>::set(kernel_, t60);
-        SetArg<61, T61>::set(kernel_, t61);
-        SetArg<62, T62>::set(kernel_, t62);
-        SetArg<63, T63>::set(kernel_, t63);
-        SetArg<64, T64>::set(kernel_, t64);
-        SetArg<65, T65>::set(kernel_, t65);
-        SetArg<66, T66>::set(kernel_, t66);
-        SetArg<67, T67>::set(kernel_, t67);
-        SetArg<68, T68>::set(kernel_, t68);
-        SetArg<69, T69>::set(kernel_, t69);
-        SetArg<70, T70>::set(kernel_, t70);
-        SetArg<71, T71>::set(kernel_, t71);
-        SetArg<72, T72>::set(kernel_, t72);
-        SetArg<73, T73>::set(kernel_, t73);
-        SetArg<74, T74>::set(kernel_, t74);
-        SetArg<75, T75>::set(kernel_, t75);
-        SetArg<76, T76>::set(kernel_, t76);
-        SetArg<77, T77>::set(kernel_, t77);
-        SetArg<78, T78>::set(kernel_, t78);
-        SetArg<79, T79>::set(kernel_, t79);
-        SetArg<80, T80>::set(kernel_, t80);
-        SetArg<81, T81>::set(kernel_, t81);
-        SetArg<82, T82>::set(kernel_, t82);
-        SetArg<83, T83>::set(kernel_, t83);
-        SetArg<84, T84>::set(kernel_, t84);
-        SetArg<85, T85>::set(kernel_, t85);
-        SetArg<86, T86>::set(kernel_, t86);
-        SetArg<87, T87>::set(kernel_, t87);
-        SetArg<88, T88>::set(kernel_, t88);
-        SetArg<89, T89>::set(kernel_, t89);
-        SetArg<90, T90>::set(kernel_, t90);
-        SetArg<91, T91>::set(kernel_, t91);
-        SetArg<92, T92>::set(kernel_, t92);
-        SetArg<93, T93>::set(kernel_, t93);
-        SetArg<94, T94>::set(kernel_, t94);
-        SetArg<95, T95>::set(kernel_, t95);
-        SetArg<96, T96>::set(kernel_, t96);
-        SetArg<97, T97>::set(kernel_, t97);
-        SetArg<98, T98>::set(kernel_, t98);
-        SetArg<99, T99>::set(kernel_, t99);
-        SetArg<100, T100>::set(kernel_, t100);
-        SetArg<101, T101>::set(kernel_, t101);
-        SetArg<102, T102>::set(kernel_, t102);
-        SetArg<103, T103>::set(kernel_, t103);
-        SetArg<104, T104>::set(kernel_, t104);
-        SetArg<105, T105>::set(kernel_, t105);
-        SetArg<106, T106>::set(kernel_, t106);
-        SetArg<107, T107>::set(kernel_, t107);
-        SetArg<108, T108>::set(kernel_, t108);
-        SetArg<109, T109>::set(kernel_, t109);
-        SetArg<110, T110>::set(kernel_, t110);
-        SetArg<111, T111>::set(kernel_, t111);
-        SetArg<112, T112>::set(kernel_, t112);
-        SetArg<113, T113>::set(kernel_, t113);
-        SetArg<114, T114>::set(kernel_, t114);
-        SetArg<115, T115>::set(kernel_, t115);
-        SetArg<116, T116>::set(kernel_, t116);
-        SetArg<117, T117>::set(kernel_, t117);
-        SetArg<118, T118>::set(kernel_, t118);
-        SetArg<119, T119>::set(kernel_, t119);
-        SetArg<120, T120>::set(kernel_, t120);
-        SetArg<121, T121>::set(kernel_, t121);
-        SetArg<122, T122>::set(kernel_, t122);
-        SetArg<123, T123>::set(kernel_, t123);
-        SetArg<124, T124>::set(kernel_, t124);
-        SetArg<125, T125>::set(kernel_, t125);
-        SetArg<126, T126>::set(kernel_, t126);
-        SetArg<127, T127>::set(kernel_, t127);
-//@@@@EXCESSIVE-ARG-END
-        
-        args.queue_.enqueueNDRangeKernel(
-            kernel_,
-            args.offset_,
-            args.global_,
-            args.local_,
-            &args.events_,
-            &event);
-        
-        return event;
-    }
-
-};
-
-//------------------------------------------------------------------------------------------------------
-
-
-%FUNCTION_IMPLEMENTATION_REPLACEMENT_POINT%
-
-
-
-} // namespace detail
 
 //----------------------------------------------------------------------------------------------
 
-template <
-   typename T0,   typename T1 = detail::NullType,   typename T2 = detail::NullType,
-   typename T3 = detail::NullType,   typename T4 = detail::NullType,
-   typename T5 = detail::NullType,   typename T6 = detail::NullType,
-   typename T7 = detail::NullType,   typename T8 = detail::NullType,
-   typename T9 = detail::NullType,   typename T10 = detail::NullType,
-   typename T11 = detail::NullType,   typename T12 = detail::NullType,
-   typename T13 = detail::NullType,   typename T14 = detail::NullType,
-   typename T15 = detail::NullType,   typename T16 = detail::NullType,
-   typename T17 = detail::NullType,   typename T18 = detail::NullType,
-   typename T19 = detail::NullType,   typename T20 = detail::NullType,
-   typename T21 = detail::NullType,   typename T22 = detail::NullType,
-   typename T23 = detail::NullType,   typename T24 = detail::NullType,
-   typename T25 = detail::NullType,   typename T26 = detail::NullType,
-   typename T27 = detail::NullType,   typename T28 = detail::NullType,
-   typename T29 = detail::NullType,   typename T30 = detail::NullType,
-   typename T31 = detail::NullType
-//@@@@EXCESSIVE-ARG-START   
 
-   ,   typename T32 = detail::NullType,
-   typename T33 = detail::NullType,   typename T34 = detail::NullType,
-   typename T35 = detail::NullType,   typename T36 = detail::NullType,
-   typename T37 = detail::NullType,   typename T38 = detail::NullType,
-   typename T39 = detail::NullType,   typename T40 = detail::NullType,
-   typename T41 = detail::NullType,   typename T42 = detail::NullType,
-   typename T43 = detail::NullType,   typename T44 = detail::NullType,
-   typename T45 = detail::NullType,   typename T46 = detail::NullType,
-   typename T47 = detail::NullType,   typename T48 = detail::NullType,
-   typename T49 = detail::NullType,   typename T50 = detail::NullType,
-   typename T51 = detail::NullType,   typename T52 = detail::NullType,
-   typename T53 = detail::NullType,   typename T54 = detail::NullType,
-   typename T55 = detail::NullType,   typename T56 = detail::NullType,
-   typename T57 = detail::NullType,   typename T58 = detail::NullType,
-   typename T59 = detail::NullType,   typename T60 = detail::NullType,
-   typename T61 = detail::NullType,   typename T62 = detail::NullType,
-   typename T63 = detail::NullType,   typename T64 = detail::NullType,
-   typename T65 = detail::NullType,   typename T66 = detail::NullType,
-   typename T67 = detail::NullType,   typename T68 = detail::NullType,
-   typename T69 = detail::NullType,   typename T70 = detail::NullType,
-   typename T71 = detail::NullType,   typename T72 = detail::NullType,
-   typename T73 = detail::NullType,   typename T74 = detail::NullType,
-   typename T75 = detail::NullType,   typename T76 = detail::NullType,
-   typename T77 = detail::NullType,   typename T78 = detail::NullType,
-   typename T79 = detail::NullType,   typename T80 = detail::NullType,
-   typename T81 = detail::NullType,   typename T82 = detail::NullType,
-   typename T83 = detail::NullType,   typename T84 = detail::NullType,
-   typename T85 = detail::NullType,   typename T86 = detail::NullType,
-   typename T87 = detail::NullType,   typename T88 = detail::NullType,
-   typename T89 = detail::NullType,   typename T90 = detail::NullType,
-   typename T91 = detail::NullType,   typename T92 = detail::NullType,
-   typename T93 = detail::NullType,   typename T94 = detail::NullType,
-   typename T95 = detail::NullType,   typename T96 = detail::NullType,
-   typename T97 = detail::NullType,   typename T98 = detail::NullType,
-   typename T99 = detail::NullType,   typename T100 = detail::NullType,
-   typename T101 = detail::NullType,   typename T102 = detail::NullType,
-   typename T103 = detail::NullType,   typename T104 = detail::NullType,
-   typename T105 = detail::NullType,   typename T106 = detail::NullType,
-   typename T107 = detail::NullType,   typename T108 = detail::NullType,
-   typename T109 = detail::NullType,   typename T110 = detail::NullType,
-   typename T111 = detail::NullType,   typename T112 = detail::NullType,
-   typename T113 = detail::NullType,   typename T114 = detail::NullType,
-   typename T115 = detail::NullType,   typename T116 = detail::NullType,
-   typename T117 = detail::NullType,   typename T118 = detail::NullType,
-   typename T119 = detail::NullType,   typename T120 = detail::NullType,
-   typename T121 = detail::NullType,   typename T122 = detail::NullType,
-   typename T123 = detail::NullType,   typename T124 = detail::NullType,
-   typename T125 = detail::NullType,   typename T126 = detail::NullType,
-   typename T127 = detail::NullType
-//@@@@EXCESSIVE-ARG-END
->
-struct make_kernel :
-    public detail::functionImplementation_<
-               T0,   T1,   T2,   T3,
-               T4,   T5,   T6,   T7,
-               T8,   T9,   T10,   T11,
-               T12,   T13,   T14,   T15,
-               T16,   T17,   T18,   T19,
-               T20,   T21,   T22,   T23,
-               T24,   T25,   T26,   T27,
-               T28,   T29,   T30,   T31
-//@@@@EXCESSIVE-ARG-START
-               ,
-               T32,   T33,   T34,   T35,
-               T36,   T37,   T38,   T39,
-               T40,   T41,   T42,   T43,
-               T44,   T45,   T46,   T47,
-               T48,   T49,   T50,   T51,
-               T52,   T53,   T54,   T55,
-               T56,   T57,   T58,   T59,
-               T60,   T61,   T62,   T63,
-               T64,   T65,   T66,   T67,
-               T68,   T69,   T70,   T71,
-               T72,   T73,   T74,   T75,
-               T76,   T77,   T78,   T79,
-               T80,   T81,   T82,   T83,
-               T84,   T85,   T86,   T87,
-               T88,   T89,   T90,   T91,
-               T92,   T93,   T94,   T95,
-               T96,   T97,   T98,   T99,
-               T100,   T101,   T102,   T103,
-               T104,   T105,   T106,   T107,
-               T108,   T109,   T110,   T111,
-               T112,   T113,   T114,   T115,
-               T116,   T117,   T118,   T119,
-               T120,   T121,   T122,   T123,
-               T124,   T125,   T126,   T127
-//@@@@EXCESSIVE-ARG-END
-    >
+/**
+ * Type safe kernel functor.
+ * 
+ */
+template<typename T, typename... Ts>
+class KernelFunctor
 {
+private:
+	Kernel kernel_;
+
+	template<int index, typename T0, typename... Ts>
+	void setArgs(T0 t0, Ts... ts)
+	{
+		kernel_.setArg(index, t0);
+		setArgs<index + 1, Ts...>(ts...);
+	}
+
+	template<int index, typename T0>
+	void setArgs(T0 t0)
+	{
+		kernel_.setArg(index, t0);
+	}
+
 public:
-    typedef detail::KernelFunctorGlobal<             
-               T0,   T1,   T2,   T3,
-               T4,   T5,   T6,   T7,
-               T8,   T9,   T10,   T11,
-               T12,   T13,   T14,   T15,
-               T16,   T17,   T18,   T19,
-               T20,   T21,   T22,   T23,
-               T24,   T25,   T26,   T27,
-               T28,   T29,   T30,   T31
-//@@@@EXCESSIVE-ARG-START
-               ,
-               T32,   T33,   T34,   T35,
-               T36,   T37,   T38,   T39,
-               T40,   T41,   T42,   T43,
-               T44,   T45,   T46,   T47,
-               T48,   T49,   T50,   T51,
-               T52,   T53,   T54,   T55,
-               T56,   T57,   T58,   T59,
-               T60,   T61,   T62,   T63,
-               T64,   T65,   T66,   T67,
-               T68,   T69,   T70,   T71,
-               T72,   T73,   T74,   T75,
-               T76,   T77,   T78,   T79,
-               T80,   T81,   T82,   T83,
-               T84,   T85,   T86,   T87,
-               T88,   T89,   T90,   T91,
-               T92,   T93,   T94,   T95,
-               T96,   T97,   T98,   T99,
-               T100,   T101,   T102,   T103,
-               T104,   T105,   T106,   T107,
-               T108,   T109,   T110,   T111,
-               T112,   T113,   T114,   T115,
-               T116,   T117,   T118,   T119,
-               T120,   T121,   T122,   T123,
-               T124,   T125,   T126,   T127
-//@@@@EXCESSIVE-ARG-END
-    > FunctorType;
+	KernelFunctor(Kernel kernel) : kernel_(kernel)
+	{}
 
-    make_kernel(
-        const Program& program,
-        const CL_HPP_STRING_CLASS name,
-        cl_int * err = NULL) :
-           detail::functionImplementation_<
-                    T0,   T1,   T2,   T3,
-                       T4,   T5,   T6,   T7,
-                       T8,   T9,   T10,   T11,
-                       T12,   T13,   T14,   T15,
-                       T16,   T17,   T18,   T19,
-                       T20,   T21,   T22,   T23,
-                       T24,   T25,   T26,   T27,
-                       T28,   T29,   T30,   T31
-//@@@@EXCESSIVE-ARG-START
-                       ,
-                       T32,   T33,   T34,   T35,
-                       T36,   T37,   T38,   T39,
-                       T40,   T41,   T42,   T43,
-                       T44,   T45,   T46,   T47,
-                       T48,   T49,   T50,   T51,
-                       T52,   T53,   T54,   T55,
-                       T56,   T57,   T58,   T59,
-                       T60,   T61,   T62,   T63,
-                       T64,   T65,   T66,   T67,
-                       T68,   T69,   T70,   T71,
-                       T72,   T73,   T74,   T75,
-                       T76,   T77,   T78,   T79,
-                       T80,   T81,   T82,   T83,
-                       T84,   T85,   T86,   T87,
-                       T88,   T89,   T90,   T91,
-                       T92,   T93,   T94,   T95,
-                       T96,   T97,   T98,   T99,
-                       T100,   T101,   T102,   T103,
-                       T104,   T105,   T106,   T107,
-                       T108,   T109,   T110,   T111,
-                       T112,   T113,   T114,   T115,
-                       T116,   T117,   T118,   T119,
-                       T120,   T121,   T122,   T123,
-                       T124,   T125,   T126,   T127
-//@@@@EXCESSIVE-ARG-END
-           >(
-            FunctorType(program, name, err)) 
-    {}
+	KernelFunctor(
+		const Program& program,
+        const string_class name,
+		cl_int * err = NULL) :
+		kernel_(program, name.c_str(), err)
+	{}
 
-    make_kernel(
-        const Kernel kernel) :
-           detail::functionImplementation_<
-                    T0,   T1,   T2,   T3,
-                       T4,   T5,   T6,   T7,
-                       T8,   T9,   T10,   T11,
-                       T12,   T13,   T14,   T15,
-                       T16,   T17,   T18,   T19,
-                       T20,   T21,   T22,   T23,
-                       T24,   T25,   T26,   T27,
-                       T28,   T29,   T30,   T31
-//@@@@EXCESSIVE-ARG-START
-                       ,
-                       T32,   T33,   T34,   T35,
-                       T36,   T37,   T38,   T39,
-                       T40,   T41,   T42,   T43,
-                       T44,   T45,   T46,   T47,
-                       T48,   T49,   T50,   T51,
-                       T52,   T53,   T54,   T55,
-                       T56,   T57,   T58,   T59,
-                       T60,   T61,   T62,   T63,
-                       T64,   T65,   T66,   T67,
-                       T68,   T69,   T70,   T71,
-                       T72,   T73,   T74,   T75,
-                       T76,   T77,   T78,   T79,
-                       T80,   T81,   T82,   T83,
-                       T84,   T85,   T86,   T87,
-                       T88,   T89,   T90,   T91,
-                       T92,   T93,   T94,   T95,
-                       T96,   T97,   T98,   T99,
-                       T100,   T101,   T102,   T103,
-                       T104,   T105,   T106,   T107,
-                       T108,   T109,   T110,   T111,
-                       T112,   T113,   T114,   T115,
-                       T116,   T117,   T118,   T119,
-                       T120,   T121,   T122,   T123,
-                       T124,   T125,   T126,   T127
-//@@@@EXCESSIVE-ARG-END
-           >(
-            FunctorType(kernel)) 
-    {}    
+	//! \brief Return type of the functor
+	typedef Event result_type;
+
+	/**
+	 * Enqueue kernel.
+	 * @param args Launch parameters of the kernel.
+	 * @param t0... List of kernel arguments based on the template type of the functor.
+	 */
+	Event operator() (
+		const EnqueueArgs& args,
+		T t0,
+		Ts... ts)
+	{
+		Event event;
+		setArgs<0, T, Ts...>(t0, ts...);
+		
+		int err = args.queue_.enqueueNDRangeKernel(
+			kernel_,
+			args.offset_,
+			args.global_,
+			args.local_,
+			&args.events_,
+			&event);
+
+		return event;
+	}
+
+	/**
+	* Enqueue kernel with support for error code.
+	* @param args Launch parameters of the kernel.
+	* @param t0... List of kernel arguments based on the template type of the functor.
+	* @param error Out parameter returning the error code from the execution.
+	*/
+	Event operator() (
+		const EnqueueArgs& args,
+		T t0,
+		Ts... ts,
+		cl_int &error)
+	{
+		Event event;
+		setArgs<0, T, Ts...>(t0, ts...);
+
+		error = args.queue_.enqueueNDRangeKernel(
+			kernel_,
+			args.offset_,
+			args.global_,
+			args.local_,
+			&args.events_,
+			&event);
+		
+		return event;
+	}
+};
+
+/**
+ * Backward compatibility class to ensure that cl.hpp code works with cl2.hpp.
+ * Please use KernelFunctor directly.
+ */
+template<typename T, typename... Ts>
+struct make_kernel
+{
+	typedef KernelFunctor<T, Ts...> FunctorType;
+
+	FunctorType functor_;
+
+	make_kernel(
+		const Program& program,
+        const string_class name,
+		cl_int * err = NULL) :
+		functor_(FunctorType(program, name, err))
+	{}
+
+	make_kernel(
+		const Kernel kernel) :
+		functor_(typename FunctorType(kernel))
+	{}
+
+	//! \brief Return type of the functor
+	typedef Event result_type;
+
+	//! \brief Function signature of kernel functor with no event dependency.
+	typedef Event type_(
+		const EnqueueArgs&,
+		T, Ts...);
+
+	Event operator()(
+		const EnqueueArgs& enqueueArgs,
+		T arg0, Ts... args)
+	{
+		return functor_(
+			enqueueArgs, arg0, args...);
+	}
 };
 
 

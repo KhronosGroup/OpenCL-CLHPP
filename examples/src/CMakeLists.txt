@@ -18,11 +18,7 @@ include_directories(
     ${CLCPP_BINARY_DIR}/include
     ${OPENCL_DIST_DIR}/include)
 
-if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-  link_directories( ${OPENCL_DIST_DIR}/lib/x86_64 )
-else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-  link_directories( ${OPENCL_DIST_DIR}/lib/x86 )
-endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
+link_directories( ${OPENCL_LIB_DIR} )
 
 if( MSVC )
   set(CMAKE_CXX_FLAGS " -W3 /EHsc" )
