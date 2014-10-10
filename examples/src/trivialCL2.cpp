@@ -1,7 +1,5 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
-//#define CL_HPP_NO_STD_STRING
-#define  _VARIADIC_MAX 10
 #include <CL/cl2.hpp>
 #include <iostream>
 #include <vector>
@@ -13,15 +11,15 @@ int main(void)
 
     cl::Program vectorAddProgram(
         std::string(
-            "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)];}")
+        "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)];}")
         , true);
 
-    auto vectorAddKernel = 
-        cl::make_kernel<
-            cl::Buffer&,
-            cl::Buffer&,
-            cl::Buffer&
-            >( vectorAddProgram, "vectorAdd" );
+    auto vectorAddKernel =
+        cl::KernelFunctor<
+        cl::Buffer&,
+        cl::Buffer&,
+        cl::Buffer&
+        >(vectorAddProgram, "vectorAdd");
 
     std::vector<int> inputA(numElements, 1);
     std::vector<int> inputB(numElements, 2);
@@ -32,16 +30,26 @@ int main(void)
 
     vectorAddKernel(
         cl::EnqueueArgs(
-            cl::NDRange(numElements),
-            cl::NDRange(numElements)),
+        cl::NDRange(numElements),
+        cl::NDRange(numElements)),
         inputABuffer,
         inputBBuffer,
         outputBuffer);
 
+    cl_int error;
+    vectorAddKernel(
+        cl::EnqueueArgs(
+        cl::NDRange(numElements),
+        cl::NDRange(numElements)),
+        inputABuffer,
+        inputBBuffer,
+        outputBuffer,
+        error);
+
     cl::copy(outputBuffer, begin(output), end(output));
 
     std::cout << "Output:\n";
-    for( int i = 1; i < numElements; ++i ) {
+    for (int i = 1; i < numElements; ++i) {
         std::cout << "\t" << output[i] << "\n";
     }
     std::cout << "\n\n";
