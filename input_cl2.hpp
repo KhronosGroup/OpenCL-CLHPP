@@ -234,23 +234,28 @@
 #include <iterator>
 #include <mutex>
 #include <cstring>
+#include <memory>
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 #include <exception>
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
+// Use STL string and vector classes if no request made to avoid them
 #if !defined(CL_HPP_NO_STD_VECTOR)
 #include <vector>
-template < class T, class Alloc = std::allocator<T> >
-using vector_class = std::vector<T, Alloc>;
-#endif
-
+namespace cl {
+    template < class T, class Alloc = std::allocator<T> >
+    using vector_class = std::vector<T, Alloc>;
+} // namespace cl
+#endif // #if !defined(CL_HPP_NO_STD_VECTOR)
 #if !defined(CL_HPP_NO_STD_STRING)
 #include <string>
-using string_class = std::string;
+namespace cl {
+    using string_class = std::string;
+} // namespace cl
 #endif 
 
-
+// TODO: Remove alloca code
 #if defined(__ANDROID__) || defined(linux) || defined(__APPLE__) || defined(__MACOSX)
 #include <alloca.h>
 #endif // linux
