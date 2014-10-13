@@ -266,7 +266,6 @@ namespace cl {
  *
  */
 namespace cl {
-
 class Memory;
 
 #define CL_HPP_INIT_CL_EXT_FCN_PTR_(name) \
@@ -2461,6 +2460,203 @@ template< typename IteratorType >
 cl_int copy( const CommandQueue &queue, IteratorType startIterator, IteratorType endIterator, cl::Buffer &buffer );
 template< typename IteratorType >
 cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
+
+namespace detail
+{
+    class SVMTraitParent
+    {
+    public:
+        cl_int getSVMMemFlags();
+    };
+} // namespace detail
+
+class SVMTraitCoarse : detail::SVMTraitParent
+{
+public:
+    static cl_int getSVMMemFlags(){ return 0; }
+};
+
+class SVMTraitFine : detail::SVMTraitParent
+{
+public:
+    static cl_int getSVMMemFlags()
+    {
+        return CL_MEM_SVM_FINE_GRAIN_BUFFER;
+    }
+};
+
+class SVMTraitAtomic : detail::SVMTraitParent
+{
+public:
+    static cl_int getSVMMemFlags()
+    {
+        return
+            CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_SVM_ATOMICS;
+    }
+};
+
+template<typename T, class SVMTrait>
+class SVMAllocator {
+private:
+    Context context_;
+
+public:
+    typedef T value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
+    typedef std::size_t size_type;
+    typedef std::ptrdiff_t difference_type;
+
+    template<typename U>
+    struct rebind
+    {
+        typedef SVMAllocator<U, SVMTrait> other;
+    };
+
+    template<typename U, typename V>
+    friend class SVMAllocator;
+
+public:
+    explicit SVMAllocator() :
+        context_(Context::getDefault())
+    {
+        // TODO: Pass optional queue for enqueued free? See how allocator is used.
+    }
+
+    explicit SVMAllocator(cl::Context context) :
+        context_(context)
+    {
+        // TODO: Pass optional queue for enqueued free? See how allocator is used.
+    }
+    
+    SVMAllocator(const SVMAllocator &other) :
+        context_(other.context_)
+    {
+    }
+
+    template<typename U>
+    SVMAllocator(const SVMAllocator<U, SVMTrait> &other) :
+        context_(other.context_)
+    {
+    }
+
+    ~SVMAllocator()
+    {
+    }
+
+    pointer address(reference r) CL_HPP_NOEXCEPT_
+    {
+        return std::addressof(r);
+    }
+
+    const_pointer address(const_reference r) CL_HPP_NOEXCEPT_
+    {
+        return std::addressof(r);
+    }
+
+    /**
+    * Allocate an SVM pointer.
+    *
+    */
+    pointer allocate(
+        size_type size,
+        typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
+    {
+        // TODO: Replace with clSVMAlloc
+        // TODO: Throw bad_alloc if clSVMAlloc fails
+        // TODO: Decide what to do if exceptions are disabled
+        // TODO: Decide how to put read-onlyness into the configuration
+        pointer retValue = reinterpret_cast<pointer>(
+            clSVMAlloc(
+                context_(),
+                SVMTrait::getSVMMemFlags() | CL_MEM_READ_WRITE,
+                size*sizeof(T),
+                0));
+        if (!retValue) {
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+            std::bad_alloc excep;
+            throw excep;
+#else // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+#error Solve exception disabled case in allocator
+            // TODO: exceptions not enabled
+#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+        }
+
+        return retValue;
+    }
+
+    void deallocate(pointer p, size_type)
+    {
+        // TODO: How to do an enqueued free? Add queue to allocator constructor?
+        clSVMFree(context_(), p);
+    }
+
+    inline size_type max_size() const CL_HPP_NOEXCEPT_
+    {
+        // TODO: The max side check would require iterating through 
+        // all devices in the context. We can do that but it is 
+        // a little messy
+        return std::numeric_limits<size_type>::max() / sizeof(T);
+    }
+
+    template< class U, class... Args >
+    void construct(U* p, Args&&... args)
+    {
+        new(p)T(args...);
+    }
+
+    template< class U >
+    void destroy(U* p)
+    {
+        p->~U();
+    }
+
+    inline bool operator==(SVMAllocator const&)
+    {
+        // TODO: If we add a queue, only compare equal if queues match
+        return true;
+    }
+
+    inline bool operator!=(SVMAllocator const& a)
+    {
+        return !operator==(a);
+    }
+}; // class SVMAllocator
+
+
+template<class SVMTrait>
+class SVMAllocator<void, SVMTrait> {
+public:
+    typedef void value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+
+    template<typename U>
+    struct rebind
+    {
+        typedef SVMAllocator<U, SVMTrait> other;
+    };
+
+    template<typename U, typename V>
+    friend class SVMAllocator;
+};
+
+template< class T, class SVMTrait, class... Args >
+std::shared_ptr<T> allocate_svm(Args... args)
+{
+    SVMAllocator<T, SVMTrait> alloc;
+    return std::allocate_shared<T>(alloc, args...);
+}
+
+template< class T, class SVMTrait, class... Args >
+std::shared_ptr<T> allocate_svm(const cl::Context &c, Args... args)
+{
+    SVMAllocator<T, SVMTrait> alloc(c);
+    return std::allocate_shared<T>(alloc, args...);
+}
 
 
 /*! \brief Class interface for Buffer Memory Objects.
