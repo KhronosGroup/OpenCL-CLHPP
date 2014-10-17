@@ -234,7 +234,6 @@
 #include <iterator>
 #include <mutex>
 #include <cstring>
-#include <memory>
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 #include <exception>
@@ -252,6 +251,14 @@ namespace cl {
 #include <string>
 namespace cl {
     using string_class = std::string;
+} // namespace cl
+#endif 
+// TODO: Check that when this is defined, memory isn't needed
+#if !defined(CL_HPP_NO_STD_SHARED_PTR)
+#include <memory>
+namespace cl {
+    template<class T>
+    using pointer_class = std::shared_ptr<T>;
 } // namespace cl
 #endif 
 
@@ -2565,16 +2572,16 @@ public:
         size_type size,
         typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
     {
-        // TODO: Replace with clSVMAlloc
-        // TODO: Throw bad_alloc if clSVMAlloc fails
         // TODO: Decide what to do if exceptions are disabled
         // TODO: Decide how to put read-onlyness into the configuration
-        pointer retValue = reinterpret_cast<pointer>(
+        void* voidPointer =
             clSVMAlloc(
-                context_(),
-                SVMTrait::getSVMMemFlags() | CL_MEM_READ_WRITE,
-                size*sizeof(T),
-                0));
+            context_(),
+            SVMTrait::getSVMMemFlags() | CL_MEM_READ_WRITE,
+            size*sizeof(T),
+            0);
+        pointer retValue = reinterpret_cast<pointer>(
+            voidPointer);
         if (!retValue) {
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
             std::bad_alloc excep;
@@ -2645,19 +2652,36 @@ public:
 };
 
 template< class T, class SVMTrait, class... Args >
-std::shared_ptr<T> allocate_svm(Args... args)
+cl::pointer_class<T> allocate_svm(Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc;
     return std::allocate_shared<T>(alloc, args...);
 }
 
 template< class T, class SVMTrait, class... Args >
-std::shared_ptr<T> allocate_svm(const cl::Context &c, Args... args)
+cl::pointer_class<T> allocate_svm(const cl::Context &c, Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc(c);
     return std::allocate_shared<T>(alloc, args...);
 }
 
+/*! \brief Vector alias to simplify contruction of coarse-grained SVM containers.
+ * 
+ */
+template < class T >
+using coarse_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitCoarse>>;
+
+/*! \brief Vector alias to simplify contruction of fine-grained SVM containers.
+*
+*/
+template < class T >
+using fine_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitFine>>;
+
+/*! \brief Vector alias to simplify contruction of fine-grained SVM containers that support platform atomics.
+*
+*/
+template < class T >
+using atomic_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitAtomic>>;
 
 /*! \brief Class interface for Buffer Memory Objects.
  * 
@@ -4416,8 +4440,55 @@ public:
         return param;
     }
 
+    /*! \brief setArg overload taking a shared_ptr type
+     */
+    template<typename T>
+    cl_int setArg(cl_uint index, const cl::pointer_class<T> argPtr)
+    {
+        return detail::errHandler(
+            ::clSetKernelArgSVMPointer(object_, index, argPtr.get()),
+            __SET_KERNEL_ARGS_ERR);
+    }
+
+    /*! \brief setArg overload taking a vector_class type.
+     */
+    template<typename T, class Alloc>
+    cl_int setArg(cl_uint index, const cl::vector_class<T, Alloc> &argPtr)
+    {
+        return detail::errHandler(
+            ::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
+            __SET_KERNEL_ARGS_ERR);
+    }
+    
+    /*! \brief setArg overload taking an OpenCL 1.x buffer type.
+     */
+    cl_int setArg(cl_uint index, const cl::Buffer &argBuffer)
+    {
+        return detail::errHandler(
+            ::clSetKernelArg(
+                object_,
+                index,
+                sizeof(cl::Buffer),
+                &argBuffer),
+                __SET_KERNEL_ARGS_ERR);
+    }
+
+    /*! \brief setArg overload taking a pointer type
+    */
+    template<typename T>
+    typename std::enable_if<std::is_pointer<T>::value, cl_int>::type
+        setArg(cl_uint index, const T argPtr)
+    {
+        return detail::errHandler(
+            ::clSetKernelArgSVMPointer(object_, index, argPtr),
+            __SET_KERNEL_ARGS_ERR);
+        }
+
+    /*! \brief setArg overload taking a POD type
+     */
     template <typename T>
-    cl_int setArg(cl_uint index, const T &value)
+    typename std::enable_if<std::is_pod<T>::value && !std::is_pointer<T>::value, cl_int>::type
+        setArg(cl_uint index, const T &value)
     {
         return detail::errHandler(
             ::clSetKernelArg(
@@ -4425,14 +4496,20 @@ public:
                 index,
                 detail::KernelArgumentHandler<T>::size(value),
                 detail::KernelArgumentHandler<T>::ptr(value)),
-            __SET_KERNEL_ARGS_ERR);
+                __SET_KERNEL_ARGS_ERR);
     }
-
+        
     cl_int setArg(cl_uint index, ::size_t size, const void* argPtr)
     {
         return detail::errHandler(
             ::clSetKernelArg(object_, index, size, argPtr),
             __SET_KERNEL_ARGS_ERR);
+    }
+
+    // TODO:
+    cl_int setExecInfo()
+    {
+        return -1;
     }
 };
 
