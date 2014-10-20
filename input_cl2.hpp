@@ -4552,14 +4552,29 @@ public:
     }
 
     template<int index, int ArrayLength, typename T0, typename... Ts>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0, Ts... ts)
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0, Ts... ts)
+    {
+        pointerList[index] = static_cast<void*>(t0.get());
+        setSVMPointersHelper<index + 1, Ts...>(ts...);
+    }
+
+    template<int index, int ArrayLength, typename T0, typename... Ts>
+    typename std::enable_if<std::is_pointer<T0>::value, void>::type
+    setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0, Ts... ts)
     {
         pointerList[index] = static_cast<void*>(t0);
         setSVMPointersHelper<index + 1, Ts...>(ts...);
     }
+    
+    template<int index, int ArrayLength, typename T0>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0)
+    {
+        pointerList[index] = static_cast<void*>(t0.get());
+    }
 
     template<int index, int ArrayLength, typename T0>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0)
+    typename std::enable_if<std::is_pointer<T0>::value, void>::type
+    setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0)
     {
         pointerList[index] = static_cast<void*>(t0);
     }
@@ -4569,7 +4584,7 @@ public:
     {
         std::array<void*, 1 + sizeof...(Ts)> pointerList;
 
-        setSVMPointersHelper<0, 1 + sizeof...(Ts), T0, Ts...>(pointerList, t0, ts...);
+        setSVMPointersHelper<0, 1 + sizeof...(Ts)>(pointerList, t0, ts...);
         return detail::errHandler(
             ::clSetKernelExecInfo(
             object_,
@@ -4650,10 +4665,7 @@ public:
                 "-cl-std=CL2.0",
                 NULL,
                 NULL);
-            size_t length;
-            char buffer[2048];
-            clGetProgramBuildInfo((*this)(), 0, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length);
-            cout << "--- Build log ---\n " << buffer << endl;
+
             detail::errHandler(error, __BUILD_PROGRAM_ERR);
         }
 

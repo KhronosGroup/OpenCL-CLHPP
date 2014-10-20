@@ -78,10 +78,14 @@ int main(void)
 
     cl::Buffer outputBuffer(theQueue, begin(output), end(output), false);
 	
-    //cl::vector_class<void*> ptrs;
-    //ptrs.push_back(static_cast<void*>(fooPointer.get()));
-    //vectorAddKernel.setSVMPointers(ptrs);
+    // Only the last of these will actually be used
+    // but this will check that the API is working for all
+    // of them
+    cl::vector_class<void*> ptrs;
+    ptrs.push_back(static_cast<void*>(fooPointer.get()));
+    vectorAddKernel.setSVMPointers(ptrs);
     vectorAddKernel.setSVMPointers(fooPointer.get());
+    vectorAddKernel.setSVMPointers(fooPointer);
 	cl_int error;
     vectorAddKernel(
         cl::EnqueueArgs(
