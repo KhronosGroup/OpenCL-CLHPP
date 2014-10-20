@@ -2468,6 +2468,8 @@ cl_int copy( const CommandQueue &queue, IteratorType startIterator, IteratorType
 template< typename IteratorType >
 cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
 
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 namespace detail
 {
     class SVMTraitParent
@@ -2682,6 +2684,9 @@ using fine_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTrait
 */
 template < class T >
 using atomic_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitAtomic>>;
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
 
 /*! \brief Class interface for Buffer Memory Objects.
  * 
@@ -4440,6 +4445,7 @@ public:
         return param;
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief setArg overload taking a shared_ptr type
      */
     template<typename T>
@@ -4459,6 +4465,7 @@ public:
             ::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
             __SET_KERNEL_ARGS_ERR);
     }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     
     /*! \brief setArg overload taking an OpenCL 1.x buffer type.
      */
@@ -4473,6 +4480,7 @@ public:
                 __SET_KERNEL_ARGS_ERR);
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief setArg overload taking a pointer type
     */
     template<typename T>
@@ -4482,7 +4490,8 @@ public:
         return detail::errHandler(
             ::clSetKernelArgSVMPointer(object_, index, argPtr),
             __SET_KERNEL_ARGS_ERR);
-        }
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
     /*! \brief setArg overload taking a POD type
      */
