@@ -253,7 +253,12 @@ namespace cl {
     using string_class = std::string;
 } // namespace cl
 #endif 
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#include <array>
+
 // TODO: Check that when this is defined, memory isn't needed
+
 #if !defined(CL_HPP_NO_STD_SHARED_PTR)
 #include <memory>
 namespace cl {
@@ -261,6 +266,7 @@ namespace cl {
     using pointer_class = std::shared_ptr<T>;
 } // namespace cl
 #endif 
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
 // TODO: Remove alloca code
 #if defined(__ANDROID__) || defined(linux) || defined(__APPLE__) || defined(__MACOSX)
@@ -505,6 +511,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
  *  OpenCL C calls that require arrays of size_t values, whose
  *  size is known statically.
  */
+// TODO: Remove this
 template <int N>
 class size_t
 { 
@@ -4314,8 +4321,6 @@ Local(::size_t size)
     return ret;
 }
 
-//class KernelFunctor;
-
 /*! \brief Class interface for cl_kernel.
  *
  *  \note Copies of these objects are shallow, meaning that the copy will refer
@@ -4515,11 +4520,64 @@ public:
             __SET_KERNEL_ARGS_ERR);
     }
 
-    // TODO:
-    cl_int setExecInfo()
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    
+    /*!
+     * Specify a vector of SVM pointers that the kernel may access in 
+     * addition to its arguments.
+     */
+    cl_int setSVMPointers(const vector_class<void*> &pointerList)
     {
-        return -1;
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+                object_,
+                CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                sizeof(void*)*pointerList.size(),
+                pointerList.data()));
     }
+
+    /*!
+     * Specify a std::array of SVM pointers that the kernel may access in
+     * addition to its arguments.
+     */
+    template<int ArrayLength>
+    cl_int setSVMPointers(const std::array<void*, ArrayLength> &pointerList)
+    {
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+            object_,
+            CL_KERNEL_EXEC_INFO_SVM_PTRS,
+            sizeof(void*)*pointerList.size(),
+            pointerList.data()));
+    }
+
+    template<int index, int ArrayLength, typename T0, typename... Ts>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0, Ts... ts)
+    {
+        pointerList[index] = static_cast<void*>(t0);
+        setSVMPointersHelper<index + 1, Ts...>(ts...);
+    }
+
+    template<int index, int ArrayLength, typename T0>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0)
+    {
+        pointerList[index] = static_cast<void*>(t0);
+    }
+
+    template<typename T0, typename... Ts>
+    cl_int setSVMPointers(T0 t0, Ts... ts)
+    {
+        std::array<void*, 1 + sizeof...(Ts)> pointerList;
+
+        setSVMPointersHelper<0, 1 + sizeof...(Ts), T0, Ts...>(pointerList, t0, ts...);
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+            object_,
+            CL_KERNEL_EXEC_INFO_SVM_PTRS,
+            sizeof(void*)*(1 + sizeof...(Ts)),
+            pointerList.data()));
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 };
 
 /*! \class Program
@@ -4583,15 +4641,19 @@ public:
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
 
         if (error == CL_SUCCESS && build) {
-
+            // TODO: Temporarily forced to CL 2.0. Decide how we want to do this
+            // whether this version of the header defaults to 2.0 or not
             error = ::clBuildProgram(
                 object_,
                 0,
                 NULL,
-                "",
+                "-cl-std=CL2.0",
                 NULL,
                 NULL);
-
+            size_t length;
+            char buffer[2048];
+            clGetProgramBuildInfo((*this)(), 0, CL_PROGRAM_BUILD_LOG, sizeof(buffer), buffer, &length);
+            cout << "--- Build log ---\n " << buffer << endl;
             detail::errHandler(error, __BUILD_PROGRAM_ERR);
         }
 
@@ -6952,6 +7014,20 @@ public:
 		
 		return event;
 	}
+
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    cl_int setSVMPointers(const vector_class<void*> &pointerList)
+    {
+        return kernel_.setSVMPointers(pointerList);
+    }
+
+    template<typename T0, typename... Ts>
+    cl_int setSVMPointers(T0 t0, Ts... ts)
+    {
+        return kernel_.setSVMPointers(t0, ts...);
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 };
 
 /**
