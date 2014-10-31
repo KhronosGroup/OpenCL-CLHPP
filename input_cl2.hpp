@@ -4521,7 +4521,6 @@ public:
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-    
     /*!
      * Specify a vector of SVM pointers that the kernel may access in 
      * addition to its arguments.
@@ -4550,6 +4549,32 @@ public:
             sizeof(void*)*pointerList.size(),
             pointerList.data()));
     }
+
+    /*! \brief Enable fine-grained system SVM.
+     *
+     * \note It is only possible to enable fine-grained system SVM if all devices
+     *       in the context associated with kernel support it.
+     * 
+     * \param svmEnabled True if fine-grained system SVM is requested. False otherwise.
+     * \return CL_SUCCESS if the function was executed succesfully. CL_INVALID_OPERATION
+     *         if no devices in the context support fine-grained system SVM.
+     *
+     * \see clSetKernelExecInfo
+     */
+    cl_int enableFineGrainedSystemSVM(bool svmEnabled)
+    {
+        cl_bool svmEnabled_ = svmEnabled ? CL_TRUE : CL_FALSE;
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+                object_,
+                CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,
+                sizeof(cl_bool),
+                &svmEnabled_
+                )
+            );
+    }
+
+    // TODO: probably need to add a vector_class overload here to allow that as an option
 
     template<int index, int ArrayLength, typename T0, typename... Ts>
     void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0, Ts... ts)
