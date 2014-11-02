@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2013 The Khronos Group Inc.
+ * Copyright (c) 2008-2014 The Khronos Group Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and/or associated documentation files (the
@@ -2041,7 +2041,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Device(Device&& dev) : detail::Wrapper<cl_type>(std::move(dev)) CL_HPP_NOEXCEPT {}
+    Device(Device&& dev) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(dev)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -2604,7 +2604,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Context(Context&& ctx) : detail::Wrapper<cl_type>(std::move(ctx)) CL_HPP_NOEXCEPT{}
+    Context(Context&& ctx) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(ctx)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -3022,7 +3022,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Memory(Memory&& mem) : detail::Wrapper<cl_type>(std::move(mem)) CL_HPP_NOEXCEPT {}
+    Memory(Memory&& mem) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(mem)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -3263,7 +3263,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Buffer(Buffer&& buf) : Memory(std::move(buf)) CL_HPP_NOEXCEPT {}
+    Buffer(Buffer&& buf) CL_HPP_NOEXCEPT : Memory(std::move(buf)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -3398,7 +3398,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
     * Required for MSVC.
     */
-    BufferD3D10(BufferD3D10&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT{}
+    BufferD3D10(BufferD3D10&& buf) CL_HPP_NOEXCEPT : Buffer(std::move(buf)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
     * Required for MSVC.
@@ -3484,7 +3484,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
     * Required for MSVC.
     */
-    BufferGL(BufferGL&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT{}
+    BufferGL(BufferGL&& buf) CL_HPP_NOEXCEPT : Buffer(std::move(buf)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
     * Required for MSVC.
@@ -3579,7 +3579,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
     * Required for MSVC.
     */
-    BufferRenderGL(BufferRenderGL&& buf) : Buffer(std::move(buf)) CL_HPP_NOEXCEPT{}
+    BufferRenderGL(BufferRenderGL&& buf) CL_HPP_NOEXCEPT : Buffer(std::move(buf)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
     * Required for MSVC.
@@ -3648,7 +3648,7 @@ protected:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image(Image&& img) : Memory(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image(Image&& img) CL_HPP_NOEXCEPT : Memory(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -3765,7 +3765,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image1D(Image1D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image1D(Image1D&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -3842,7 +3842,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image1DBuffer(Image1DBuffer&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image1DBuffer(Image1DBuffer&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -3923,7 +3923,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image1DArray(Image1DArray&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image1DArray(Image1DArray&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4053,7 +4053,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image2D(Image2D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT{}
+    Image2D(Image2D&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4146,7 +4146,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image2DGL(Image2DGL&& img) : Image2D(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image2DGL(Image2DGL&& img) CL_HPP_NOEXCEPT : Image2D(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4233,7 +4233,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image2DArray(Image2DArray&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image2DArray(Image2DArray&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4367,7 +4367,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image3D(Image3D&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+    Image3D(Image3D&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4457,7 +4457,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Image3DGL(Image3DGL&& img) : Image3D(std::move(img)) CL_HPP_NOEXCEPT{}
+    Image3DGL(Image3DGL&& img) CL_HPP_NOEXCEPT : Image3D(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4532,7 +4532,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    ImageGL(ImageGL&& img) : Image(std::move(img)) CL_HPP_NOEXCEPT {}
+    ImageGL(ImageGL&& img) CL_HPP_NOEXCEPT : Image(std::move(img)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4621,7 +4621,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Sampler(Sampler&& sam) : detail::Wrapper<cl_type>(std::move(sam)) CL_HPP_NOEXCEPT {}
+    Sampler(Sampler&& sam) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(sam)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -4815,7 +4815,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Kernel(Kernel&& kernel) : detail::Wrapper<cl_type>(std::move(kernel)) CL_HPP_NOEXCEPT {}
+    Kernel(Kernel&& kernel) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(kernel)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -5150,7 +5150,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    Program(Program&& program) : detail::Wrapper<cl_type>(std::move(program)) CL_HPP_NOEXCEPT {}
+    Program(Program&& program) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(program)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
@@ -5507,7 +5507,7 @@ public:
     /*! \brief Move constructor to forward move to the superclass correctly.
      * Required for MSVC.
      */
-    CommandQueue(CommandQueue&& queue) : detail::Wrapper<cl_type>(std::move(queue)) CL_HPP_NOEXCEPT {}
+    CommandQueue(CommandQueue&& queue) CL_HPP_NOEXCEPT : detail::Wrapper<cl_type>(std::move(queue)) {}
 
     /*! \brief Move assignment to forward move to the superclass correctly.
      * Required for MSVC.
