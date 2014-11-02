@@ -189,7 +189,7 @@
 
 // Need to do both tests here because for some reason __cplusplus is not 
 // updated in visual studio
-#if (!defined(_MSC_VER) && __cplusplus < 201103L) || (_MSC_VER < 1700)
+#if (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1700)
 #error Visual studio 2013 or another C++11-supporting compiler required
 #endif
 
