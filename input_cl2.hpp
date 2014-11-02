@@ -6589,11 +6589,11 @@ class KernelFunctor
 private:
 	Kernel kernel_;
 
-	template<int index, typename T0, typename... Ts>
-	void setArgs(T0 t0, Ts... ts)
+	template<int index, typename T0, typename... T1s>
+	void setArgs(T0 t0, T1s... t1s)
 	{
 		kernel_.setArg(index, t0);
-		setArgs<index + 1, Ts...>(ts...);
+		setArgs<index + 1, T1s...>(t1s...);
 	}
 
 	template<int index, typename T0>
@@ -6687,7 +6687,7 @@ struct make_kernel
 
 	make_kernel(
 		const Kernel kernel) :
-		functor_(typename FunctorType(kernel))
+		functor_(FunctorType(kernel))
 	{}
 
 	//! \brief Return type of the functor
