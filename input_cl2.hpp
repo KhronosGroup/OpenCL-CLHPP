@@ -147,7 +147,7 @@
 #endif
 
 #if !defined(CL_HPP_MINIMUM_OPENCL_VERSION)
-# define CL_HPP_MINIMUM_OPENCL_VERSION 100
+# define CL_HPP_MINIMUM_OPENCL_VERSION 200
 #endif
 #if CL_HPP_MINIMUM_OPENCL_VERSION != 100 && CL_HPP_MINIMUM_OPENCL_VERSION != 110 && CL_HPP_MINIMUM_OPENCL_VERSION != 120 && CL_HPP_MINIMUM_OPENCL_VERSION != 200
 # warning "CL_HPP_MINIMUM_OPENCL_VERSION is not a valid value (100, 110, 120 or 200). It will be set to 100"
@@ -241,15 +241,18 @@
 
 #if !defined(CL_HPP_NO_STD_VECTOR)
 #include <vector>
-template < class T, class Alloc = std::allocator<T> >
-using vector_class = std::vector<T, Alloc>;
+namespace cl {
+    template < class T, class Alloc = std::allocator<T> >
+    using vector_class = std::vector<T, Alloc>;
+}
 #endif
 
 #if !defined(CL_HPP_NO_STD_STRING)
 #include <string>
-using string_class = std::string;
+namespace cl {
+    using string_class = std::string;
+}
 #endif 
-
 
 #if defined(__ANDROID__) || defined(linux) || defined(__APPLE__) || defined(__MACOSX)
 #include <alloca.h>
@@ -689,7 +692,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_MAX_COMPUTE_UNITS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_GROUP_SIZE, ::size_t) \
-    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, vector_class< ::size_t>) \
+    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, cl::vector_class< ::size_t>) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT, cl_uint) \
@@ -736,8 +739,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_EXTENSIONS, string_class) \
     \
     F(cl_context_info, CL_CONTEXT_REFERENCE_COUNT, cl_uint) \
-    F(cl_context_info, CL_CONTEXT_DEVICES, vector_class<Device>) \
-    F(cl_context_info, CL_CONTEXT_PROPERTIES, vector_class<cl_context_properties>) \
+    F(cl_context_info, CL_CONTEXT_DEVICES, cl::vector_class<Device>) \
+    F(cl_context_info, CL_CONTEXT_PROPERTIES, cl::vector_class<cl_context_properties>) \
     \
     F(cl_event_info, CL_EVENT_COMMAND_QUEUE, cl::CommandQueue) \
     F(cl_event_info, CL_EVENT_COMMAND_TYPE, cl_command_type) \
@@ -764,6 +767,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_image_info, CL_IMAGE_WIDTH, ::size_t) \
     F(cl_image_info, CL_IMAGE_HEIGHT, ::size_t) \
     F(cl_image_info, CL_IMAGE_DEPTH, ::size_t) \
+    F(cl_image_info, CL_IMAGE_ARRAY_SIZE, ::size_t) \
+    F(cl_image_info, CL_IMAGE_NUM_MIP_LEVELS, cl_uint) \
+    F(cl_image_info, CL_IMAGE_NUM_SAMPLES, cl_uint) \
     \
     F(cl_sampler_info, CL_SAMPLER_REFERENCE_COUNT, cl_uint) \
     F(cl_sampler_info, CL_SAMPLER_CONTEXT, cl::Context) \
@@ -774,10 +780,10 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_REFERENCE_COUNT, cl_uint) \
     F(cl_program_info, CL_PROGRAM_CONTEXT, cl::Context) \
     F(cl_program_info, CL_PROGRAM_NUM_DEVICES, cl_uint) \
-    F(cl_program_info, CL_PROGRAM_DEVICES, vector_class<Device>) \
+    F(cl_program_info, CL_PROGRAM_DEVICES, cl::vector_class<Device>) \
     F(cl_program_info, CL_PROGRAM_SOURCE, string_class) \
-    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, vector_class< ::size_t>) \
-    F(cl_program_info, CL_PROGRAM_BINARIES, vector_class<char *>) \
+    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, cl::vector_class< ::size_t>) \
+    F(cl_program_info, CL_PROGRAM_BINARIES, cl::vector_class<char *>) \
     \
     F(cl_program_build_info, CL_PROGRAM_BUILD_STATUS, cl_build_status) \
     F(cl_program_build_info, CL_PROGRAM_BUILD_OPTIONS, string_class) \
@@ -837,8 +843,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string_class) \
     \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl_device_id) \
-    F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, vector_class<cl_device_partition_property>) \
-    F(cl_device_info, CL_DEVICE_PARTITION_TYPE, vector_class<cl_device_partition_property>)  \
+    F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector_class<cl_device_partition_property>) \
+    F(cl_device_info, CL_DEVICE_PARTITION_TYPE, cl::vector_class<cl_device_partition_property>)  \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, ::size_t) \
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
@@ -846,10 +852,10 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
-    F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, vector_class<cl_device_partition_property_ext>) \
-    F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, vector_class<cl_device_partition_property_ext>) \
+    F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector_class<cl_device_partition_property_ext>) \
+    F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector_class<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
-    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, vector_class<cl_device_partition_property_ext>)
+    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector_class<cl_device_partition_property_ext>)
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -3295,7 +3301,7 @@ public:
 class Image2D : public Image
 {
 public:
-    /*! \brief Constructs a 1D Image in a specified context.
+    /*! \brief Constructs a 2D Image in a specified context.
      *
      *  Wraps clCreateImage().
      */
@@ -3363,6 +3369,115 @@ public:
         }
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    /*! \brief Constructs a 2D Image from a buffer.
+    * \note This will share storage with the underlying buffer.
+    *
+    *  Wraps clCreateImage().
+    */
+    Image2D(
+        const Context& context,
+        ImageFormat format,
+        const Buffer &sourceBuffer,
+        ::size_t width,
+        ::size_t height,
+        ::size_t row_pitch = 0,
+        cl_int* err = nullptr)
+    {
+        cl_int error;
+
+        cl_image_desc desc =
+        {
+            CL_MEM_OBJECT_IMAGE2D,
+            width,
+            height,
+            0, 0, // depth, array size (unused)
+            row_pitch,
+            0, 0, 0,
+            // Use buffer as input to image
+            sourceBuffer()
+        };
+        object_ = ::clCreateImage(
+            context(),
+            0, // flags inherited from buffer
+            &format,
+            &desc,
+            nullptr,
+            &error);
+
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    /*! \brief Constructs a 2D Image from an image.
+    * \note This will share storage with the underlying image but may
+    *       reinterpret the channel order and type.
+    *
+    * The image will be created matching with a descriptor matching the source. 
+    *
+    * \param order is the channel order to reinterpret the image data as.
+    *              The channel order may differ as described in the OpenCL 
+    *              2.0 API specification.
+    *
+    * Wraps clCreateImage().
+    */
+    Image2D(
+        const Context& context,
+        cl_channel_order order,
+        const Image &sourceImage,
+        cl_int* err = nullptr)
+    {
+        cl_int error;
+
+        // Descriptor fields have to match source image
+        ::size_t sourceWidth = 
+            sourceImage.getImageInfo<CL_IMAGE_WIDTH>();
+        ::size_t sourceHeight = 
+            sourceImage.getImageInfo<CL_IMAGE_HEIGHT>();
+        ::size_t sourceRowPitch =
+            sourceImage.getImageInfo<CL_IMAGE_ROW_PITCH>();
+        ::size_t sourceNumMIPLevels =
+            sourceImage.getImageInfo<CL_IMAGE_NUM_MIP_LEVELS>();
+        ::size_t sourceNumSamples =
+            sourceImage.getImageInfo<CL_IMAGE_NUM_SAMPLES>();
+        cl_image_format sourceFormat =
+            sourceImage.getImageInfo<CL_IMAGE_FORMAT>();
+
+        // Update only the channel order. 
+        // Channel format inherited from source.
+        sourceFormat.image_channel_order = order;
+        cl_image_desc desc =
+        {
+            CL_MEM_OBJECT_IMAGE2D,
+            sourceWidth,
+            sourceHeight,
+            0, 0, // depth (unused), array size (unused)
+            sourceRowPitch,
+            0, // slice pitch (unused)
+            sourceNumMIPLevels,
+            sourceNumSamples,
+            // Use buffer as input to image
+            sourceImage()
+        };
+        object_ = ::clCreateImage(
+            context(),
+            0, // flags should be inherited from mem_object
+            &sourceFormat,
+            &desc,
+            nullptr,
+            &error);
+
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
     //! \brief Default constructor - initializes to NULL.
     Image2D() { }
