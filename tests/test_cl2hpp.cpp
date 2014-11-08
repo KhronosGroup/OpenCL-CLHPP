@@ -77,6 +77,9 @@ extern "C" {
     void testKernelSetArgMem();
     void testKernelSetArgLocal();
     void testCopyHostToBuffer();
+    void testGetBuildInfo();
+    void testCreateSubDevice();
+    void testGetContextInfoDevices();
 } // extern "C"
 
 #include "test_clhpp.cpp"

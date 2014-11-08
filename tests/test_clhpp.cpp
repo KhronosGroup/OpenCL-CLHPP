@@ -60,6 +60,11 @@ static inline cl_kernel make_kernel(int index)
     return (cl_kernel) (size_t) (0xcececece + index);
 }
 
+static inline cl_program make_program(int index)
+{
+    return (cl_program)(size_t)(0xcfcfcfcf + index);
+}
+
 /* Pools of pre-allocated wrapped objects for tests. There is no device pool,
  * because there is no way to know whether the test wants the device to be
  * reference countable or not.
@@ -1616,6 +1621,79 @@ void testCopyHostToBuffer()
     free(some_host_memory);
 
 }
+
+
+/****************************************************************************
+* Tests for getBuildInfo
+****************************************************************************/
+
+static cl_int clGetDeviceInfo_testGetBuildInfo(
+    cl_device_id device,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(param_name, CL_DEVICE_PLATFORM);
+    TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_platform_id));
+    TEST_ASSERT_NOT_EQUAL(param_value, NULL);
+    TEST_ASSERT_EQUAL(param_value_size_ret, NULL);
+    cl_platform_id temp = make_platform_id(0);
+    memcpy(param_value, &temp, sizeof(cl_platform_id));
+    return CL_SUCCESS;
+}
+
+
+static  cl_int clGetProgramBuildInfo_testGetBuildInfo(
+    cl_program program,
+    cl_device_id device,
+    cl_program_build_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_BUILD_LOG);
+
+    const char returnString[] = 
+        "This is the string returned by the build info function.";
+    if (param_value) {
+        ::size_t returnSize = param_value_size;
+        if (sizeof(returnString) < returnSize) {
+            returnSize = sizeof(returnString);
+        }
+        memcpy(param_value, returnString, returnSize);
+    }
+    else {
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(returnString);
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testGetBuildInfo()
+{
+    cl_device_id fakeDevice = make_device_id(0);
+    clGetDeviceInfo_ExpectAndReturn(fakeDevice, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), NULL, NULL, CL_SUCCESS);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_testGetBuildInfo);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+
+    cl::Program prog(make_program(0));
+    cl::Device dev(fakeDevice);
+    
+    cl_int err;
+    std::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
+
+    prog() = NULL;
+    dev() = NULL;
+}
+
 
 void testCreateSubDevice()
 {

@@ -1212,13 +1212,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
         return err;
     }
 
-    char* value = (char*) alloca(required);
-    err = f(name, required, value, NULL);
+    // std::string has a constant data member
+    // a char vector does not
+    VECTOR_CLASS<char> value(required);
+    err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
     }
-
-    *param = value;
+    if (param) {
+        param->assign(begin(value), end(value));
+    }
     return CL_SUCCESS;
 }
 

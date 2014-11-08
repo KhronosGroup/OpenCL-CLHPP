@@ -4635,7 +4635,7 @@ public:
         }
 
         object_ = ::clCreateProgramWithSource(
-            context(), (cl_uint)n, strings, lengths, &error);
+            context(), (cl_uint)n, strings.data(), lengths.data(), &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
         if (err != NULL) {
