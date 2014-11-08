@@ -2005,7 +2005,7 @@ public:
      * 
      *  This simply copies the device ID value, which is an inexpensive operation.
      */
-    Device(const cl_device_id &device) : detail::Wrapper<cl_type>(device) { }
+    __CL_EXPLICIT_CONSTRUCTORS Device(const cl_device_id &device) : detail::Wrapper<cl_type>(device) { }
 
     /*! \brief Returns the first device on the default context.
      *
@@ -2158,7 +2158,7 @@ public:
      * 
      *  This simply copies the platform ID value, which is an inexpensive operation.
      */
-    Platform(const cl_platform_id &platform) : detail::Wrapper<cl_type>(platform) { }
+    __CL_EXPLICIT_CONSTRUCTORS Platform(const cl_platform_id &platform) : detail::Wrapper<cl_type>(platform) { }
 
     /*! \brief Assignment operator from cl_platform_id.
      * 
@@ -2369,6 +2369,7 @@ public:
             if (errResult != NULL) {
                 *errResult = err;
             }
+            return Platform();
         }
 
         cl_platform_id* ids = (cl_platform_id*) alloca(
@@ -2377,13 +2378,14 @@ public:
 
         if (err != CL_SUCCESS) {
             detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
+            if (errResult != NULL) {
+                *errResult = err;
+            }
+            return Platform();
         }
 
-        if (errResult != NULL) {
-            *errResult = err;
-        }
         
-        return ids[0];
+        return Platform(ids[0]);
     }
 
     static Platform getDefault( 
@@ -2812,7 +2814,7 @@ public:
      *  This effectively transfers ownership of a refcount on the cl_event
      *  into the new Event object.
      */
-    Event(const cl_event& event) : detail::Wrapper<cl_type>(event) { }
+    __CL_EXPLICIT_CONSTRUCTORS Event(const cl_event& event) : detail::Wrapper<cl_type>(event) { }
 
     /*! \brief Assignment operator from cl_event - takes ownership.
      *
@@ -4590,7 +4592,7 @@ public:
      *  This effectively transfers ownership of a refcount on the cl_sampler
      *  into the new Sampler object.
      */
-    Sampler(const cl_sampler& sampler) : detail::Wrapper<cl_type>(sampler) { }
+    __CL_EXPLICIT_CONSTRUCTORS Sampler(const cl_sampler& sampler) : detail::Wrapper<cl_type>(sampler) { }
 
     /*! \brief Assignment operator from cl_sampler - takes ownership.
      *
@@ -5582,7 +5584,7 @@ public:
 
     CommandQueue() { }
 
-    CommandQueue(const cl_command_queue& commandQueue) : detail::Wrapper<cl_type>(commandQueue) { }
+    __CL_EXPLICIT_CONSTRUCTORS CommandQueue(const cl_command_queue& commandQueue) : detail::Wrapper<cl_type>(commandQueue) { }
 
     CommandQueue& operator = (const cl_command_queue& rhs)
     {
