@@ -254,10 +254,6 @@ namespace cl {
 }
 #endif 
 
-#if defined(__ANDROID__) || defined(linux) || defined(__APPLE__) || defined(__MACOSX)
-#include <alloca.h>
-#endif // linux
-
 /*! \namespace cl
  *
  * \brief The OpenCL C++ bindings are defined within this namespace.
@@ -550,14 +546,18 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
     if (err != CL_SUCCESS) {
         return err;
     }
+    const ::size_t elements = required / sizeof(T);
 
-    T* value = (T*) alloca(required);
-    err = f(name, required, value, NULL);
+    // Temporary to avoid changing param on an error
+    vector_class<T> localData(elements);
+    err = f(name, required, localData.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
     }
+    if (param) {
+        *param = std::move(localData);
+    }
 
-    param->assign(&value[0], &value[required/sizeof(T)]);
     return CL_SUCCESS;
 }
 
@@ -568,7 +568,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
  * template will provide a better match.
  */
 template <typename Func, typename T>
-inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, int, typename T::cl_type = 0)
+inline cl_int getInfoHelper(
+    Func f, cl_uint name, vector_class<T>* param, int, typename T::cl_type = 0)
 {
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
@@ -576,22 +577,22 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, int, t
         return err;
     }
 
-    typename T::cl_type * value = (typename T::cl_type *) alloca(required);
-    err = f(name, required, value, NULL);
+    ::size_t elements = required / sizeof(typename T::cl_type);
+
+    vector_class<typename T::cl_type> value(elements);
+    err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
     }
 
-    ::size_t elements = required / sizeof(typename T::cl_type);
-    param->assign(&value[0], &value[elements]);
-    for (::size_t i = 0; i < elements; i++)
-    {
-        if (value[i] != NULL)
-        {
-            err = (*param)[i].retain();
-            if (err != CL_SUCCESS) {
-                return err;
-            }
+    if (param) {
+        // Assign to convert CL type to T for each element
+        param->resize(elements);
+
+        // Assign to param, constructing with retain behaviour
+        // to correctly capture each underlying CL object
+        for (::size_t i = 0; i < elements; i++) {
+            (*param)[i] = T(value[i], true);
         }
     }
     return CL_SUCCESS;
@@ -620,13 +621,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
         return err;
     }
 
-    char* value = (char*) alloca(required);
-    err = f(name, required, value, NULL);
+    // std::string has a constant data member
+    // a char vector does not
+    vector_class<char> value(required);
+    err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
     }
-
-    *param = value;
+    if (param) {
+        param->assign(begin(value), end(value));
+    }
     return CL_SUCCESS;
 }
 
@@ -640,13 +644,19 @@ inline cl_int getInfoHelper(Func f, cl_uint name, size_t<N>* param, long)
         return err;
     }
 
-    ::size_t* value = (::size_t*) alloca(required);
-    err = f(name, required, value, NULL);
+    ::size_t elements = required/sizeof(::size_t);
+    vector_class<::size_t> value(elements);
+    err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
     }
-
-    for(int i = 0; i < N; ++i) {
+    
+    // Bound the copy with N to prevent overruns
+    // if passed N > than the amount copied
+    if (elements > N) {
+        elements = N;
+    }
+    for (int i = 0; i < elements; ++i) {
         (*param)[i] = value[i];
     }
 
@@ -1111,7 +1121,7 @@ struct ReferenceHandler<cl_event>
 
 
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
-static cl_uint getVersion(const char *versionInfo)
+static cl_uint getVersion(const vector_class<char> &versionInfo)
 {
     int highVersion = 0;
     int lowVersion = 0;
@@ -1135,8 +1145,9 @@ static cl_uint getPlatformVersion(cl_platform_id platform)
 {
     ::size_t size = 0;
     clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size);
-    char *versionInfo = (char *) alloca(size);
-    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, &versionInfo[0], &size);
+    
+    vector_class<char> versionInfo(size);
+    clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, versionInfo.data(), &size);
     return getVersion(versionInfo);
 }
 
@@ -1150,13 +1161,13 @@ static cl_uint getDevicePlatformVersion(cl_device_id device)
 static cl_uint getContextPlatformVersion(cl_context context)
 {
     // The platform cannot be queried directly, so we first have to grab a
-    // device and obtain its context
+    // device and obtain its platform
     ::size_t size = 0;
     clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &size);
     if (size == 0)
         return 0;
-    cl_device_id *devices = (cl_device_id *) alloca(size);
-    clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices, NULL);
+    vector_class<cl_device_id> devices(size/sizeof(cl_device_id));
+    clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices.data(), NULL);
     return getDevicePlatformVersion(devices[0]);
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
@@ -1172,8 +1183,13 @@ protected:
 
 public:
     Wrapper() : object_(NULL) { }
-
-    Wrapper(const cl_type &obj) : object_(obj) { }
+    
+    Wrapper(const cl_type &obj, bool retainObject) : object_(obj) 
+    {
+        if (retainObject) { 
+            detail::errHandler(retain(), __RETAIN_ERR); 
+        }
+    }
 
     ~Wrapper()
     {
@@ -1183,7 +1199,7 @@ public:
     Wrapper(const Wrapper<cl_type>& rhs)
     {
         object_ = rhs.object_;
-        if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+        detail::errHandler(retain(), __RETAIN_ERR);
     }
 
     Wrapper(Wrapper<cl_type>&& rhs) CL_HPP_NOEXCEPT_
@@ -1195,9 +1211,9 @@ public:
     Wrapper<cl_type>& operator = (const Wrapper<cl_type>& rhs)
     {
         if (this != &rhs) {
-            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            detail::errHandler(release(), __RELEASE_ERR);
             object_ = rhs.object_;
-            if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+            detail::errHandler(retain(), __RETAIN_ERR);
         }
         return *this;
     }
@@ -1205,7 +1221,7 @@ public:
     Wrapper<cl_type>& operator = (Wrapper<cl_type>&& rhs)
     {
         if (this != &rhs) {
-            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            detail::errHandler(release(), __RELEASE_ERR);
             object_ = rhs.object_;
             rhs.object_ = NULL;
         }
@@ -1214,7 +1230,7 @@ public:
 
     Wrapper<cl_type>& operator = (const cl_type &rhs)
     {
-        if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+        detail::errHandler(release(), __RELEASE_ERR);
         object_ = rhs;
         return *this;
     }
@@ -1229,12 +1245,22 @@ protected:
 
     cl_int retain() const
     {
-        return ReferenceHandler<cl_type>::retain(object_);
+        if (object_ != nullptr) {
+            return ReferenceHandler<cl_type>::retain(object_);
+        }
+        else {
+            return CL_SUCCESS;
+        }
     }
 
     cl_int release() const
     {
-        return ReferenceHandler<cl_type>::release(object_);
+        if (object_ != nullptr) {
+            return ReferenceHandler<cl_type>::release(object_);
+        }
+        else {
+            return CL_SUCCESS;
+        }
     }
 };
 
@@ -1271,21 +1297,27 @@ public:
     { 
     }
     
-    Wrapper(const cl_type &obj) : object_(obj), referenceCountable_(false) 
+    Wrapper(const cl_type &obj, bool retainObject) : 
+        object_(obj), 
+        referenceCountable_(false) 
     {
         referenceCountable_ = isReferenceCountable(obj); 
+
+        if (retainObject) {
+            detail::errHandler(retain(), __RETAIN_ERR);
+        }
     }
 
     ~Wrapper()
     {
-        if (object_ != NULL) { release(); }
+        release();
     }
     
     Wrapper(const Wrapper<cl_type>& rhs)
     {
         object_ = rhs.object_;
         referenceCountable_ = isReferenceCountable(object_); 
-        if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+        detail::errHandler(retain(), __RETAIN_ERR);
     }
 
     Wrapper(Wrapper<cl_type>&& rhs) CL_HPP_NOEXCEPT_
@@ -1299,10 +1331,10 @@ public:
     Wrapper<cl_type>& operator = (const Wrapper<cl_type>& rhs)
     {
         if (this != &rhs) {
-            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            detail::errHandler(release(), __RELEASE_ERR);
             object_ = rhs.object_;
             referenceCountable_ = rhs.referenceCountable_;
-            if (object_ != NULL) { detail::errHandler(retain(), __RETAIN_ERR); }
+            detail::errHandler(retain(), __RETAIN_ERR);
         }
         return *this;
     }
@@ -1310,7 +1342,7 @@ public:
     Wrapper<cl_type>& operator = (Wrapper<cl_type>&& rhs)
     {
         if (this != &rhs) {
-            if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+            detail::errHandler(release(), __RELEASE_ERR);
             object_ = rhs.object_;
             referenceCountable_ = rhs.referenceCountable_;
             rhs.object_ = NULL;
@@ -1321,7 +1353,7 @@ public:
 
     Wrapper<cl_type>& operator = (const cl_type &rhs)
     {
-        if (object_ != NULL) { detail::errHandler(release(), __RELEASE_ERR); }
+        detail::errHandler(release(), __RELEASE_ERR);
         object_ = rhs;
         referenceCountable_ = isReferenceCountable(object_); 
         return *this;
@@ -1340,7 +1372,7 @@ protected:
 
     cl_int retain() const
     {
-        if( referenceCountable_ ) {
+        if( object_ != nullptr && referenceCountable_ ) {
             return ReferenceHandler<cl_type>::retain(object_);
         }
         else {
@@ -1350,7 +1382,7 @@ protected:
 
     cl_int release() const
     {
-        if( referenceCountable_ ) {
+        if (object_ != nullptr && referenceCountable_) {
             return ReferenceHandler<cl_type>::release(object_);
         }
         else {
@@ -1407,7 +1439,8 @@ public:
      * 
      *  This simply copies the device ID value, which is an inexpensive operation.
      */
-    Device(const cl_device_id &device) : detail::Wrapper<cl_type>(device) { }
+    explicit Device(const cl_device_id &device, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(device, retainObject) { }
 
     /*! \brief Returns the first device on the default context.
      *
@@ -1491,13 +1524,26 @@ public:
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
         }
 
-        cl_device_id* ids = (cl_device_id*) alloca(n * sizeof(cl_device_id));
-        err = clCreateSubDevices(object_, properties, n, ids, NULL);
+        vector_class<cl_device_id> ids(n);
+        err = clCreateSubDevices(object_, properties, n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
         }
 
-        devices->assign(&ids[0], &ids[n]);
+        // Cannot trivially assign because we need to capture intermediates 
+        // with safe construction
+        if (devices) {
+            devices->resize(ids.size());
+
+            // Assign to param, constructing with retain behaviour
+            // to correctly capture each underlying CL object
+            for (::size_t i = 0; i < ids.size(); i++) {
+                // We do not need to retain because this device is being created 
+                // by the runtime
+                (*devices)[i] = Device(ids[i], false);
+            }
+        }
+
         return CL_SUCCESS;
     }
 #elif defined(CL_HPP_USE_CL_DEVICE_FISSION)
@@ -1526,13 +1572,24 @@ public:
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
         }
 
-        cl_device_id* ids = (cl_device_id*) alloca(n * sizeof(cl_device_id));
-        err = pfn_clCreateSubDevicesEXT(object_, properties, n, ids, NULL);
+        vector_class<cl_device_id> ids(n);
+        err = pfn_clCreateSubDevicesEXT(object_, properties, n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
         }
+        // Cannot trivially assign because we need to capture intermediates 
+        // with safe construction
+        if (devices) {
+            devices->resize(ids.size());
 
-        devices->assign(&ids[0], &ids[n]);
+            // Assign to param, constructing with retain behaviour
+            // to correctly capture each underlying CL object
+            for (::size_t i = 0; i < ids.size(); i++) {
+                // We do not need to retain because this device is being created 
+                // by the runtime
+                (*devices)[i] = Device(ids[i], false);
+            }
+        }
         return CL_SUCCESS;
     }
 #endif // defined(CL_HPP_USE_CL_DEVICE_FISSION)
@@ -1553,9 +1610,13 @@ public:
 
     /*! \brief Constructor from cl_platform_id.
      * 
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  This simply copies the platform ID value, which is an inexpensive operation.
      */
-    Platform(const cl_platform_id &platform) : detail::Wrapper<cl_type>(platform) { }
+    explicit Platform(const cl_platform_id &platform, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(platform, retainObject) { }
 
     /*! \brief Assignment operator from cl_platform_id.
      * 
@@ -1606,13 +1667,25 @@ public:
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        cl_device_id* ids = (cl_device_id*) alloca(n * sizeof(cl_device_id));
-        err = ::clGetDeviceIDs(object_, type, n, ids, NULL);
+        vector_class<cl_device_id> ids(n);
+        err = ::clGetDeviceIDs(object_, type, n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        devices->assign(&ids[0], &ids[n]);
+        // Cannot trivially assign because we need to capture intermediates 
+        // with safe construction
+        // We must retain things we obtain from the API to avoid releasing
+        // API-owned objects.
+        if (devices) {
+            devices->resize(ids.size());
+
+            // Assign to param, constructing with retain behaviour
+            // to correctly capture each underlying CL object
+            for (::size_t i = 0; i < ids.size(); i++) {
+                (*devices)[i] = Device(ids[i], true);
+            }
+        }
         return CL_SUCCESS;
     }
 
@@ -1675,20 +1748,32 @@ public:
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        cl_device_id* ids = (cl_device_id*) alloca(n * sizeof(cl_device_id));
+        vector_class<cl_device_id> ids(n);
         err = pfn_clGetDeviceIDsFromD3D10KHR(
             object_, 
             d3d_device_source, 
             d3d_object,
             d3d_device_set,
             n, 
-            ids, 
+            ids.data(), 
             NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        devices->assign(&ids[0], &ids[n]);
+        // Cannot trivially assign because we need to capture intermediates 
+        // with safe construction
+        // We must retain things we obtain from the API to avoid releasing
+        // API-owned objects.
+        if (devices) {
+            devices->resize(ids.size());
+
+            // Assign to param, constructing with retain behaviour
+            // to correctly capture each underlying CL object
+            for (::size_t i = 0; i < ids.size(); i++) {
+                (*devices)[i] = Device(ids[i], true);
+            }
+        }
         return CL_SUCCESS;
     }
 #endif
@@ -1711,14 +1796,20 @@ public:
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
-        cl_platform_id* ids = (cl_platform_id*) alloca(
-            n * sizeof(cl_platform_id));
-        err = ::clGetPlatformIDs(n, ids, NULL);
+        vector_class<cl_platform_id> ids(n);
+        err = ::clGetPlatformIDs(n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
-        platforms->assign(&ids[0], &ids[n]);
+        if (platforms) {
+            platforms->resize(ids.size());
+
+            // Platforms don't reference count
+            for (::size_t i = 0; i < ids.size(); i++) {
+                (*platforms)[i] = Platform(ids[i]);
+            }
+        }
         return CL_SUCCESS;
     }
 
@@ -1740,20 +1831,23 @@ public:
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
-        cl_platform_id* ids = (cl_platform_id*) alloca(
-            n * sizeof(cl_platform_id));
-        err = ::clGetPlatformIDs(n, ids, NULL);
+        vector_class<cl_platform_id> ids(n);
+        err = ::clGetPlatformIDs(n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
-        *platform = ids[0];
+        *platform = Platform(ids[0]);
         return CL_SUCCESS;
     }
 
     /*! \brief Gets the first available platform, returning it by value.
-     * 
-     *  Wraps clGetPlatformIDs(), returning the first result.
+     *
+     * \return Returns a valid platform if one is available.
+     *         If no platform is available will return a null platform.
+     * Throws an exception if no platforms are available
+     * or an error condition occurs.
+     * Wraps clGetPlatformIDs(), returning the first result.
      */
     static Platform get(
         cl_int * errResult = NULL)
@@ -1761,26 +1855,29 @@ public:
         Platform platform;
         cl_uint n = 0;
         cl_int err = ::clGetPlatformIDs(0, NULL, &n);
+        if (n == 0) {
+            err = CL_INVALID_VALUE;
+        }
         if (err != CL_SUCCESS) {
             detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
             if (errResult != NULL) {
                 *errResult = err;
             }
+            return Platform();
         }
 
-        cl_platform_id* ids = (cl_platform_id*) alloca(
-            n * sizeof(cl_platform_id));
-        err = ::clGetPlatformIDs(n, ids, NULL);
+        vector_class<cl_platform_id> ids(n);
+        err = ::clGetPlatformIDs(n, ids.data(), NULL);
 
         if (err != CL_SUCCESS) {
             detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
+            if (errResult != NULL) {
+                *errResult = err;
+            }
+            return Platform();
         }
 
-        if (errResult != NULL) {
-            *errResult = err;
-        }
-        
-        return ids[0];
+        return Platform(ids[0]);
     }
 
     static Platform getDefault( 
@@ -1878,14 +1975,15 @@ public:
         cl_int error;
 
         ::size_t numDevices = devices.size();
-        cl_device_id* deviceIDs = (cl_device_id*) alloca(numDevices * sizeof(cl_device_id));
+        vector_class<cl_device_id> deviceIDs(numDevices);
+
         for( ::size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
         object_ = ::clCreateContext(
             properties, (cl_uint) numDevices,
-            deviceIDs,
+            deviceIDs.data(),
             notifyFptr, data, &error);
 
         detail::errHandler(error, __CREATE_CONTEXT_ERR);
@@ -2056,7 +2154,8 @@ public:
      *  This effectively transfers ownership of a refcount on the cl_context
      *  into the new Context object.
      */
-    explicit Context(const cl_context& context) : detail::Wrapper<cl_type>(context) { }
+    explicit Context(const cl_context& context, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(context, retainObject) { }
 
     /*! \brief Assignment operator from cl_context - takes ownership.
      * 
@@ -2113,14 +2212,13 @@ public:
             return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
         }
 
-        ImageFormat* value = (ImageFormat*)
-            alloca(numEntries * sizeof(ImageFormat));
+        vector_class<ImageFormat> value(numEntries);
         err = ::clGetSupportedImageFormats(
             object_, 
             flags, 
             type, 
             numEntries,
-            (cl_image_format*) value, 
+            (cl_image_format*) value.data(), 
             NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
@@ -2176,10 +2274,14 @@ public:
 
     /*! \brief Constructor from cl_event - takes ownership.
      * 
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  This effectively transfers ownership of a refcount on the cl_event
      *  into the new Event object.
      */
-    Event(const cl_event& event) : detail::Wrapper<cl_type>(event) { }
+    explicit Event(const cl_event& event, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(event, retainObject) { }
 
     /*! \brief Assignment operator from cl_event - takes ownership.
      *
@@ -2354,11 +2456,18 @@ public:
     Memory() : detail::Wrapper<cl_type>() { }
 
     /*! \brief Constructor from cl_mem - takes ownership.
-     * 
-     *  This effectively transfers ownership of a refcount on the cl_mem
+     *
+     *  Optionally transfer ownership of a refcount on the cl_mem
      *  into the new Memory object.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     *
+     *  See Memory for further details.
      */
-    explicit Memory(const cl_mem& memory) : detail::Wrapper<cl_type>(memory) { }
+    explicit Memory(const cl_mem& memory, bool retainObject) :
+        detail::Wrapper<cl_type>(memory, retainObject) { }
 
     /*! \brief Assignment operator from cl_mem - takes ownership.
      *
@@ -2596,10 +2705,14 @@ public:
     Buffer() : Memory() { }
 
     /*! \brief Constructor from cl_mem - takes ownership.
-    *
-    *  See Memory for further details.
-    */
-    explicit Buffer(const cl_mem& buffer) : Memory(buffer) { }
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with earlier versions.
+     *
+     *  See Memory for further details.
+     */
+    explicit Buffer(const cl_mem& buffer, bool retainObject = false) :
+        Memory(buffer, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
     *
@@ -2730,9 +2843,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with 
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit BufferD3D10(const cl_mem& buffer) : Buffer(buffer) { }
+    explicit BufferD3D10(const cl_mem& buffer, bool retainObject = false) : 
+        Buffer(buffer, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -2814,9 +2931,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit BufferGL(const cl_mem& buffer) : Buffer(buffer) { }
+    explicit BufferGL(const cl_mem& buffer, bool retainObject = false) :
+        Buffer(buffer, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -2907,9 +3028,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with 
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit BufferRenderGL(const cl_mem& buffer) : Buffer(buffer) { }
+    explicit BufferRenderGL(const cl_mem& buffer, bool retainObject = false) :
+        Buffer(buffer, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -2974,9 +3099,13 @@ protected:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit Image(const cl_mem& image) : Memory(image) { }
+    explicit Image(const cl_mem& image, bool retainObject = false) :
+        Memory(image, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3090,9 +3219,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit Image1D(const cl_mem& image1D) : Image(image1D) { }
+    explicit Image1D(const cl_mem& image1D, bool retainObject = false) :
+        Image(image1D, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3172,7 +3305,15 @@ public:
 
     Image1DBuffer() { }
 
-    explicit Image1DBuffer(const cl_mem& image1D) : Image(image1D) { }
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     *  See Memory for further details.
+     */
+    explicit Image1DBuffer(const cl_mem& image1D, bool retainObject = false) :
+        Image(image1D, retainObject) { }
 
     Image1DBuffer& operator = (const cl_mem& rhs)
     {
@@ -3251,8 +3392,17 @@ public:
     }
 
     Image1DArray() { }
+  
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     *  See Memory for further details.
+     */
+    explicit Image1DArray(const cl_mem& imageArray, bool retainObject = false) :
+        Image(imageArray, retainObject) { }
 
-    explicit Image1DArray(const cl_mem& imageArray) : Image(imageArray) { }
 
     Image1DArray& operator = (const cl_mem& rhs)
     {
@@ -3484,9 +3634,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit Image2D(const cl_mem& image2D) : Image(image2D) { }
+    explicit Image2D(const cl_mem& image2D, bool retainObject = false) :
+        Image(image2D, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3576,9 +3730,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit Image2DGL(const cl_mem& image) : Image2D(image) { }
+    explicit Image2DGL(const cl_mem& image, bool retainObject = false) : 
+        Image2D(image, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *c
@@ -3667,8 +3825,15 @@ public:
     }
 
     Image2DArray() { }
-
-    explicit Image2DArray(const cl_mem& imageArray) : Image(imageArray) { }
+    
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     *  See Memory for further details.
+     */
+    explicit Image2DArray(const cl_mem& imageArray, bool retainObject = false) : Image(imageArray, retainObject) { }
 
     Image2DArray& operator = (const cl_mem& rhs)
     {
@@ -3794,9 +3959,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit Image3D(const cl_mem& image3D) : Image(image3D) { }
+    explicit Image3D(const cl_mem& image3D, bool retainObject = false) : 
+        Image(image3D, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3882,9 +4051,13 @@ public:
 
     /*! \brief Constructor from cl_mem - takes ownership.
      *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  See Memory for further details.
      */
-    explicit Image3DGL(const cl_mem& image) : Image3D(image) { }
+    explicit Image3DGL(const cl_mem& image, bool retainObject = false) : 
+        Image3D(image, retainObject) { }
 
     /*! \brief Assignment from cl_mem - performs shallow copy.
      *
@@ -3960,8 +4133,16 @@ public:
     }
 
     ImageGL() : Image() { }
-
-    explicit ImageGL(const cl_mem& image) : Image(image) { }
+    
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     *  See Memory for further details.
+     */
+    explicit ImageGL(const cl_mem& image, bool retainObject = false) : 
+        Image(image, retainObject) { }
 
     ImageGL& operator = (const cl_mem& rhs)
     {
@@ -4040,10 +4221,14 @@ public:
 
     /*! \brief Constructor from cl_sampler - takes ownership.
      * 
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  This effectively transfers ownership of a refcount on the cl_sampler
      *  into the new Sampler object.
      */
-    Sampler(const cl_sampler& sampler) : detail::Wrapper<cl_type>(sampler) { }
+    explicit Sampler(const cl_sampler& sampler, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(sampler, retainObject) { }
 
     /*! \brief Assignment operator from cl_sampler - takes ownership.
      *
@@ -4219,10 +4404,14 @@ public:
 
     /*! \brief Constructor from cl_kernel - takes ownership.
      * 
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
      *  This effectively transfers ownership of a refcount on the cl_kernel
      *  into the new Kernel object.
      */
-    explicit Kernel(const cl_kernel& kernel) : detail::Wrapper<cl_type>(kernel) { }
+    explicit Kernel(const cl_kernel& kernel, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(kernel, retainObject) { }
 
     /*! \brief Assignment operator from cl_kernel - takes ownership.
      *
@@ -4436,8 +4625,9 @@ public:
         cl_int error;
 
         const ::size_t n = (::size_t)sources.size();
-        ::size_t* lengths = (::size_t*) alloca(n * sizeof(::size_t));
-        const char** strings = (const char**) alloca(n * sizeof(const char*));
+
+        vector_class<::size_t> lengths(n);
+        vector_class<const char*> strings(n);
 
         for (::size_t i = 0; i < n; ++i) {
             strings[i] = sources[(int)i].first;
@@ -4493,15 +4683,15 @@ public:
             return;
         }
 
-        ::size_t* lengths = (::size_t*) alloca(numDevices * sizeof(::size_t));
-        const unsigned char** images = (const unsigned char**) alloca(numDevices * sizeof(const unsigned char**));
+        vector_class<::size_t> lengths(numDevices);
+        vector_class<const unsigned char*> images(numDevices);
+        vector_class<cl_device_id> deviceIDs(numDevices);
 
         for (::size_t i = 0; i < numDevices; ++i) {
             images[i] = (const unsigned char*)binaries[i].first;
             lengths[i] = binaries[(int)i].second;
         }
 
-        cl_device_id* deviceIDs = (cl_device_id*) alloca(numDevices * sizeof(cl_device_id));
         for( ::size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -4512,8 +4702,8 @@ public:
         
         object_ = ::clCreateProgramWithBinary(
             context(), (cl_uint) devices.size(),
-            deviceIDs,
-            lengths, images, (binaryStatus != NULL && numDevices > 0)
+            deviceIDs.data(),
+            lengths.data(), images.data(), (binaryStatus != NULL && numDevices > 0)
                ? &binaryStatus->front()
                : NULL, &error);
 
@@ -4539,7 +4729,7 @@ public:
 
 
         ::size_t numDevices = devices.size();
-        cl_device_id* deviceIDs = (cl_device_id*) alloca(numDevices * sizeof(cl_device_id));
+        vector_class<cl_device_id> deviceIDs(numDevices);
         for( ::size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -4547,7 +4737,7 @@ public:
         object_ = ::clCreateProgramWithBuiltInKernels(
             context(), 
             (cl_uint) devices.size(),
-            deviceIDs,
+            deviceIDs.data(),
             kernelNames.c_str(), 
             &error);
 
@@ -4559,8 +4749,16 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
     Program() { }
+    
 
-    explicit Program(const cl_program& program) : detail::Wrapper<cl_type>(program) { }
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     */
+    explicit Program(const cl_program& program, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(program, retainObject) { }
 
     Program& operator = (const cl_program& rhs)
     {
@@ -4603,7 +4801,8 @@ public:
         void* data = NULL) const
     {
         ::size_t numDevices = devices.size();
-        cl_device_id* deviceIDs = (cl_device_id*) alloca(numDevices * sizeof(cl_device_id));
+        vector_class<cl_device_id> deviceIDs(numDevices);
+        
         for( ::size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -4613,7 +4812,7 @@ public:
                 object_,
                 (cl_uint)
                 devices.size(),
-                deviceIDs,
+                deviceIDs.data(),
                 options,
                 notifyFptr,
                 data),
@@ -4709,14 +4908,25 @@ public:
             return detail::errHandler(err, __CREATE_KERNELS_IN_PROGRAM_ERR);
         }
 
-        Kernel* value = (Kernel*) alloca(numKernels * sizeof(Kernel));
+        vector_class<cl_kernel> value(numKernels);
+        
         err = ::clCreateKernelsInProgram(
-            object_, numKernels, (cl_kernel*) value, NULL);
+            object_, numKernels, value.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_KERNELS_IN_PROGRAM_ERR);
         }
 
-        kernels->assign(&value[0], &value[numKernels]);
+        if (kernels) {
+            kernels->resize(value.size());
+
+            // Assign to param, constructing with retain behaviour
+            // to correctly capture each underlying CL object
+            for (::size_t i = 0; i < value.size(); i++) {
+                // We do not need to retain because this kernel is being created 
+                // by the runtime
+                (*kernels)[i] = Kernel(value[i], false);
+            }
+        }
         return CL_SUCCESS;
     }
 };
@@ -4767,14 +4977,12 @@ inline Program linkProgram(
 {
     cl_int error_local = CL_SUCCESS;
 
-    cl_program * programs = (cl_program*) alloca(inputPrograms.size() * sizeof(cl_program));
+    vector_class<cl_program> programs(inputPrograms.size());
 
-    if (programs != NULL) {
-        for (unsigned int i = 0; i < inputPrograms.size(); i++) {
-          programs[i] = inputPrograms[i]();
-        }
-    } 
-
+    for (unsigned int i = 0; i < inputPrograms.size(); i++) {
+        programs[i] = inputPrograms[i]();
+    }
+    
     Context ctx;
     if(inputPrograms.size() > 0) {
         ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>(&error_local);
@@ -4788,7 +4996,7 @@ inline Program linkProgram(
         NULL,
         options,
         (cl_uint)inputPrograms.size(),
-        programs,
+        programs.data(),
         notifyFptr,
         data,
         &error_local);
@@ -4798,7 +5006,7 @@ inline Program linkProgram(
         *err = error_local;
     }
 
-    return Program(prog);
+    return Program(prog, false);
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
@@ -4964,7 +5172,15 @@ public:
 
     CommandQueue() { }
 
-    CommandQueue(const cl_command_queue& commandQueue) : detail::Wrapper<cl_type>(commandQueue) { }
+
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with
+     *                     earlier versions.
+     */
+    explicit CommandQueue(const cl_command_queue& commandQueue, bool retainObject = false) : 
+        detail::Wrapper<cl_type>(commandQueue, retainObject) { }
 
     CommandQueue& operator = (const cl_command_queue& rhs)
     {
@@ -5637,7 +5853,8 @@ public:
     {
         cl_event tmp;
         
-        cl_mem* localMemObjects = static_cast<cl_mem*>(alloca(memObjects.size() * sizeof(cl_mem)));
+        vector_class<cl_mem> localMemObjects(memObjects.size());
+
         for( int i = 0; i < (int)memObjects.size(); ++i ) {
             localMemObjects[i] = memObjects[i]();
         }
@@ -5647,7 +5864,7 @@ public:
             ::clEnqueueMigrateMemObjects(
                 object_, 
                 (cl_uint)memObjects.size(), 
-                static_cast<const cl_mem*>(localMemObjects),
+                localMemObjects.data(),
                 flags,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -5715,22 +5932,21 @@ public:
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
-        cl_mem * mems = (mem_objects != NULL && mem_objects->size() > 0) 
-            ? (cl_mem*) alloca(mem_objects->size() * sizeof(cl_mem))
-            : NULL;
-
-        if (mems != NULL) {
-            for (unsigned int i = 0; i < mem_objects->size(); i++) {
-                mems[i] = ((*mem_objects)[i])();
-            }
+        ::size_t elements = 0;
+        if (mem_objects != NULL) {
+            elements = mem_objects->size();
         }
-
+        vector_class<cl_mem> mems(elements);
+        for (unsigned int i = 0; i < elements; i++) {
+            mems[i] = ((*mem_objects)[i])();
+        }
+        
         cl_event tmp;
         cl_int err = detail::errHandler(
             ::clEnqueueNativeKernel(
                 object_, userFptr, args.first, args.second,
                 (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
-                mems,
+                mems.data(),
                 (mem_locs != NULL && mem_locs->size() > 0) ? (const void **) &mem_locs->front() : NULL,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,

@@ -604,6 +604,13 @@ void testContextFromType()
 {
     clGetPlatformIDs_StubWithCallback(clGetPlatformIDs_testContextFromType);
     clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_testContextFromType);
+#if defined(TEST_CL2)
+    // The cl2.hpp header will perform an extra retain here to be consistent
+    // with other APIs retaining runtime-owned objects before releasing them
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+#endif
+
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
 
@@ -1608,6 +1615,17 @@ void testCopyHostToBuffer()
 
     free(some_host_memory);
 
+}
+
+void testCreateSubDevice()
+{
+    // TODO
+
+}
+
+void testGetContextInfoDevices()
+{
+    // TODO
 }
 
 } // extern "C"
