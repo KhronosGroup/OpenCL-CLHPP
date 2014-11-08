@@ -4989,9 +4989,9 @@ inline Program linkProgram(
         if(error_local!=CL_SUCCESS) {
             detail::errHandler(error_local, __LINK_PROGRAM_ERR);
         }
-	}
-	cl_program prog = ::clLinkProgram(
-		ctx(),
+    }
+    cl_program prog = ::clLinkProgram(
+        ctx(),
         0,
         NULL,
         options,
@@ -6729,14 +6729,19 @@ inline cl_int finish(void)
     return queue.finish();
 }
 
-struct EnqueueArgs
+class EnqueueArgs
 {
+private:
     CommandQueue queue_;
     const NDRange offset_;
     const NDRange global_;
     const NDRange local_;
     vector_class<Event> events_;
 
+    template<typename T, typename... Ts>
+    friend class KernelFunctor;
+
+public:
     EnqueueArgs(NDRange global) : 
       queue_(CommandQueue::getDefault()),
       offset_(NullRange), 
@@ -6918,84 +6923,84 @@ template<typename T, typename... Ts>
 class KernelFunctor
 {
 private:
-	Kernel kernel_;
+    Kernel kernel_;
 
-	template<int index, typename T0, typename... T1s>
-	void setArgs(T0 t0, T1s... t1s)
-	{
-		kernel_.setArg(index, t0);
-		setArgs<index + 1, T1s...>(t1s...);
-	}
+    template<int index, typename T0, typename... T1s>
+    void setArgs(T0 t0, T1s... t1s)
+    {
+        kernel_.setArg(index, t0);
+        setArgs<index + 1, T1s...>(t1s...);
+    }
 
-	template<int index, typename T0>
-	void setArgs(T0 t0)
-	{
-		kernel_.setArg(index, t0);
-	}
+    template<int index, typename T0>
+    void setArgs(T0 t0)
+    {
+        kernel_.setArg(index, t0);
+    }
 
 public:
-	KernelFunctor(Kernel kernel) : kernel_(kernel)
-	{}
+    KernelFunctor(Kernel kernel) : kernel_(kernel)
+    {}
 
-	KernelFunctor(
-		const Program& program,
+    KernelFunctor(
+        const Program& program,
         const string_class name,
-		cl_int * err = NULL) :
-		kernel_(program, name.c_str(), err)
-	{}
+        cl_int * err = NULL) :
+        kernel_(program, name.c_str(), err)
+    {}
 
-	//! \brief Return type of the functor
-	typedef Event result_type;
+    //! \brief Return type of the functor
+    typedef Event result_type;
 
-	/**
-	 * Enqueue kernel.
-	 * @param args Launch parameters of the kernel.
-	 * @param t0... List of kernel arguments based on the template type of the functor.
-	 */
-	Event operator() (
-		const EnqueueArgs& args,
-		T t0,
-		Ts... ts)
-	{
-		Event event;
-		setArgs<0, T, Ts...>(t0, ts...);
-		
-		int err = args.queue_.enqueueNDRangeKernel(
-			kernel_,
-			args.offset_,
-			args.global_,
-			args.local_,
-			&args.events_,
-			&event);
+    /**
+     * Enqueue kernel.
+     * @param args Launch parameters of the kernel.
+     * @param t0... List of kernel arguments based on the template type of the functor.
+     */
+    Event operator() (
+        const EnqueueArgs& args,
+        T t0,
+        Ts... ts)
+    {
+        Event event;
+        setArgs<0, T, Ts...>(t0, ts...);
+        
+        int err = args.queue_.enqueueNDRangeKernel(
+            kernel_,
+            args.offset_,
+            args.global_,
+            args.local_,
+            &args.events_,
+            &event);
 
-		return event;
-	}
+        return event;
+    }
 
-	/**
-	* Enqueue kernel with support for error code.
-	* @param args Launch parameters of the kernel.
-	* @param t0... List of kernel arguments based on the template type of the functor.
-	* @param error Out parameter returning the error code from the execution.
-	*/
-	Event operator() (
-		const EnqueueArgs& args,
-		T t0,
-		Ts... ts,
-		cl_int &error)
-	{
-		Event event;
-		setArgs<0, T, Ts...>(t0, ts...);
+    /**
+    * Enqueue kernel with support for error code.
+    * @param args Launch parameters of the kernel.
+    * @param t0... List of kernel arguments based on the template type of the functor.
+    * @param error Out parameter returning the error code from the execution.
+    */
+    Event operator() (
+        const EnqueueArgs& args,
+        T t0,
+        Ts... ts,
+        cl_int &error)
+    {
+        Event event;
+        setArgs<0, T, Ts...>(t0, ts...);
 
-		error = args.queue_.enqueueNDRangeKernel(
-			kernel_,
-			args.offset_,
-			args.global_,
-			args.local_,
-			&args.events_,
-			&event);
-		
-		return event;
-	}
+        error = args.queue_.enqueueNDRangeKernel(
+            kernel_,
+            args.offset_,
+            args.global_,
+            args.local_,
+            &args.events_,
+            &event);
+        
+        return event;
+    }
 };
 
 /**
@@ -7005,37 +7010,37 @@ public:
 template<typename T, typename... Ts>
 struct make_kernel
 {
-	typedef KernelFunctor<T, Ts...> FunctorType;
+    typedef KernelFunctor<T, Ts...> FunctorType;
 
-	FunctorType functor_;
+    FunctorType functor_;
 
-	make_kernel(
-		const Program& program,
+    make_kernel(
+        const Program& program,
         const string_class name,
-		cl_int * err = NULL) :
-		functor_(FunctorType(program, name, err))
-	{}
+        cl_int * err = NULL) :
+        functor_(FunctorType(program, name, err))
+    {}
 
-	make_kernel(
-		const Kernel kernel) :
-		functor_(FunctorType(kernel))
-	{}
+    make_kernel(
+        const Kernel kernel) :
+        functor_(FunctorType(kernel))
+    {}
 
-	//! \brief Return type of the functor
-	typedef Event result_type;
+    //! \brief Return type of the functor
+    typedef Event result_type;
 
-	//! \brief Function signature of kernel functor with no event dependency.
-	typedef Event type_(
-		const EnqueueArgs&,
-		T, Ts...);
+    //! \brief Function signature of kernel functor with no event dependency.
+    typedef Event type_(
+        const EnqueueArgs&,
+        T, Ts...);
 
-	Event operator()(
-		const EnqueueArgs& enqueueArgs,
-		T arg0, Ts... args)
-	{
-		return functor_(
-			enqueueArgs, arg0, args...);
-	}
+    Event operator()(
+        const EnqueueArgs& enqueueArgs,
+        T arg0, Ts... args)
+    {
+        return functor_(
+            enqueueArgs, arg0, args...);
+    }
 };
 
 
