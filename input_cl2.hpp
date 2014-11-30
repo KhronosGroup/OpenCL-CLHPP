@@ -3591,9 +3591,9 @@ public:
             sourceImage.getImageInfo<CL_IMAGE_HEIGHT>();
         ::size_t sourceRowPitch =
             sourceImage.getImageInfo<CL_IMAGE_ROW_PITCH>();
-        ::size_t sourceNumMIPLevels =
+        cl_uint sourceNumMIPLevels =
             sourceImage.getImageInfo<CL_IMAGE_NUM_MIP_LEVELS>();
-        ::size_t sourceNumSamples =
+        cl_uint sourceNumSamples =
             sourceImage.getImageInfo<CL_IMAGE_NUM_SAMPLES>();
         cl_image_format sourceFormat =
             sourceImage.getImageInfo<CL_IMAGE_FORMAT>();
