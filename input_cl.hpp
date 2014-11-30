@@ -1220,7 +1220,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
         return err;
     }
     if (param) {
-        param->assign(begin(value), end(value));
+        param->assign(value.begin(), value.end());
     }
     return CL_SUCCESS;
 }
