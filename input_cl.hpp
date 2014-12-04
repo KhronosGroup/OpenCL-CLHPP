@@ -2762,7 +2762,7 @@ inline Device Device::getDefault(cl_int * err)
     Device device;
 
     Context context = Context::getDefault(&error);
-    detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+    detail::errHandler(error, __CREATE_CONTEXT_ERR);
 
     if (error != CL_SUCCESS) {
         if (err != NULL) {
@@ -5427,7 +5427,7 @@ public:
         cl_int error;
 
         Context context = Context::getDefault(&error);
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+        detail::errHandler(error, __CREATE_CONTEXT_ERR);
 
         if (error != CL_SUCCESS) {
             if (err != NULL) {
@@ -5458,7 +5458,7 @@ public:
         VECTOR_CLASS<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+        detail::errHandler(error, __CREATE_CONTEXT_ERR);
 
         if (error != CL_SUCCESS)
         {

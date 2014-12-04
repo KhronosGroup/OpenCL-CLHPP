@@ -1,4 +1,6 @@
 #define TEST_CL2
+#define CL_HPP_UNIT_TEST_ENABLE
+
 // Want to support 2.0 but also test that 1.1 is ok
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
@@ -20,6 +22,7 @@ extern "C" {
     // to import tests from test_clhpp.cpp
     // Saves duplication of tests and the runner generator
     // does not process through the include below
+
     void testCompareExchange();
     void testFence();
     void testCopyContextNonNull();
@@ -247,4 +250,119 @@ void testCreateImage2DFromImage_2_0()
     //context() = NULL;
 }
 
+// Note that default tests maintain state when run from the same
+// unit process.
+// One default setting test will maintain the defaults until the end.
+void testSetDefaultPlatform()
+{
+    cl::Platform p(make_platform_id(1));
+    cl::Platform p2 = cl::Platform::setDefault(p);
+    cl::Platform p3 = cl::Platform::getDefault();
+    TEST_ASSERT_EQUAL(p(), p2());
+    TEST_ASSERT_EQUAL(p(), p3());
+}
+
+// Note that default tests maintain state when run from the same
+// unit process.
+// One default setting test will maintain the defaults until the end.
+void testSetDefaultPlatformTwice()
+{
+    cl::Platform p(make_platform_id(2));
+    cl::Platform p2 = cl::Platform::getDefault();
+    cl::Platform p3 = cl::Platform::setDefault(p);
+    // Set default should have failed
+    TEST_ASSERT_EQUAL(p2(), p3());
+    TEST_ASSERT_NOT_EQUAL(p(), p3());
+}
+
+// Note that default tests maintain state when run from the same
+// unit process.
+// One default setting test will maintain the defaults until the end.
+void testSetDefaultContext()
+{   
+
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context c(make_context(1));
+    cl::Context c2 = cl::Context::setDefault(c);
+    cl::Context c3 = cl::Context::getDefault();
+    TEST_ASSERT_EQUAL(c(), c2());
+    TEST_ASSERT_EQUAL(c(), c3());
+}
+
+// Note that default tests maintain state when run from the same
+// unit process.
+// One default setting test will maintain the defaults until the end.
+void testSetDefaultCommandQueue()
+{
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+
+    cl::CommandQueue c(make_command_queue(1));
+    cl::CommandQueue c2 = cl::CommandQueue::setDefault(c);
+    cl::CommandQueue c3 = cl::CommandQueue::getDefault();
+    TEST_ASSERT_EQUAL(c(), c2());
+    TEST_ASSERT_EQUAL(c(), c3());
+}
+
+// Note that default tests maintain state when run from the same
+// unit process.
+// One default setting test will maintain the defaults until the end.
+void testSetDefaultDevice()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    cl::Device d(make_device_id(1));
+    cl::Device  d2 = cl::Device::setDefault(d);
+    cl::Device  d3 = cl::Device::getDefault();
+    TEST_ASSERT_EQUAL(d(), d2());
+    TEST_ASSERT_EQUAL(d(), d3());
+}
+
+
+// Run after other tests to clear the default state in the header
+// using special unit test bypasses.
+// We cannot remove the once_flag, so this is a hard fix
+// but it means we won't hit cmock release callbacks at the end.
+// This is a lot like tearDown but for the header default
+// so we do not want to run it for every test.
+// The alternative would be to manually modify the test runner
+// but we avoid that for now.
+void testCleanupHeaderState()
+{
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    cl::CommandQueue::unitTestClearDefault();
+    cl::Context::unitTestClearDefault();
+    cl::Device::unitTestClearDefault();
+    cl::Platform::unitTestClearDefault();
+}
 } // extern "C"

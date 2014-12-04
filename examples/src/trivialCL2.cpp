@@ -8,7 +8,26 @@ const int numElements = 32;
 
 int main(void)
 {
+    // Filter for a 2.0 platform and set it as the default
+    std::vector<cl::Platform> platforms;
+    cl::Platform::get(&platforms);
+    cl::Platform plat;
+    for (auto &p : platforms) {
+        std::string platver = p.getInfo<CL_PLATFORM_VERSION>();
+        if (platver.find("OpenCL 2.") != std::string::npos) {
+            plat = p;
+        }
+    }
+    if (plat() == 0)  {
+        std::cout << "No OpenCL 2.0 platform found.";
+        return -1;
+    }
 
+    cl::Platform newP = cl::Platform::setDefault(plat);
+    if (newP != plat) {
+        std::cout << "Error setting default platform.";
+        return -1;
+    }
     cl::Program vectorAddProgram(
         std::string(
         "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)];}")

@@ -741,8 +741,25 @@ static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContex
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT(properties == 0);
     return make_command_queue(0);
-
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+// stub for clCreateCommandQueueWithProperties - returns queue zero
+static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext(
+    cl_context context,
+    cl_device_id device,
+    const cl_queue_properties *properties,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+    TEST_ASSERT(properties[0] == CL_QUEUE_PROPERTIES);
+    TEST_ASSERT(properties[1] == 0);
+    return make_command_queue(0);
+}
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
 void testCommandQueueFromSpecifiedContext()
 {
@@ -758,12 +775,21 @@ void testCommandQueueFromSpecifiedContext()
     // This is the context we will pass in to test
     cl::Context context = contextPool[0];
 
-    // Assumes the context contains the first device
+    // Assumes the context contains the fi rst device
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clCreateCommandQueueWithProperties_StubWithCallback(clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clCreateCommandQueue_StubWithCallback(clCreateCommandQueue_testCommandQueueFromSpecifiedContext);
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clReleaseCommandQueue_ExpectAndReturn(expected, CL_SUCCESS);
 
     cl::CommandQueue queue(context);
@@ -1040,7 +1066,11 @@ void testBufferConstructorContextIterator()
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clCreateCommandQueueWithProperties_StubWithCallback(clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clCreateCommandQueue_StubWithCallback(clCreateCommandQueue_testCommandQueueFromSpecifiedContext);
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
     clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);

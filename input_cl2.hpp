@@ -419,7 +419,9 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __CREATE_KERNELS_IN_PROGRAM_ERR     CL_HPP_ERR_STR_(clCreateKernelsInProgram)
 
-#define __CREATE_COMMAND_QUEUE_ERR          CL_HPP_ERR_STR_(clCreateCommandQueue)
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#define __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR          CL_HPP_ERR_STR_(clCreateCommandQueueWithProperties)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __SET_COMMAND_QUEUE_PROPERTY_ERR    CL_HPP_ERR_STR_(clSetCommandQueueProperty)
 #define __ENQUEUE_READ_BUFFER_ERR           CL_HPP_ERR_STR_(clEnqueueReadBuffer)
 #define __ENQUEUE_READ_BUFFER_RECT_ERR      CL_HPP_ERR_STR_(clEnqueueReadBufferRect)
@@ -475,6 +477,13 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_GL_TEXTURE_3D_ERR          CL_HPP_ERR_STR_(clCreateFromGLTexture3D)
 #define __CREATE_IMAGE2D_ERR                CL_HPP_ERR_STR_(clCreateImage2D)
 #define __CREATE_IMAGE3D_ERR                CL_HPP_ERR_STR_(clCreateImage3D)
+#endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
+
+/**
+ * Deprecated APIs for 2.0
+ */
+#if defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
+#define __CREATE_COMMAND_QUEUE_ERR          CL_HPP_ERR_STR_(clCreateCommandQueue)
 #endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
@@ -1391,6 +1400,18 @@ protected:
     }
 };
 
+template <typename T>
+inline bool operator==(const Wrapper<T> &lhs, const Wrapper<T> &rhs)
+{
+    return lhs() == rhs();
+}
+
+template <typename T>
+inline bool operator!=(const Wrapper<T> &lhs, const Wrapper<T> &rhs)
+{
+    return !operator==(lhs, rhs);
+}
+
 } // namespace detail
 //! \endcond
 
@@ -1431,7 +1452,40 @@ struct ImageFormat : public cl_image_format
  */
 class Device : public detail::Wrapper<cl_device_id>
 {
+private:
+    static std::once_flag default_initialized_;
+    static Device default_;
+    static cl_int default_error_;
+
+    /*! \brief Create the default context.
+    *
+    * This sets @c default_ and @c default_error_. It does not throw
+    * @c cl::Error.
+    */
+    static void makeDefault();
+
+    /*! \brief Create the default platform from a provided platform.
+    *
+    * This sets @c default_. It does not throw
+    * @c cl::Error.
+    */
+    static void makeDefaultProvided(Device &p) {
+        default_ = p;
+    }
+
 public:
+#ifdef CL_HPP_UNIT_TEST_ENABLE
+    /*! \brief Reset the default.
+    *
+    * This sets @c default_ to an empty value to support cleanup in
+    * the unit test framework.
+    * This function is not thread safe.
+    */
+    static void unitTestClearDefault() {
+        default_ = Device();
+    }
+#endif // #ifdef CL_HPP_UNIT_TEST_ENABLE
+
     //! \brief Default constructor - initializes to NULL.
     Device() : detail::Wrapper<cl_type>() { }
 
@@ -1446,7 +1500,30 @@ public:
      *
      *  \see Context::getDefault()
      */
-    static Device getDefault(cl_int * err = NULL);
+    static Device getDefault(
+        cl_int *errResult = NULL)
+    {
+        std::call_once(default_initialized_, makeDefault);
+        detail::errHandler(default_error_);
+        if (errResult != NULL) {
+            *errResult = default_error_;
+        }
+        return default_;
+    }
+
+    /**
+    * Modify the default platform to be used by
+    * subsequent operations.
+    * Will only set the default if no default was previously created.
+    * @return updated default platform.
+    *         Should be compared to the passed value to ensure that it was updated.
+    */
+    static Device setDefault(Device &default_device)
+    {
+        std::call_once(default_initialized_, makeDefaultProvided, default_device);
+        detail::errHandler(default_error_);
+        return default_;
+    }
 
     /*! \brief Assignment operator from cl_device_id.
      * 
@@ -1595,6 +1672,10 @@ public:
 #endif // defined(CL_HPP_USE_CL_DEVICE_FISSION)
 };
 
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Device::default_initialized_;
+CL_HPP_DEFINE_STATIC_MEMBER_ Device Device::default_;
+CL_HPP_DEFINE_STATIC_MEMBER_ cl_int Device::default_error_ = CL_SUCCESS;
+
 /*! \brief Class interface for cl_platform_id.
  *
  *  \note Copies of these objects are inexpensive, since they don't 'own'
@@ -1604,7 +1685,70 @@ public:
  */
 class Platform : public detail::Wrapper<cl_platform_id>
 {
+private:
+    static std::once_flag default_initialized_;
+    static Platform default_;
+    static cl_int default_error_;
+
+    /*! \brief Create the default context.
+    *
+    * This sets @c default_ and @c default_error_. It does not throw
+    * @c cl::Error.
+    */
+    static void makeDefault() {
+        /* Throwing an exception from a call_once invocation does not do
+        * what we wish, so we catch it and save the error.
+        */
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+        try
+#endif
+        {
+            // If default wasn't passed ,generate one
+            // Otherwise set it
+            cl_uint n = 0;
+
+            cl_int err = ::clGetPlatformIDs(0, NULL, &n);
+            if (err != CL_SUCCESS) {
+                default_error_ = err;
+            }
+
+            vector_class<cl_platform_id> ids(n);
+            err = ::clGetPlatformIDs(n, ids.data(), NULL);
+            if (err != CL_SUCCESS) {
+                default_error_ = err;
+            }
+
+            default_ = Platform(ids[0]);
+        }
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+        catch (cl::Error &e) {
+            default_error_ = e.err();
+        }
+#endif
+    }
+
+    /*! \brief Create the default platform from a provided platform.
+     *
+     * This sets @c default_. It does not throw
+     * @c cl::Error.
+     */
+    static void makeDefaultProvided(Platform &p) {
+       default_ = p;
+    }
+    
 public:
+#ifdef CL_HPP_UNIT_TEST_ENABLE
+    /*! \brief Reset the default.
+    *
+    * This sets @c default_ to an empty value to support cleanup in
+    * the unit test framework.
+    * This function is not thread safe.
+    */
+    static void unitTestClearDefault() {
+        default_ = Platform();
+    }
+#endif // #ifdef CL_HPP_UNIT_TEST_ENABLE
+
     //! \brief Default constructor - initializes to NULL.
     Platform() : detail::Wrapper<cl_type>()  { }
 
@@ -1626,6 +1770,31 @@ public:
     {
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
+    }
+
+    static Platform getDefault(
+        cl_int *errResult = NULL)
+    {
+        std::call_once(default_initialized_, makeDefault);
+        detail::errHandler(default_error_);
+        if (errResult != NULL) {
+            *errResult = default_error_;
+        }
+        return default_;
+    }
+
+    /**
+     * Modify the default platform to be used by 
+     * subsequent operations.
+     * Will only set the default if no default was previously created.
+     * @return updated default platform. 
+     *         Should be compared to the passed value to ensure that it was updated.
+     */
+    static Platform setDefault(Platform &default_platform)
+    {
+        std::call_once(default_initialized_, makeDefaultProvided, default_platform);
+        detail::errHandler(default_error_);
+        return default_;
     }
 
     //! \brief Wrapper for clGetPlatformInfo().
@@ -1820,25 +1989,12 @@ public:
     static cl_int get(
         Platform * platform)
     {
-        cl_uint n = 0;
-
-        if( platform == NULL ) {
-            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_PLATFORM_IDS_ERR);
+        cl_int err;
+        Platform default_platform = Platform::getDefault(&err);
+        if (platform) {
+            *platform = default_platform;
         }
-
-        cl_int err = ::clGetPlatformIDs(0, NULL, &n);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
-        }
-
-        vector_class<cl_platform_id> ids(n);
-        err = ::clGetPlatformIDs(n, ids.data(), NULL);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
-        }
-
-        *platform = Platform(ids[0]);
-        return CL_SUCCESS;
+        return err;
     }
 
     /*! \brief Gets the first available platform, returning it by value.
@@ -1852,40 +2008,13 @@ public:
     static Platform get(
         cl_int * errResult = NULL)
     {
-        Platform platform;
-        cl_uint n = 0;
-        cl_int err = ::clGetPlatformIDs(0, NULL, &n);
-        if (n == 0) {
-            err = CL_INVALID_VALUE;
+        cl_int err;
+        Platform default_platform = Platform::getDefault(&err);
+        if (errResult) {
+            *errResult = err;
         }
-        if (err != CL_SUCCESS) {
-            detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
-            if (errResult != NULL) {
-                *errResult = err;
-            }
-            return Platform();
-        }
-
-        vector_class<cl_platform_id> ids(n);
-        err = ::clGetPlatformIDs(n, ids.data(), NULL);
-
-        if (err != CL_SUCCESS) {
-            detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
-            if (errResult != NULL) {
-                *errResult = err;
-            }
-            return Platform();
-        }
-
-        return Platform(ids[0]);
-    }
-
-    static Platform getDefault( 
-        cl_int *errResult = NULL )
-    {
-        return get(errResult);
-    }
-
+        return default_platform;
+    }    
     
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     //! \brief Wrapper for clUnloadCompiler().
@@ -1896,6 +2025,11 @@ public:
     }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 }; // class Platform
+
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Platform::default_initialized_;
+CL_HPP_DEFINE_STATIC_MEMBER_ Platform Platform::default_;
+CL_HPP_DEFINE_STATIC_MEMBER_ cl_int Platform::default_error_ = CL_SUCCESS;
+
 
 /**
  * Deprecated APIs for 1.2
@@ -1930,7 +2064,7 @@ private:
     static Context default_;
     static cl_int default_error_;
 
-    /*! \brief Create the default context.
+    /*! \brief Create the default context from the default device type in the default platform.
      *
      * This sets @c default_ and @c default_error_. It does not throw
      * @c cl::Error.
@@ -1943,9 +2077,19 @@ private:
         try
 #endif
         {
+#if !defined(__APPLE__) && !defined(__MACOS)
+            Platform &p = Platform::getDefault();
+            cl_platform_id defaultPlatform = p();
+            cl_context_properties properties[3] = {
+                CL_CONTEXT_PLATFORM, (cl_context_properties)defaultPlatform, 0
+            };
+#else // #if !defined(__APPLE__) && !defined(__MACOS)
+            cl_context_properties *properties = nullptr;
+#endif // #if !defined(__APPLE__) && !defined(__MACOS)
+
             default_ = Context(
                 CL_DEVICE_TYPE_DEFAULT,
-                NULL,
+                properties,
                 NULL,
                 NULL,
                 &default_error_);
@@ -1956,7 +2100,30 @@ private:
         }
 #endif
     }
+
+
+    /*! \brief Create the default context from a provided Context.
+     *
+     * This sets @c default_. It does not throw
+     * @c cl::Error.
+     */
+    static void makeDefaultProvided(Context &c) {
+        default_ = c;
+    }
+    
 public:
+#ifdef CL_HPP_UNIT_TEST_ENABLE
+    /*! \brief Reset the default.
+    *
+    * This sets @c default_ to an empty value to support cleanup in
+    * the unit test framework.
+    * This function is not thread safe.
+    */
+    static void unitTestClearDefault() {
+        default_ = Context();
+    }
+#endif // #ifdef CL_HPP_UNIT_TEST_ENABLE
+
     /*! \brief Constructs a context including a list of specified devices.
      *
      *  Wraps clCreateContext().
@@ -2017,7 +2184,7 @@ public:
             *err = error;
         }
     }
-
+    
     /*! \brief Constructs a context including all or a subset of devices of a specified type.
      *
      *  Wraps clCreateContextFromType().
@@ -2146,6 +2313,20 @@ public:
         return default_;
     }
 
+    /**
+     * Modify the default platform to be used by
+     * subsequent operations.
+     * Will only set the default if no default was previously created.
+     * @return updated default platform.
+     *         Should be compared to the passed value to ensure that it was updated.
+     */
+    static Context setDefault(Context &default_context)
+    {
+        std::call_once(default_initialized_, makeDefaultProvided, default_context);
+        detail::errHandler(default_error_);
+        return default_;
+    }
+
     //! \brief Default constructor - initializes to NULL.
     Context() : detail::Wrapper<cl_type>() { }
 
@@ -2229,30 +2410,34 @@ public:
     }
 };
 
-inline Device Device::getDefault(cl_int * err)
+inline void Device::makeDefault()
 {
-    cl_int error;
-    Device device;
+    /* Throwing an exception from a call_once invocation does not do
+    * what we wish, so we catch it and save the error.
+    */
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try
+#endif
+    {
+        cl_int error = 0;
 
-    Context context = Context::getDefault(&error);
-    detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+        Context context = Context::getDefault(&error);
+        detail::errHandler(error, __CREATE_CONTEXT_ERR);
 
-    if (error != CL_SUCCESS) {
-        if (err != NULL) {
-            *err = error;
+        if (error != CL_SUCCESS) {
+            default_error_ = error;
+        }
+        else {
+            default_ = context.getInfo<CL_CONTEXT_DEVICES>()[0];
+            default_error_ = CL_SUCCESS;
         }
     }
-    else {
-        device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
-        if (err != NULL) {
-            *err = CL_SUCCESS;
-        }
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    catch (cl::Error &e) {
+        default_error_ = e.err();
     }
-
-    return device;
+#endif
 }
-
-
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Context::default_initialized_;
 CL_HPP_DEFINE_STATIC_MEMBER_ Context Context::default_;
@@ -5085,7 +5270,28 @@ private:
 #endif
     }
 
+    /*! \brief Create the default command queue.
+     *
+     * This sets @c default_. It does not throw
+     * @c cl::Error.
+     */
+    static void makeDefaultProvided(CommandQueue &c) {
+        default_ = c;
+    }
+
 public:
+#ifdef CL_HPP_UNIT_TEST_ENABLE
+    /*! \brief Reset the default.
+    *
+    * This sets @c default_ to an empty value to support cleanup in
+    * the unit test framework.
+    * This function is not thread safe.
+    */
+    static void unitTestClearDefault() {
+        default_ = CommandQueue();
+    }
+#endif // #ifdef CL_HPP_UNIT_TEST_ENABLE
+
    CommandQueue(
         cl_command_queue_properties properties,
         cl_int* err = NULL)
@@ -5093,7 +5299,7 @@ public:
         cl_int error;
 
         Context context = Context::getDefault(&error);
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+        detail::errHandler(error, __CREATE_CONTEXT_ERR);
 
         if (error != CL_SUCCESS) {
             if (err != NULL) {
@@ -5103,6 +5309,17 @@ public:
         else {
             Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+            cl_queue_properties queue_properties[] = {
+                CL_QUEUE_PROPERTIES, properties, 0 };
+            object_ = ::clCreateCommandQueueWithProperties(
+                context(), device(), queue_properties, &error);
+
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+#else
             object_ = ::clCreateCommandQueue(
                 context(), device(), properties, &error);
 
@@ -5110,6 +5327,7 @@ public:
             if (err != NULL) {
                 *err = error;
             }
+#endif
         }
     }
     /*!
@@ -5124,7 +5342,7 @@ public:
         vector_class<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+        detail::errHandler(error, __CREATE_CONTEXT_ERR);
 
         if (error != CL_SUCCESS)
         {
@@ -5134,13 +5352,25 @@ public:
             return;
         }
 
-        object_ = ::clCreateCommandQueue(context(), devices[0](), properties, &error);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        cl_queue_properties queue_properties[] = {
+            CL_QUEUE_PROPERTIES, properties, 0 };
+        object_ = ::clCreateCommandQueueWithProperties(
+            context(), devices[0](), queue_properties, &error);
 
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-
+        detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
         if (err != NULL) {
             *err = error;
         }
+#else
+        object_ = ::clCreateCommandQueue(
+            context(), devices[0](), properties, &error);
+
+        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+#endif
 
     }
 
@@ -5151,6 +5381,18 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        cl_queue_properties queue_properties[] = {
+            CL_QUEUE_PROPERTIES, properties, 0 };
+        object_ = ::clCreateCommandQueueWithProperties(
+            context(), device(), queue_properties, &error);
+
+        detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+#else
         object_ = ::clCreateCommandQueue(
             context(), device(), properties, &error);
 
@@ -5158,15 +5400,34 @@ public:
         if (err != NULL) {
             *err = error;
         }
+#endif
     }
 
     static CommandQueue getDefault(cl_int * err = NULL) 
     {
         std::call_once(default_initialized_, makeDefault);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        detail::errHandler(default_error_, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+#else // CL_HPP_TARGET_OPENCL_VERSION >= 200
         detail::errHandler(default_error_, __CREATE_COMMAND_QUEUE_ERR);
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
         if (err != NULL) {
             *err = default_error_;
         }
+        return default_;
+    }
+
+    /**
+     * Modify the default command queue to be used by
+     * subsequent operations.
+     * Will only set the default if no default was previously created.
+     * @return updated default platform.
+     *         Should be compared to the passed value to ensure that it was updated.
+     */
+    static CommandQueue setDefault(CommandQueue &default_queue)
+    {
+        std::call_once(default_initialized_, makeDefaultProvided, default_queue);
+        detail::errHandler(default_error_);
         return default_;
     }
 
