@@ -234,6 +234,7 @@
 #include <iterator>
 #include <mutex>
 #include <cstring>
+#include <functional>
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 #include <exception>
@@ -1469,7 +1470,7 @@ private:
     * This sets @c default_. It does not throw
     * @c cl::Error.
     */
-    static void makeDefaultProvided(Device &p) {
+    static void makeDefaultProvided(const Device &p) {
         default_ = p;
     }
 
@@ -1512,15 +1513,15 @@ public:
     }
 
     /**
-    * Modify the default platform to be used by
+    * Modify the default device to be used by
     * subsequent operations.
     * Will only set the default if no default was previously created.
-    * @return updated default platform.
+    * @return updated default device.
     *         Should be compared to the passed value to ensure that it was updated.
     */
-    static Device setDefault(Device &default_device)
+    static Device setDefault(const Device &default_device)
     {
-        std::call_once(default_initialized_, makeDefaultProvided, default_device);
+        std::call_once(default_initialized_, makeDefaultProvided, std::cref(default_device));
         detail::errHandler(default_error_);
         return default_;
     }
@@ -1732,7 +1733,7 @@ private:
      * This sets @c default_. It does not throw
      * @c cl::Error.
      */
-    static void makeDefaultProvided(Platform &p) {
+    static void makeDefaultProvided(const Platform &p) {
        default_ = p;
     }
     
@@ -1790,9 +1791,9 @@ public:
      * @return updated default platform. 
      *         Should be compared to the passed value to ensure that it was updated.
      */
-    static Platform setDefault(Platform &default_platform)
+    static Platform setDefault(const Platform &default_platform)
     {
-        std::call_once(default_initialized_, makeDefaultProvided, default_platform);
+        std::call_once(default_initialized_, makeDefaultProvided, std::cref(default_platform));
         detail::errHandler(default_error_);
         return default_;
     }
@@ -2078,7 +2079,7 @@ private:
 #endif
         {
 #if !defined(__APPLE__) && !defined(__MACOS)
-            Platform &p = Platform::getDefault();
+            const Platform &p = Platform::getDefault();
             cl_platform_id defaultPlatform = p();
             cl_context_properties properties[3] = {
                 CL_CONTEXT_PLATFORM, (cl_context_properties)defaultPlatform, 0
@@ -2107,7 +2108,7 @@ private:
      * This sets @c default_. It does not throw
      * @c cl::Error.
      */
-    static void makeDefaultProvided(Context &c) {
+    static void makeDefaultProvided(const Context &c) {
         default_ = c;
     }
     
@@ -2314,15 +2315,15 @@ public:
     }
 
     /**
-     * Modify the default platform to be used by
+     * Modify the default context to be used by
      * subsequent operations.
      * Will only set the default if no default was previously created.
-     * @return updated default platform.
+     * @return updated default context.
      *         Should be compared to the passed value to ensure that it was updated.
      */
-    static Context setDefault(Context &default_context)
+    static Context setDefault(const Context &default_context)
     {
-        std::call_once(default_initialized_, makeDefaultProvided, default_context);
+        std::call_once(default_initialized_, makeDefaultProvided, std::cref(default_context));
         detail::errHandler(default_error_);
         return default_;
     }
@@ -5275,7 +5276,7 @@ private:
      * This sets @c default_. It does not throw
      * @c cl::Error.
      */
-    static void makeDefaultProvided(CommandQueue &c) {
+    static void makeDefaultProvided(const CommandQueue &c) {
         default_ = c;
     }
 
@@ -5424,9 +5425,9 @@ public:
      * @return updated default platform.
      *         Should be compared to the passed value to ensure that it was updated.
      */
-    static CommandQueue setDefault(CommandQueue &default_queue)
+    static CommandQueue setDefault(const CommandQueue &default_queue)
     {
-        std::call_once(default_initialized_, makeDefaultProvided, default_queue);
+        std::call_once(default_initialized_, makeDefaultProvided, std::cref(default_queue));
         detail::errHandler(default_error_);
         return default_;
     }
