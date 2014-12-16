@@ -16,7 +16,8 @@ set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GE
 
 include_directories(
     ${CLCPP_BINARY_DIR}/include
-    ${OPENCL_DIST_DIR}/include)
+    ${OPENCL_DIST_DIR}/include
+    ${OPENCL_INCLUDE_DIR})
 
 link_directories( ${OPENCL_LIB_DIR} )
 
