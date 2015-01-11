@@ -283,9 +283,6 @@ void testSetDefaultContext()
 
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
-    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
-    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
-
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
@@ -305,9 +302,6 @@ void testSetDefaultCommandQueue()
 {
     clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
     clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
-    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
-    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
-
     clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
     clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
     clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
@@ -330,9 +324,6 @@ void testSetDefaultDevice()
 
     clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
     clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
-    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
-    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
-
     clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
