@@ -757,7 +757,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_AVAILABLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_COMPILER_AVAILABLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_EXECUTION_CAPABILITIES, cl_device_exec_capabilities) \
-    F(cl_device_info, CL_DEVICE_QUEUE_PROPERTIES, cl_command_queue_properties) \
     F(cl_device_info, CL_DEVICE_PLATFORM, cl_platform_id) \
     F(cl_device_info, CL_DEVICE_NAME, string_class) \
     F(cl_device_info, CL_DEVICE_VENDOR, string_class) \
@@ -844,7 +843,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF, cl_uint) \
     F(cl_device_info, CL_DEVICE_DOUBLE_FP_CONFIG, cl_device_fp_config) \
     F(cl_device_info, CL_DEVICE_HALF_FP_CONFIG, cl_device_fp_config) \
-    F(cl_device_info, CL_DEVICE_HOST_UNIFIED_MEMORY, cl_bool) \
     F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, string_class) \
     \
     F(cl_mem_info, CL_MEM_ASSOCIATED_MEMOBJECT, cl::Memory) \
@@ -856,8 +854,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_event_info, CL_EVENT_CONTEXT, cl::Context)
 
 #define CL_HPP_PARAM_NAME_INFO_1_2_(F) \
-    F(cl_image_info, CL_IMAGE_BUFFER, cl::Buffer) \
-    \
     F(cl_program_info, CL_PROGRAM_NUM_KERNELS, ::size_t) \
     F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, string_class) \
     \
@@ -878,12 +874,21 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
     F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, string_class)
 
+#define CL_HPP_PARAM_NAME_INFO_2_0_(F) \
+    F(cl_device_info, CL_DEVICE_QUEUE_ON_HOST_PROPERTIES, cl_command_queue_properties) \
+    F(cl_device_info, CL_DEVICE_QUEUE_ON_DEVICE_PROPERTIES, cl_command_queue_properties) \
+    F(cl_device_info, CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE, cl_uint) \
+    F(cl_device_info, CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE, cl_uint) \
+    F(cl_device_info, CL_DEVICE_MAX_ON_DEVICE_QUEUES, cl_uint) \
+    F(cl_device_info, CL_DEVICE_MAX_ON_DEVICE_EVENTS, cl_uint)
+
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector_class<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector_class<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
     F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector_class<cl_device_partition_property_ext>)
+
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -904,6 +909,32 @@ CL_HPP_PARAM_NAME_INFO_1_1_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 CL_HPP_PARAM_NAME_INFO_1_2_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+CL_HPP_PARAM_NAME_INFO_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+
+
+// Flags deprecated in OpenCL 2.0
+#define CL_HPP_PARAM_NAME_INFO_1_0_DEPRECATED_IN_2_0_(F) \
+    F(cl_device_info, CL_DEVICE_QUEUE_PROPERTIES, cl_command_queue_properties)
+
+#define CL_HPP_PARAM_NAME_INFO_1_1_DEPRECATED_IN_2_0_(F) \
+    F(cl_device_info, CL_DEVICE_HOST_UNIFIED_MEMORY, cl_bool)
+
+#define CL_HPP_PARAM_NAME_INFO_1_2_DEPRECATED_IN_2_0_(F) \
+    F(cl_image_info, CL_IMAGE_BUFFER, cl::Buffer)
+
+// Include deprecated query flags based on versions
+// Only include deprecated 1.0 flags if 2.0 not active as there is an enum clash
+#if CL_HPP_TARGET_OPENCL_VERSION > 100 && CL_HPP_MINIMUM_OPENCL_VERSION < 200 && CL_HPP_TARGET_OPENCL_VERSION < 200
+CL_HPP_PARAM_NAME_INFO_1_0_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 110
+#if CL_HPP_TARGET_OPENCL_VERSION > 110 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+CL_HPP_PARAM_NAME_INFO_1_1_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#if CL_HPP_TARGET_OPENCL_VERSION > 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+CL_HPP_PARAM_NAME_INFO_1_2_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
 
 #if defined(CL_HPP_USE_CL_DEVICE_FISSION)
 CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
