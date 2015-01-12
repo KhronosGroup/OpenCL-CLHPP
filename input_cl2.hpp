@@ -405,7 +405,6 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_GL_TEXTURE_ERR             CL_HPP_ERR_STR_(clCreateFromGLTexture)
 #define __IMAGE_DIMENSION_ERR               CL_HPP_ERR_STR_(Incorrect image dimensions)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
-#define __CREATE_SAMPLER_ERR                CL_HPP_ERR_STR_(clCreateSampler)
 #define __SET_MEM_OBJECT_DESTRUCTOR_CALLBACK_ERR CL_HPP_ERR_STR_(clSetMemObjectDestructorCallback)
 
 #define __CREATE_USER_EVENT_ERR             CL_HPP_ERR_STR_(clCreateUserEvent)
@@ -429,6 +428,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR          CL_HPP_ERR_STR_(clCreateCommandQueueWithProperties)
+#define __CREATE_SAMPLER_WITH_PROPERTIES_ERR                CL_HPP_ERR_STR_(clCreateSamplerWithProperties)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __SET_COMMAND_QUEUE_PROPERTY_ERR    CL_HPP_ERR_STR_(clSetCommandQueueProperty)
 #define __ENQUEUE_READ_BUFFER_ERR           CL_HPP_ERR_STR_(clEnqueueReadBuffer)
@@ -492,6 +492,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #if defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
 #define __CREATE_COMMAND_QUEUE_ERR          CL_HPP_ERR_STR_(clCreateCommandQueue)
 #define __ENQUEUE_TASK_ERR                  CL_HPP_ERR_STR_(clEnqueueTask)
+#define __CREATE_SAMPLER_ERR                CL_HPP_ERR_STR_(clCreateSampler)
 #endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
@@ -4405,8 +4406,25 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        cl_sampler_properties sampler_properties[] = {
+            CL_SAMPLER_NORMALIZED_COORDS, normalized_coords,
+            CL_SAMPLER_ADDRESSING_MODE, addressing_mode,
+            CL_SAMPLER_FILTER_MODE, filter_mode,
+            0 };
+        object_ = ::clCreateSamplerWithProperties(
+            context(),
+            sampler_properties,
+            &error);
+
+        detail::errHandler(error, __CREATE_SAMPLER_WITH_PROPERTIES_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+#else
         object_ = ::clCreateSampler(
-            context(), 
+            context(),
             normalized_coords,
             addressing_mode,
             filter_mode,
@@ -4416,6 +4434,7 @@ public:
         if (err != NULL) {
             *err = error;
         }
+#endif        
     }
 
     /*! \brief Constructor from cl_sampler - takes ownership.
