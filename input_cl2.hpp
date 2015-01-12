@@ -1711,12 +1711,18 @@ private:
             cl_int err = ::clGetPlatformIDs(0, NULL, &n);
             if (err != CL_SUCCESS) {
                 default_error_ = err;
+                return;
+            }
+            if (n == 0) {
+                default_error_ = CL_INVALID_PLATFORM;
+                return;
             }
 
             vector_class<cl_platform_id> ids(n);
             err = ::clGetPlatformIDs(n, ids.data(), NULL);
             if (err != CL_SUCCESS) {
                 default_error_ = err;
+                return;
             }
 
             default_ = Platform(ids[0]);
