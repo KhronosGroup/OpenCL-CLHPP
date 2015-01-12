@@ -225,6 +225,13 @@
 #define CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
 #endif // #if !defined(CL_EXT_PREFIX__VERSION_1_1_DEPRECATED)
 
+#if !defined(CL_EXT_PREFIX__VERSION_1_2_DEPRECATED)
+#define CL_EXT_PREFIX__VERSION_1_2_DEPRECATED  
+#endif // #if !defined(CL_EXT_PREFIX__VERSION_1_2_DEPRECATED)
+#if !defined(CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED)
+#define CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED
+#endif // #if !defined(CL_EXT_PREFIX__VERSION_1_2_DEPRECATED)
+
 #if !defined(CL_CALLBACK)
 #define CL_CALLBACK
 #endif //CL_CALLBACK
@@ -441,7 +448,6 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_MAP_IMAGE_ERR             CL_HPP_ERR_STR_(clEnqueueMapImage)
 #define __ENQUEUE_UNMAP_MEM_OBJECT_ERR      CL_HPP_ERR_STR_(clEnqueueUnMapMemObject)
 #define __ENQUEUE_NDRANGE_KERNEL_ERR        CL_HPP_ERR_STR_(clEnqueueNDRangeKernel)
-#define __ENQUEUE_TASK_ERR                  CL_HPP_ERR_STR_(clEnqueueTask)
 #define __ENQUEUE_NATIVE_KERNEL             CL_HPP_ERR_STR_(clEnqueueNativeKernel)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __ENQUEUE_MIGRATE_MEM_OBJECTS_ERR   CL_HPP_ERR_STR_(clEnqueueMigrateMemObjects)
@@ -485,6 +491,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
  */
 #if defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
 #define __CREATE_COMMAND_QUEUE_ERR          CL_HPP_ERR_STR_(clCreateCommandQueue)
+#define __ENQUEUE_TASK_ERR                  CL_HPP_ERR_STR_(clEnqueueTask)
 #endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
@@ -6172,10 +6179,11 @@ public:
         return err;
     }
 
-    cl_int enqueueTask(
+#if defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
+    CL_EXT_PREFIX__VERSION_1_2_DEPRECATED cl_int enqueueTask(
         const Kernel& kernel,
         const vector_class<Event>* events = NULL,
-        Event* event = NULL) const
+        Event* event = NULL) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED const
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
@@ -6191,6 +6199,7 @@ public:
 
         return err;
     }
+#endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
 
     cl_int enqueueNativeKernel(
         void (CL_CALLBACK *userFptr)(void *),
