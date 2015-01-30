@@ -3512,101 +3512,6 @@ public:
     }
 };
 
-/*! \brief Class interface for GL Render Buffer Memory Objects.
- *
- *  This is provided to facilitate interoperability with OpenGL.
- * 
- *  See Memory for details about copy semantics, etc.
- * 
- *  \see Memory
- */
-class BufferRenderGL : public Buffer
-{
-public:
-    /*! \brief Constructs a BufferRenderGL in a specified context, from a given
-     *         GL Renderbuffer.
-     *
-     *  Wraps clCreateFromGLRenderbuffer().
-     */
-    BufferRenderGL(
-        const Context& context,
-        cl_mem_flags flags,
-        cl_GLuint bufobj,
-        cl_int * err = NULL)
-    {
-        cl_int error;
-        object_ = ::clCreateFromGLRenderbuffer(
-            context(),
-            flags,
-            bufobj,
-            &error);
-
-        detail::errHandler(error, __CREATE_GL_RENDER_BUFFER_ERR);
-        if (err != NULL) {
-            *err = error;
-        }
-    }
-
-    //! \brief Default constructor - initializes to NULL.
-    BufferRenderGL() : Buffer() { }
-
-    /*! \brief Constructor from cl_mem - takes ownership.
-     *
-     *  See Memory for further details.
-     */
-    __CL_EXPLICIT_CONSTRUCTORS BufferRenderGL(const cl_mem& buffer) : Buffer(buffer) { }
-
-    /*! \brief Assignment from cl_mem - performs shallow copy.
-     *
-     *  See Memory for further details.
-     */
-    BufferRenderGL& operator = (const cl_mem& rhs)
-    {
-        Buffer::operator=(rhs);
-        return *this;
-    }
-
-    /*! \brief Copy constructor to forward copy to the superclass correctly.
-    * Required for MSVC.
-    */
-    BufferRenderGL(const BufferRenderGL& buf) : Buffer(buf) {}
-
-    /*! \brief Copy assignment to forward copy to the superclass correctly.
-    * Required for MSVC.
-    */
-    BufferRenderGL& operator = (const BufferRenderGL &buf)
-    {
-        Buffer::operator=(buf);
-        return *this;
-    }
-
-#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
-    /*! \brief Move constructor to forward move to the superclass correctly.
-    * Required for MSVC.
-    */
-    BufferRenderGL(BufferRenderGL&& buf) CL_HPP_NOEXCEPT : Buffer(std::move(buf)) {}
-
-    /*! \brief Move assignment to forward move to the superclass correctly.
-    * Required for MSVC.
-    */
-    BufferRenderGL& operator = (BufferRenderGL &&buf)
-    {
-        Buffer::operator=(std::move(buf));
-        return *this;
-    }
-#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
-
-    //! \brief Wrapper for clGetGLObjectInfo().
-    cl_int getObjectInfo(
-        cl_gl_object_type *type,
-        cl_GLuint * gl_object_name)
-    {
-        return detail::errHandler(
-            ::clGetGLObjectInfo(object_,type,gl_object_name),
-            __GET_GL_OBJECT_INFO_ERR);
-    }
-};
-
 /*! \brief C++ base class for Image Memory objects.
  *
  *  See Memory for details about copy semantics, etc.
@@ -4550,6 +4455,138 @@ public:
 #endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
 };
 #endif // #if defined(CL_VERSION_1_2)
+
+/*! \brief Class interface for GL Render Buffer Memory Objects.
+*
+*  This is provided to facilitate interoperability with OpenGL.
+*
+*  See Memory for details about copy semantics, etc.
+*
+*  \see Memory
+*/
+class BufferRenderGL : 
+#if defined(CL_VERSION_1_2)
+    public ImageGL
+#else // #if defined(CL_VERSION_1_2)
+    public Image2DGL
+#endif //#if defined(CL_VERSION_1_2)
+{
+public:
+    /*! \brief Constructs a BufferRenderGL in a specified context, from a given
+    *         GL Renderbuffer.
+    *
+    *  Wraps clCreateFromGLRenderbuffer().
+    */
+    BufferRenderGL(
+        const Context& context,
+        cl_mem_flags flags,
+        cl_GLuint bufobj,
+        cl_int * err = NULL)
+    {
+        cl_int error;
+        object_ = ::clCreateFromGLRenderbuffer(
+            context(),
+            flags,
+            bufobj,
+            &error);
+
+        detail::errHandler(error, __CREATE_GL_RENDER_BUFFER_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+
+    //! \brief Default constructor - initializes to NULL.
+#if defined(CL_VERSION_1_2)
+    BufferRenderGL() : ImageGL() {};
+#else // #if defined(CL_VERSION_1_2)
+    BufferRenderGL() : Image2DGL() {};
+#endif //#if defined(CL_VERSION_1_2)
+
+    /*! \brief Constructor from cl_mem - takes ownership.
+    *
+    *  See Memory for further details.
+    */
+#if defined(CL_VERSION_1_2)
+    __CL_EXPLICIT_CONSTRUCTORS BufferRenderGL(const cl_mem& buffer) : ImageGL(buffer) { }
+#else // #if defined(CL_VERSION_1_2)
+    __CL_EXPLICIT_CONSTRUCTORS BufferRenderGL(const cl_mem& buffer) : Image2DGL(buffer) { }
+#endif //#if defined(CL_VERSION_1_2)
+
+
+    /*! \brief Assignment from cl_mem - performs shallow copy.
+    *
+    *  See Memory for further details.
+    */
+    BufferRenderGL& operator = (const cl_mem& rhs)
+    {
+#if defined(CL_VERSION_1_2)
+        ImageGL::operator=(rhs);
+#else // #if defined(CL_VERSION_1_2)
+        Image2DGL::operator=(rhs);
+#endif //#if defined(CL_VERSION_1_2)
+        
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+#if defined(CL_VERSION_1_2)
+    BufferRenderGL(const BufferRenderGL& buf) : ImageGL(buf) {}
+#else // #if defined(CL_VERSION_1_2)
+    BufferRenderGL(const BufferRenderGL& buf) : Image2DGL(buf) {}
+#endif //#if defined(CL_VERSION_1_2)
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferRenderGL& operator = (const BufferRenderGL &rhs)
+    {
+#if defined(CL_VERSION_1_2)
+        ImageGL::operator=(rhs);
+#else // #if defined(CL_VERSION_1_2)
+        Image2DGL::operator=(rhs);
+#endif //#if defined(CL_VERSION_1_2)
+        return *this;
+    }
+
+#if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+    /*! \brief Move constructor to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+#if defined(CL_VERSION_1_2)
+    BufferRenderGL(BufferRenderGL&& buf) CL_HPP_NOEXCEPT : ImageGL(std::move(buf)) {}
+#else // #if defined(CL_VERSION_1_2)
+    BufferRenderGL(BufferRenderGL&& buf) CL_HPP_NOEXCEPT : Image2DGL(std::move(buf)) {}
+#endif //#if defined(CL_VERSION_1_2)
+    
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+    * Required for MSVC.
+    */
+    BufferRenderGL& operator = (BufferRenderGL &&buf)
+    {
+#if defined(CL_VERSION_1_2)
+        ImageGL::operator=(std::move(buf));
+#else // #if defined(CL_VERSION_1_2)
+        Image2DGL::operator=(std::move(buf));
+#endif //#if defined(CL_VERSION_1_2)
+        
+        return *this;
+    }
+#endif // #if defined(CL_HPP_RVALUE_REFERENCES_SUPPORTED)
+
+    //! \brief Wrapper for clGetGLObjectInfo().
+    cl_int getObjectInfo(
+        cl_gl_object_type *type,
+        cl_GLuint * gl_object_name)
+    {
+        return detail::errHandler(
+            ::clGetGLObjectInfo(object_, type, gl_object_name),
+            __GET_GL_OBJECT_INFO_ERR);
+    }
+};
 
 /*! \brief Class interface for cl_sampler.
  *
