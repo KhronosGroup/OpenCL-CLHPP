@@ -336,6 +336,67 @@ void testSetDefaultDevice()
     TEST_ASSERT_EQUAL(d(), d3());
 }
 
+static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevice(
+    cl_context context,
+    cl_device_id device,
+    const cl_queue_properties *properties,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_context(1), context);
+    TEST_ASSERT_EQUAL_PTR(make_device_id(1), device);
+    TEST_ASSERT_EQUAL(properties[0], CL_QUEUE_PROPERTIES);
+    static cl_command_queue default_ = 0;
+
+    if ((properties[1] & CL_QUEUE_ON_DEVICE_DEFAULT) == 0) {
+        TEST_ASSERT_EQUAL(properties[1], (CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_ON_DEVICE));
+        if (properties[2] == CL_QUEUE_SIZE) {
+            TEST_ASSERT_EQUAL(properties[3], 256);
+            TEST_ASSERT_EQUAL(properties[4], 0);
+            return make_command_queue(2);
+        }
+        else {
+            TEST_ASSERT_EQUAL(properties[2], 0);
+            return make_command_queue(3);
+        }
+    }
+    else {
+        TEST_ASSERT_EQUAL(properties[1], (CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_ON_DEVICE | CL_QUEUE_ON_DEVICE_DEFAULT));
+        if (default_ == 0) {
+            default_ = make_command_queue(4);
+        }
+        return default_;
+    }
+}
+
+
+void testCreateDeviceCommandQueue()
+{
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clCreateCommandQueueWithProperties_StubWithCallback(clCreateCommandQueueWithProperties_testCommandQueueDevice);       
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(4), CL_SUCCESS);
+    // TODO: I think I don't understand cmock/unity enough to know what is going on here
+    // Either this fails because release is called too early, or two many times, whether I put
+    // the above line in or not
+
+    cl::Context c(make_context(1));
+    cl::Context c2 = cl::Context::setDefault(c);
+    cl::Device d(make_device_id(1));
+
+    cl::DeviceCommandQueue dq(c, d);
+    cl::DeviceCommandQueue dq2(c, d, 256);    
+
+    cl::DeviceCommandQueue dqd = cl::DeviceCommandQueue::makeDefault(c, d);
+    cl::DeviceCommandQueue dqd2 = cl::DeviceCommandQueue::makeDefault(c, d);
+
+    TEST_ASSERT_EQUAL(dqd(), dqd2());
+}
+
 
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
@@ -356,4 +417,6 @@ void testCleanupHeaderState()
     cl::Device::unitTestClearDefault();
     cl::Platform::unitTestClearDefault();
 }
+
+
 } // extern "C"
