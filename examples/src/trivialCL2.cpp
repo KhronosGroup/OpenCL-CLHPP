@@ -30,15 +30,22 @@ int main(void)
     }
     cl::Program vectorAddProgram(
         std::string(
-        "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)];}")
-        , true);
+        "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output){output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)]; queue_t default_queue = get_default_queue(); ndrange_t ndrange = ndrange_1D(get_global_size(0), get_global_size(0)); enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, ^{output[get_global_size(0)+get_global_id(0)] = inputA[get_global_size(0)+get_global_id(0)] + inputB[get_global_size(0)+get_global_id(0)];});}")       
+        , false);
+    try {
+        vectorAddProgram.build("-cl-std=CL2.0");
+    }
+    catch (...) {
+        std::string bl = vectorAddProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(cl::Device::getDefault());
+        std::cerr << bl << std::endl;
+    }
 
-    auto vectorAddKernel =
-        cl::KernelFunctor<
-        cl::Buffer&,
-        cl::Buffer&,
-        cl::Buffer&
-        >(vectorAddProgram, "vectorAdd");
+	auto vectorAddKernel =
+		cl::KernelFunctor<
+		cl::Buffer&,
+		cl::Buffer&,
+		cl::Buffer&
+		>(vectorAddProgram, "vectorAdd");
 
     std::vector<int> inputA(numElements, 1);
     std::vector<int> inputB(numElements, 2);
@@ -47,23 +54,30 @@ int main(void)
     cl::Buffer inputBBuffer(begin(inputB), end(inputB), true);
     cl::Buffer outputBuffer(begin(output), end(output), false);
 
+    // Unfortunately, there is no way to check for a default or know if a kernel needs one
+    // so the user has to create one
+    // We can't preemptively do so on device creation because they cannot then replace it
+    cl::DeviceCommandQueue deviceQueue = cl::DeviceCommandQueue::makeDefault(
+        cl::Context::getDefault(), cl::Device::getDefault());
+	
     vectorAddKernel(
         cl::EnqueueArgs(
-        cl::NDRange(numElements),
-        cl::NDRange(numElements)),
+            cl::NDRange(numElements/2),
+            cl::NDRange(numElements/2)),
         inputABuffer,
         inputBBuffer,
         outputBuffer);
 
-    cl_int error;
-    vectorAddKernel(
-        cl::EnqueueArgs(
-        cl::NDRange(numElements),
-        cl::NDRange(numElements)),
-        inputABuffer,
-        inputBBuffer,
-        outputBuffer,
-        error);
+
+	cl_int error;
+	vectorAddKernel(
+		cl::EnqueueArgs(
+		cl::NDRange(numElements/2),
+		cl::NDRange(numElements/2)),
+		inputABuffer,
+		inputBBuffer,
+		outputBuffer,
+		error);
 
     cl::copy(outputBuffer, begin(output), end(output));
 
