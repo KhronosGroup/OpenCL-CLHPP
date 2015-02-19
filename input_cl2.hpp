@@ -4826,8 +4826,6 @@ Local(::size_t size)
     return ret;
 }
 
-//class KernelFunctor;
-
 /*! \brief Class interface for cl_kernel.
  *
  *  \note Copies of these objects are shallow, meaning that the copy will refer
@@ -7496,7 +7494,7 @@ private:
     const NDRange local_;
     vector_class<Event> events_;
 
-    template<typename T, typename... Ts>
+    template<typename... Ts>
     friend class KernelFunctor;
 
 public:
@@ -7677,7 +7675,7 @@ public:
  * Type safe kernel functor.
  * 
  */
-template<typename T, typename... Ts>
+template<typename... Ts>
 class KernelFunctor
 {
 private:
@@ -7695,6 +7693,12 @@ private:
     {
         kernel_.setArg(index, t0);
     }
+
+    template<int index>
+    void setArgs()
+    {
+    }
+
 
 public:
     KernelFunctor(Kernel kernel) : kernel_(kernel)
@@ -7717,11 +7721,10 @@ public:
      */
     Event operator() (
         const EnqueueArgs& args,
-        T t0,
         Ts... ts)
     {
         Event event;
-        setArgs<0, T, Ts...>(t0, ts...);
+        setArgs<0, Ts...>(ts...);
         
         int err = args.queue_.enqueueNDRangeKernel(
             kernel_,
@@ -7742,12 +7745,11 @@ public:
     */
     Event operator() (
         const EnqueueArgs& args,
-        T t0,
         Ts... ts,
         cl_int &error)
     {
         Event event;
-        setArgs<0, T, Ts...>(t0, ts...);
+        setArgs<0, Ts...>(ts...);
 
         error = args.queue_.enqueueNDRangeKernel(
             kernel_,
@@ -7765,10 +7767,10 @@ public:
  * Backward compatibility class to ensure that cl.hpp code works with cl2.hpp.
  * Please use KernelFunctor directly.
  */
-template<typename T, typename... Ts>
+template<typename... Ts>
 struct make_kernel
 {
-    typedef KernelFunctor<T, Ts...> FunctorType;
+    typedef KernelFunctor<Ts...> FunctorType;
 
     FunctorType functor_;
 
@@ -7790,14 +7792,14 @@ struct make_kernel
     //! \brief Function signature of kernel functor with no event dependency.
     typedef Event type_(
         const EnqueueArgs&,
-        T, Ts...);
+        Ts...);
 
     Event operator()(
         const EnqueueArgs& enqueueArgs,
-        T arg0, Ts... args)
+        Ts... args)
     {
         return functor_(
-            enqueueArgs, arg0, args...);
+            enqueueArgs, args...);
     }
 };
 

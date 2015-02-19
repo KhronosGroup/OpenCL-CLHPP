@@ -30,6 +30,10 @@ int main(void)
     }
     cl::Program vectorAddProgram(
         std::string(
+        "global int globalA;"
+        "kernel void updateGlobal(){"
+        "  globalA = 75;"
+        "}"
         "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe){"
         "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val;"
         "  write_pipe(outPipe, &val);"
@@ -37,7 +41,7 @@ int main(void)
         "  ndrange_t ndrange = ndrange_1D(get_global_size(0), get_global_size(0)); "
         "  enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, "
         "    ^{"
-        "      output[get_global_size(0)+get_global_id(0)] = inputA[get_global_size(0)+get_global_id(0)] + inputB[get_global_size(0)+get_global_id(0)];"
+        "      output[get_global_size(0)+get_global_id(0)] = inputA[get_global_size(0)+get_global_id(0)] + inputB[get_global_size(0)+get_global_id(0)] + globalA;"
         "    });"
         "}")       
         , false);
@@ -49,14 +53,22 @@ int main(void)
         std::cerr << bl << std::endl;
     }
 
-	auto vectorAddKernel =
-		cl::KernelFunctor<
-		cl::Buffer&,
-		cl::Buffer&,
-		cl::Buffer&,
-        int,
-        cl::Pipe&
-		>(vectorAddProgram, "vectorAdd");
+    // Get and run kernel that initializes the program-scope global
+    // A test for kernels that take no arguments
+    auto program2Kernel =
+        cl::KernelFunctor<>(vectorAddProgram, "updateGlobal");
+    program2Kernel(
+        cl::EnqueueArgs(
+        cl::NDRange(1)));
+
+    auto vectorAddKernel =
+        cl::KernelFunctor<
+            cl::Buffer&,
+            cl::Buffer&,
+            cl::Buffer&,
+            int,
+            cl::Pipe&
+            >(vectorAddProgram, "vectorAdd");
 
     std::vector<int> inputA(numElements, 1);
     std::vector<int> inputB(numElements, 2);
@@ -84,8 +96,8 @@ int main(void)
 	cl_int error;
 	vectorAddKernel(
 		cl::EnqueueArgs(
-		cl::NDRange(numElements/2),
-		cl::NDRange(numElements/2)),
+	      	cl::NDRange(numElements/2),
+		    cl::NDRange(numElements/2)),
 		inputABuffer,
 		inputBBuffer,
 		outputBuffer,
