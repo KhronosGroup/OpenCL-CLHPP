@@ -3034,9 +3034,7 @@ public:
 class BufferD3D10 : public Buffer
 {
 public:
-    typedef CL_API_ENTRY cl_mem (CL_API_CALL *PFN_clCreateFromD3D10BufferKHR)(
-    cl_context context, cl_mem_flags flags, ID3D10Buffer*  buffer,
-    cl_int* errcode_ret);
+   
 
     /*! \brief Constructs a BufferD3D10, in a specified context, from a
      *         given ID3D10Buffer.
@@ -3047,10 +3045,12 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ID3D10Buffer* bufobj,
-        cl_int * err = NULL)
+        cl_int * err = NULL) : pfn_clCreateFromD3D10BufferKHR(nullptr)
     {
-        static PFN_clCreateFromD3D10BufferKHR pfn_clCreateFromD3D10BufferKHR = NULL;
-
+        typedef CL_API_ENTRY cl_mem (CL_API_CALL *PFN_clCreateFromD3D10BufferKHR)(
+            cl_context context, cl_mem_flags flags, ID3D10Buffer*  buffer,
+            cl_int* errcode_ret);
+        PFN_clCreateFromD3D10BufferKHR pfn_clCreateFromD3D10BufferKHR;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         vector<cl_context_properties> props = context.getInfo<CL_CONTEXT_PROPERTIES>();
         cl_platform platform = -1;
@@ -3060,8 +3060,7 @@ public:
             }
         }
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateFromD3D10BufferKHR);
-#endif
-#if CL_HPP_TARGET_OPENCL_VERSION >= 110
+#elif
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateFromD3D10BufferKHR);
 #endif
 
@@ -3104,7 +3103,8 @@ public:
     /*! \brief Copy constructor to forward copy to the superclass correctly.
      * Required for MSVC.
      */
-    BufferD3D10(const BufferD3D10& buf) : Buffer(buf) {}
+    BufferD3D10(const BufferD3D10& buf) : 
+        Buffer(buf) {}
 
     /*! \brief Copy assignment to forward copy to the superclass correctly.
      * Required for MSVC.
