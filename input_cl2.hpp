@@ -194,7 +194,7 @@
 #endif
 
 // 
-#if defined(CL_HPP_USE_CL_DEVICE_FISSION)
+#if defined(CL_HPP_USE_CL_DEVICE_FISSION) || defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
 #include <CL/cl_ext.h>
 #endif
 
@@ -547,6 +547,7 @@ public:
     operator const ::size_t* () const { return data_; }
 };
 
+
 namespace detail {
 
 // Generic getInfoHelper. The final parameter is used to guide overload
@@ -897,7 +898,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector_class<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
     F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector_class<cl_device_partition_property_ext>)
-
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -4702,20 +4702,26 @@ class Kernel;
 class NDRange
 {
 private:
-    size_t<3> sizes_;
+    ::size_t sizes_[3];
     cl_uint dimensions_;
 
 public:
     //! \brief Default constructor - resulting range has zero dimensions.
     NDRange()
         : dimensions_(0)
-    { }
+    {
+        sizes_[0] = 0;
+        sizes_[1] = 0;
+        sizes_[2] = 0;
+    }
 
     //! \brief Constructs one-dimensional range.
     NDRange(::size_t size0)
         : dimensions_(1)
     {
         sizes_[0] = size0;
+        sizes_[1] = 1;
+        sizes_[2] = 1;
     }
 
     //! \brief Constructs two-dimensional range.
@@ -4724,6 +4730,7 @@ public:
     {
         sizes_[0] = size0;
         sizes_[1] = size1;
+        sizes_[2] = 1;
     }
 
     //! \brief Constructs three-dimensional range.
@@ -4740,11 +4747,31 @@ public:
      *  \returns a pointer to the size of the first dimension.
      */
     operator const ::size_t*() const { 
-        return (const ::size_t*) sizes_; 
+        return sizes_; 
     }
 
     //! \brief Queries the number of dimensions in the range.
-    ::size_t dimensions() const { return dimensions_; }
+    ::size_t dimensions() const 
+    { 
+        return dimensions_; 
+    }
+
+    //! \brief Returns the size of the object in bytes based on the
+    // runtime number of dimensions
+    ::size_t size() const
+    {
+        return dimensions_*sizeof(::size_t);
+    }
+
+    ::size_t* get()
+    {
+        return sizes_;
+    }
+    
+    const ::size_t* get() const
+    {
+        return sizes_;
+    }
 };
 
 //! \brief A zero-dimensional range.
@@ -4933,6 +4960,32 @@ public:
         }
         return param;
     }
+    
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
+    cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, ::size_t* param) const
+    {
+        typedef clGetKernelSubGroupInfoKHR_fn PFN_clGetKernelSubGroupInfoKHR;
+        static PFN_clGetKernelSubGroupInfoKHR pfn_clGetKernelSubGroupInfoKHR = NULL;
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetKernelSubGroupInfoKHR);
+
+        return detail::errHandler(
+            pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(::size_t), param, nullptr),
+            __GET_KERNEL_ARG_INFO_ERR);
+    }
+
+    template <cl_int name> typename
+        ::size_t getSubGroupInfo(const cl::Device &dev, const cl::NDRange &range, cl_int* err = NULL) const
+    {
+        ::size_t param;
+        cl_int result = getSubGroupInfo(dev, name, range, &param);
+        if (err != NULL) {
+            *err = result;
+        }
+        return param;
+    }
+#endif #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
     template <typename T>
     cl_int setArg(cl_uint index, const T &value)

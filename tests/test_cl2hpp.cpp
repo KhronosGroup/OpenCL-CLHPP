@@ -1,5 +1,6 @@
 #define TEST_CL2
 #define CL_HPP_UNIT_TEST_ENABLE
+#define CL_HPP_USE_CL_SUB_GROUPS_KHR
 
 // Want to support 2.0 but also test that 1.1 is ok
 #define CL_HPP_TARGET_OPENCL_VERSION 200
@@ -467,6 +468,63 @@ void testCreatePipe()
     TEST_ASSERT_EQUAL(packets, 32);
 }
 
+#if defined(_WIN32)
+#define CL_API_CALL     __stdcall
+#else
+#define CL_API_CALL
+#endif
+
+static cl_int CL_API_CALL clGetKernelSubGroupInfoKHR_testSubGroups(cl_kernel kernel,
+    cl_device_id device,
+    cl_kernel_sub_group_info param_name,
+    size_t input_value_size,
+    const void *input_value,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret)
+{    
+    TEST_ASSERT_NOT_NULL(input_value);
+    TEST_ASSERT_NOT_NULL(param_value);
+
+    if (param_name == CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR) {
+        *static_cast<size_t*>(param_value) = 32;
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(size_t);
+        }
+    }
+    else if (param_name == CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR) {
+        *static_cast<size_t*>(param_value) = 2;
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(size_t);
+        }
+    }
+    else {
+        TEST_ABORT();
+    }
+}
+
+void testSubGroups()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", &clGetKernelSubGroupInfoKHR_testSubGroups);
+    //clGetKernelSubGroupInfoKHR_StubWithCallback(clGetKernelSubGroupInfoKHR_testSubGroups);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+
+    cl::Kernel k(make_kernel(0));
+    cl::Device d(make_device_id(0));
+    cl_int err;
+    cl::NDRange ndrange(8, 8);
+    size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
+        d, ndrange, &err);
+    size_t res2 = 0;
+    err = k.getSubGroupInfo(
+        d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+
+    TEST_ASSERT_EQUAL(res1, 32);
+    TEST_ASSERT_EQUAL(res2, 2);
+}
 
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
