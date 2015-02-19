@@ -397,6 +397,76 @@ void testCreateDeviceCommandQueue()
     TEST_ASSERT_EQUAL(dqd(), dqd2());
 }
 
+static cl_mem clCreatePipe_testCreatePipe(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_uint packet_size,
+    cl_uint num_packets,
+    const cl_pipe_properties *props,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    if (flags == 0) {
+        flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
+    }
+    TEST_ASSERT_EQUAL(flags, CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS);
+    TEST_ASSERT_NULL(props);
+
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+static cl_int clGetPipeInfo_testCreatePipe(
+    cl_mem pipe,
+    cl_pipe_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_NOT_NULL(param_value);
+    if (param_name == CL_PIPE_PACKET_SIZE) {
+        *static_cast<cl_uint*>(param_value) = 16;
+        if (param_value_size_ret) {
+            *param_value_size_ret = param_value_size;
+        }
+        return CL_SUCCESS;
+    }
+    else if (param_name == CL_PIPE_MAX_PACKETS) {
+        *static_cast<cl_uint*>(param_value) = 32;
+        if (param_value_size_ret) {
+            *param_value_size_ret = param_value_size;
+        }
+        return CL_SUCCESS;
+    }
+    else {
+        TEST_FAIL();
+    }
+}
+
+void testCreatePipe()
+{    
+    clCreatePipe_StubWithCallback(clCreatePipe_testCreatePipe);
+    clGetPipeInfo_StubWithCallback(clGetPipeInfo_testCreatePipe);
+    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context c(make_context(1));
+    cl::Pipe p(c, 16, 32);
+    cl::Pipe p2(16, 32);
+
+    cl_uint size = p2.getInfo<CL_PIPE_PACKET_SIZE>();
+    cl_uint packets;
+    p2.getInfo(CL_PIPE_MAX_PACKETS, &packets);
+
+    TEST_ASSERT_EQUAL(size, 16);
+    TEST_ASSERT_EQUAL(packets, 32);
+}
+
 
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.

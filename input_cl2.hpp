@@ -294,6 +294,7 @@ class CommandQueue;
 class DeviceCommandQueue;
 class Memory;
 class Buffer;
+class Pipe;
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 /*! \brief Exception class 
@@ -456,6 +457,8 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 
 #define __ENQUEUE_ACQUIRE_GL_ERR            CL_HPP_ERR_STR_(clEnqueueAcquireGLObjects)
 #define __ENQUEUE_RELEASE_GL_ERR            CL_HPP_ERR_STR_(clEnqueueReleaseGLObjects)
+
+#define __GET_PIPE_INFO_ERR           CL_HPP_ERR_STR_(clGetPipeInfo)
 
 
 #define __RETAIN_ERR                        CL_HPP_ERR_STR_(Retain Object)
@@ -881,7 +884,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_QUEUE_ON_DEVICE_PREFERRED_SIZE, cl_uint) \
     F(cl_device_info, CL_DEVICE_QUEUE_ON_DEVICE_MAX_SIZE, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_ON_DEVICE_QUEUES, cl_uint) \
-    F(cl_device_info, CL_DEVICE_MAX_ON_DEVICE_EVENTS, cl_uint)
+    F(cl_device_info, CL_DEVICE_MAX_ON_DEVICE_EVENTS, cl_uint) \
+    F(cl_device_info, CL_DEVICE_MAX_PIPE_ARGS, cl_uint) \
+    F(cl_device_info, CL_DEVICE_PIPE_MAX_ACTIVE_RESERVATIONS, cl_uint) \
+    F(cl_device_info, CL_DEVICE_PIPE_MAX_PACKET_SIZE, cl_uint) \
+    F(cl_pipe_info, CL_PIPE_PACKET_SIZE, cl_uint) \
+    F(cl_pipe_info, CL_PIPE_MAX_PACKETS, cl_uint)
 
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
@@ -1285,7 +1293,7 @@ public:
         return *this;
     }
 
-    cl_type operator ()() const { return object_; }
+    const cl_type& operator ()() const { return object_; }
 
     cl_type& operator ()() { return object_; }
 
@@ -1409,7 +1417,7 @@ public:
         return *this;
     }
 
-    cl_type operator ()() const { return object_; }
+    const cl_type& operator ()() const { return object_; }
 
     cl_type& operator ()() { return object_; }
 
@@ -4412,6 +4420,148 @@ public:
 };
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
+
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+/*! \brief Class interface for Pipe Memory Objects.
+*
+*  See Memory for details about copy semantics, etc.
+*
+*  \see Memory
+*/
+class Pipe : public Memory
+{
+public:
+
+    /*! \brief Constructs a Pipe in a specified context.
+     *
+     * Wraps clCreatePipe().
+     * @param context Context in which to create the pipe.
+     * @param flags Bitfield. Only CL_MEM_READ_WRITE and CL_MEM_HOST_NO_ACCESS are valid.
+     * @param packet_size Size in bytes of a single packet of the pipe.
+     * @param max_packets Number of packets that may be stored in the pipe.
+     *
+     */
+    Pipe(
+        const Context& context,
+        ::size_t packet_size,
+        ::size_t max_packets,
+        cl_int* err = NULL)
+    {
+        cl_int error;
+
+        cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
+        object_ = ::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
+
+        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+
+    /*! \brief Constructs a Pipe in a the default context.
+     *
+     * Wraps clCreatePipe().
+     * @param flags Bitfield. Only CL_MEM_READ_WRITE and CL_MEM_HOST_NO_ACCESS are valid.
+     * @param packet_size Size in bytes of a single packet of the pipe.
+     * @param max_packets Number of packets that may be stored in the pipe.
+     *
+     */
+    Pipe(
+        ::size_t packet_size,
+        ::size_t max_packets,
+        cl_int* err = NULL)
+    {
+        cl_int error;
+
+        Context context = Context::getDefault(err);
+
+        cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
+        object_ = ::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
+
+        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+
+    //! \brief Default constructor - initializes to NULL.
+    Pipe() : Memory() { }
+
+    /*! \brief Constructor from cl_mem - takes ownership.
+     *
+     * \param retainObject will cause the constructor to retain its cl object.
+     *                     Defaults to false to maintain compatibility with earlier versions.
+     *
+     *  See Memory for further details.
+     */
+    explicit Pipe(const cl_mem& pipe, bool retainObject = false) :
+        Memory(pipe, retainObject) { }
+
+    /*! \brief Assignment from cl_mem - performs shallow copy.
+     *
+     *  See Memory for further details.
+     */
+    Pipe& operator = (const cl_mem& rhs)
+    {
+        Memory::operator=(rhs);
+        return *this;
+    }
+
+    /*! \brief Copy constructor to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Pipe(const Pipe& pipe) : Memory(pipe) {}
+
+    /*! \brief Copy assignment to forward copy to the superclass correctly.
+     * Required for MSVC.
+     */
+    Pipe& operator = (const Pipe &pipe)
+    {
+        Memory::operator=(pipe);
+        return *this;
+    }
+
+    /*! \brief Move constructor to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Pipe(Pipe&& pipe) CL_HPP_NOEXCEPT_ : Memory(std::move(pipe)) {}
+
+    /*! \brief Move assignment to forward move to the superclass correctly.
+     * Required for MSVC.
+     */
+    Pipe& operator = (Pipe &&pipe)
+    {
+        Memory::operator=(std::move(pipe));
+        return *this;
+    }
+
+    //! \brief Wrapper for clGetMemObjectInfo().
+    template <typename T>
+    cl_int getInfo(cl_pipe_info name, T* param) const
+    {
+        return detail::errHandler(
+            detail::getInfo(&::clGetPipeInfo, object_, name, param),
+            __GET_MEM_OBJECT_INFO_ERR);
+    }
+
+    //! \brief Wrapper for clGetMemObjectInfo() that returns by value.
+    template <cl_int name> typename
+        detail::param_traits<detail::cl_pipe_info, name>::param_type
+        getInfo(cl_int* err = NULL) const
+    {
+        typename detail::param_traits<
+            detail::cl_pipe_info, name>::param_type param;
+        cl_int result = getInfo(name, &param);
+        if (err != NULL) {
+            *err = result;
+        }
+        return param;
+    }
+}; // class Pipe
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+
 /*! \brief Class interface for cl_sampler.
  *
  *  \note Copies of these objects are shallow, meaning that the copy will refer
@@ -4608,15 +4758,29 @@ struct LocalSpaceArg
 
 namespace detail {
 
+template <typename T, class Enable = void>
+struct KernelArgumentHandler;
+
+// Enable for objects that are not subclasses of memory
+// Pointers, constants etc
 template <typename T>
-struct KernelArgumentHandler
+struct KernelArgumentHandler<T, typename std::enable_if<!std::is_base_of<cl::Memory, T>::value>::type>
 {
     static ::size_t size(const T&) { return sizeof(T); }
     static const T* ptr(const T& value) { return &value; }
 };
 
+// Enable for subclasses of memory where we want to get a reference to the cl_mem out
+// and pass that in for safety
+template <typename T>
+struct KernelArgumentHandler<T, typename std::enable_if<std::is_base_of<cl::Memory, T>::value>::type>
+{
+    static ::size_t size(const T&) { return sizeof(cl_mem); }
+    static const cl_mem* ptr(const T& value) { return &(value()); }
+};
+
 template <>
-struct KernelArgumentHandler<LocalSpaceArg>
+struct KernelArgumentHandler<LocalSpaceArg, void>
 {
     static ::size_t size(const LocalSpaceArg& value) { return value.size_; }
     static const void* ptr(const LocalSpaceArg&) { return NULL; }
