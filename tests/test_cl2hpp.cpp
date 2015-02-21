@@ -375,15 +375,16 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
 void testCreateDeviceCommandQueue()
 {
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
-    clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
     clCreateCommandQueueWithProperties_StubWithCallback(clCreateCommandQueueWithProperties_testCommandQueueDevice);       
     clReleaseCommandQueue_ExpectAndReturn(make_command_queue(4), CL_SUCCESS);
-    // TODO: I think I don't understand cmock/unity enough to know what is going on here
-    // Either this fails because release is called too early, or two many times, whether I put
-    // the above line in or not
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(4), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(2), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(3), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
 
     cl::Context c(make_context(1));
     cl::Context c2 = cl::Context::setDefault(c);
@@ -507,7 +508,7 @@ void testSubGroups()
 {
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", &clGetKernelSubGroupInfoKHR_testSubGroups);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", (void *) &clGetKernelSubGroupInfoKHR_testSubGroups);
     //clGetKernelSubGroupInfoKHR_StubWithCallback(clGetKernelSubGroupInfoKHR_testSubGroups);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
