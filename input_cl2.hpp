@@ -4982,7 +4982,7 @@ public:
         }
         return param;
     }
-#endif #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
+#endif // #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
     template <typename T>
@@ -6770,7 +6770,7 @@ public:
     DeviceCommandQueue() { }
 
 
-    /*! \brief Constructor from cl_mem - takes ownership.
+    /*! \brief Constructor from cl_command_queue - takes ownership.
     *
     * \param retainObject will cause the constructor to retain its cl object.
     *                     Defaults to false to maintain compatibility with
