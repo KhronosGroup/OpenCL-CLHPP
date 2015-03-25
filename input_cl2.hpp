@@ -74,6 +74,7 @@
  * CL_HPP_NO_STD_VECTOR
  * CL_HPP_ENABLE_DEVICE_FISSION - Enables device fission for OpenCL 1.2 platforms
  * CL_HPP_ENABLE_EXCEPTIONS
+ * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
  *
  * \section example Example
  *
@@ -547,7 +548,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
     if (err != CL_SUCCESS) {
         return err;
     }
-    const ::size_t elements = required / sizeof(T);
+    const size_t elements = required / sizeof(T);
 
     // Temporary to avoid changing param on an error
     vector_class<T> localData(elements);
@@ -578,7 +579,7 @@ inline cl_int getInfoHelper(
         return err;
     }
 
-    ::size_t elements = required / sizeof(typename T::cl_type);
+    const size_t elements = required / sizeof(typename T::cl_type);
 
     vector_class<typename T::cl_type> value(elements);
     err = f(name, required, value.data(), NULL);
@@ -645,7 +646,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, array_class<size_t, N>* param,
         return err;
     }
 
-    vector_class<size_t> value(required, 0);
+    size_t elements = required / sizeof(size_t);
+    vector_class<size_t> value(elements, 0);
 
     err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
@@ -7766,47 +7768,58 @@ public:
         
         return event;
     }
-};
 
-/**
- * Backward compatibility class to ensure that cl.hpp code works with cl2.hpp.
- * Please use KernelFunctor directly.
- */
-template<typename... Ts>
-struct make_kernel
-{
-    typedef KernelFunctor<Ts...> FunctorType;
-
-    FunctorType functor_;
-
-    make_kernel(
-        const Program& program,
-        const string_class name,
-        cl_int * err = NULL) :
-        functor_(FunctorType(program, name, err))
-    {}
-
-    make_kernel(
-        const Kernel kernel) :
-        functor_(FunctorType(kernel))
-    {}
-
-    //! \brief Return type of the functor
-    typedef Event result_type;
-
-    //! \brief Function signature of kernel functor with no event dependency.
-    typedef Event type_(
-        const EnqueueArgs&,
-        Ts...);
-
-    Event operator()(
-        const EnqueueArgs& enqueueArgs,
-        Ts... args)
+    Kernel getKernel()
     {
-        return functor_(
-            enqueueArgs, args...);
+        return kernel_;
     }
 };
+
+namespace compatibility {
+    /**
+     * Backward compatibility class to ensure that cl.hpp code works with cl2.hpp.
+     * Please use KernelFunctor directly.
+     */
+    template<typename... Ts>
+    struct make_kernel
+    {
+        typedef KernelFunctor<Ts...> FunctorType;
+
+        FunctorType functor_;
+
+        make_kernel(
+            const Program& program,
+            const string_class name,
+            cl_int * err = NULL) :
+            functor_(FunctorType(program, name, err))
+        {}
+
+        make_kernel(
+            const Kernel kernel) :
+            functor_(FunctorType(kernel))
+        {}
+
+        //! \brief Return type of the functor
+        typedef Event result_type;
+
+        //! \brief Function signature of kernel functor with no event dependency.
+        typedef Event type_(
+            const EnqueueArgs&,
+            Ts...);
+
+        Event operator()(
+            const EnqueueArgs& enqueueArgs,
+            Ts... args)
+        {
+            return functor_(
+                enqueueArgs, args...);
+        }
+    };
+#if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+    template<int N>
+    using size_t = std::array<size_t, N>;
+#endif // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+} // namespace compatibility
 
 
 //----------------------------------------------------------------------------------------------------------------------

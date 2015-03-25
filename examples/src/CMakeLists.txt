@@ -12,6 +12,15 @@ set(TRIVIALCL2_HEADERS
     ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
 set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
 
+set(TRIVIALCL2_SIZET_COMPAT_SOURCES
+    trivialCL2SizeTCompat.cpp )
+
+set(TRIVIALCL2_SIZET_COMPAT_HEADERS
+    ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
+set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
+
+
+
 
 
 include_directories(
@@ -36,3 +45,7 @@ target_link_libraries( trivial OpenCL )
 add_executable(trivialCL2 ${TRIVIALCL2_SOURCES} ${TRIVIALCL2_HEADERS})
 add_dependencies(trivialCL2 generate_cl2hpp)
 target_link_libraries( trivialCL2 OpenCL )
+
+add_executable(trivialCL2SizeTCompat ${TRIVIALCL2_SIZET_COMPAT_SOURCES} ${TRIVIALCL2_SIZET_COMPAT_HEADERS})
+add_dependencies(trivialCL2SizeTCompat generate_cl2hpp)
+target_link_libraries( trivialCL2SizeTCompat OpenCL )
