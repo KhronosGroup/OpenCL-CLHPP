@@ -109,12 +109,8 @@ int main(void)
 
     cl::array_class<size_t, 3> WGSizeResultArray = vectorAddKernel.getKernel().getWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(cl::Device::getDefault());
     std::cout << "Array return: " << WGSizeResultArray[0] << ", " << WGSizeResultArray[1] << ", " << WGSizeResultArray[2] << "\n";
-    {
-        using cl::compatibility::size_t;
-        size_t<3> WGSizeResult = vectorAddKernel.getKernel().getWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(cl::Device::getDefault());
-        std::cout << "Size_t return: " << WGSizeResult[0] << ", " << WGSizeResult[1] << ", " << WGSizeResult[2] << "\n";
-    }
-    
+    cl::size_t<3> WGSizeResult = vectorAddKernel.getKernel().getWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(cl::Device::getDefault());
+    std::cout << "Size_t return: " << WGSizeResult[0] << ", " << WGSizeResult[1] << ", " << WGSizeResult[2] << "\n";
 
     cl::copy(outputBuffer, begin(output), end(output));
 

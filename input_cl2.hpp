@@ -251,6 +251,19 @@
 #include <cstring>
 #include <functional>
 
+
+// Define a size_type to represent a correctly resolved size_t
+#if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+namespace cl {
+    using size_type = ::size_t;
+} // namespace cl
+#else // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+namespace cl {
+    using size_type = size_t;
+} // namespace cl
+#endif // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+
+
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 #include <exception>
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
@@ -273,15 +286,79 @@ namespace cl {
 #if !defined(CL_HPP_NO_STD_ARRAY)
 #include <array>
 namespace cl {
-    template < class T, size_t N >
+    template < class T, size_type N >
     using array_class = std::array<T, N>;
 }
 #endif // #if !defined(CL_HPP_NO_STD_ARRAY)
 
+// Define size_type appropriately to allow backward-compatibility
+// use of the old size_t interface class
+#if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+namespace cl {
+    namespace compatibility {
+        /*! \brief class used to interface between C++ and
+        *  OpenCL C calls that require arrays of size_t values, whose
+        *  size is known statically.
+        */
+        template <int N>
+        class size_t
+        {
+        private:
+            size_type data_[N];
+
+        public:
+            //! \brief Initialize size_t to all 0s
+            size_t()
+            {
+                for (int i = 0; i < N; ++i) {
+                    data_[i] = 0;
+                }
+            }
+
+            size_t(const array_class<size_type, N> &rhs)
+            {
+                for (int i = 0; i < N; ++i) {
+                    data_[i] = rhs[i];
+                }
+            }
+
+            size_type& operator[](int index)
+            {
+                return data_[index];
+            }
+
+            const size_type& operator[](int index) const
+            {
+                return data_[index];
+            }
+
+            //! \brief Conversion operator to T*.
+            operator size_type* ()             { return data_; }
+
+            //! \brief Conversion operator to const T*.
+            operator const size_type* () const { return data_; }
+
+            operator array_class<size_type, N>() const
+            {
+                array_class<size_type, N> ret;
+
+                for (int i = 0; i < N; ++i) {
+                    ret[i] = data_[i];
+                }
+                return ret;
+            }
+        };
+    } // namespace compatibility
+
+    template<int N>
+    using size_t = compatibility::size_t<N>;
+} // namespace cl
+#endif // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
+
 // Helper alias to avoid confusing the macros
 namespace cl{
     namespace detail {
-        using size_t_array = array_class<size_t, 3>;
+        using size_t_array = array_class<size_type, 3>;
     }
 }
 
@@ -550,12 +627,12 @@ inline cl_int getInfoHelper(Functor f, cl_uint name, T* param, long)
 template <typename Func, typename T>
 inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
 {
-    size_t required;
+    size_type required;
     cl_int err = f(name, 0, NULL, &required);
     if (err != CL_SUCCESS) {
         return err;
     }
-    const size_t elements = required / sizeof(T);
+    const size_type elements = required / sizeof(T);
 
     // Temporary to avoid changing param on an error
     vector_class<T> localData(elements);
@@ -580,13 +657,13 @@ template <typename Func, typename T>
 inline cl_int getInfoHelper(
     Func f, cl_uint name, vector_class<T>* param, int, typename T::cl_type = 0)
 {
-    size_t required;
+    size_type required;
     cl_int err = f(name, 0, NULL, &required);
     if (err != CL_SUCCESS) {
         return err;
     }
 
-    const size_t elements = required / sizeof(typename T::cl_type);
+    const size_type elements = required / sizeof(typename T::cl_type);
 
     vector_class<typename T::cl_type> value(elements);
     err = f(name, required, value.data(), NULL);
@@ -600,7 +677,7 @@ inline cl_int getInfoHelper(
 
         // Assign to param, constructing with retain behaviour
         // to correctly capture each underlying CL object
-        for (::size_t i = 0; i < elements; i++) {
+        for (size_type i = 0; i < elements; i++) {
             (*param)[i] = T(value[i], true);
         }
     }
@@ -624,7 +701,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<char *>* param, i
 template <typename Func>
 inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
 {
-    size_t required;
+    size_type required;
     cl_int err = f(name, 0, NULL, &required);
     if (err != CL_SUCCESS) {
         return err;
@@ -644,17 +721,17 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
 }
 
 // Specialized GetInfoHelper for clsize_t params
-template <typename Func, size_t N>
-inline cl_int getInfoHelper(Func f, cl_uint name, array_class<size_t, N>* param, long)
+template <typename Func, size_type N>
+inline cl_int getInfoHelper(Func f, cl_uint name, array_class<size_type, N>* param, long)
 {
-    size_t required;
+    size_type required;
     cl_int err = f(name, 0, NULL, &required);
     if (err != CL_SUCCESS) {
         return err;
     }
 
-    size_t elements = required / sizeof(size_t);
-    vector_class<size_t> value(elements, 0);
+    size_type elements = required / sizeof(size_type);
+    vector_class<size_type> value(elements, 0);
 
     err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
@@ -666,7 +743,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, array_class<size_t, N>* param,
     if (elements > N) {
         elements = N;
     }
-    for (int i = 0; i < elements; ++i) {
+    for (size_type i = 0; i < elements; ++i) {
         (*param)[i] = value[i];
     }
 
@@ -711,8 +788,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_VENDOR_ID, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_COMPUTE_UNITS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, cl_uint) \
-    F(cl_device_info, CL_DEVICE_MAX_WORK_GROUP_SIZE, size_t) \
-    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, cl::vector_class<size_t>) \
+    F(cl_device_info, CL_DEVICE_MAX_WORK_GROUP_SIZE, size_type) \
+    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, cl::vector_class<size_type>) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT, cl_uint) \
@@ -724,13 +801,13 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_MAX_READ_IMAGE_ARGS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WRITE_IMAGE_ARGS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_MEM_ALLOC_SIZE, cl_ulong) \
-    F(cl_device_info, CL_DEVICE_IMAGE2D_MAX_WIDTH, size_t) \
-    F(cl_device_info, CL_DEVICE_IMAGE2D_MAX_HEIGHT, size_t) \
-    F(cl_device_info, CL_DEVICE_IMAGE3D_MAX_WIDTH, size_t) \
-    F(cl_device_info, CL_DEVICE_IMAGE3D_MAX_HEIGHT, size_t) \
-    F(cl_device_info, CL_DEVICE_IMAGE3D_MAX_DEPTH, size_t) \
+    F(cl_device_info, CL_DEVICE_IMAGE2D_MAX_WIDTH, size_type) \
+    F(cl_device_info, CL_DEVICE_IMAGE2D_MAX_HEIGHT, size_type) \
+    F(cl_device_info, CL_DEVICE_IMAGE3D_MAX_WIDTH, size_type) \
+    F(cl_device_info, CL_DEVICE_IMAGE3D_MAX_HEIGHT, size_type) \
+    F(cl_device_info, CL_DEVICE_IMAGE3D_MAX_DEPTH, size_type) \
     F(cl_device_info, CL_DEVICE_IMAGE_SUPPORT, cl_bool) \
-    F(cl_device_info, CL_DEVICE_MAX_PARAMETER_SIZE, size_t) \
+    F(cl_device_info, CL_DEVICE_MAX_PARAMETER_SIZE, size_type) \
     F(cl_device_info, CL_DEVICE_MAX_SAMPLERS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MEM_BASE_ADDR_ALIGN, cl_uint) \
     F(cl_device_info, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE, cl_uint) \
@@ -744,7 +821,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_LOCAL_MEM_TYPE, cl_device_local_mem_type) \
     F(cl_device_info, CL_DEVICE_LOCAL_MEM_SIZE, cl_ulong) \
     F(cl_device_info, CL_DEVICE_ERROR_CORRECTION_SUPPORT, cl_bool) \
-    F(cl_device_info, CL_DEVICE_PROFILING_TIMER_RESOLUTION, size_t) \
+    F(cl_device_info, CL_DEVICE_PROFILING_TIMER_RESOLUTION, size_type) \
     F(cl_device_info, CL_DEVICE_ENDIAN_LITTLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_AVAILABLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_COMPILER_AVAILABLE, cl_bool) \
@@ -773,20 +850,20 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     \
     F(cl_mem_info, CL_MEM_TYPE, cl_mem_object_type) \
     F(cl_mem_info, CL_MEM_FLAGS, cl_mem_flags) \
-    F(cl_mem_info, CL_MEM_SIZE, size_t) \
+    F(cl_mem_info, CL_MEM_SIZE, size_type) \
     F(cl_mem_info, CL_MEM_HOST_PTR, void*) \
     F(cl_mem_info, CL_MEM_MAP_COUNT, cl_uint) \
     F(cl_mem_info, CL_MEM_REFERENCE_COUNT, cl_uint) \
     F(cl_mem_info, CL_MEM_CONTEXT, cl::Context) \
     \
     F(cl_image_info, CL_IMAGE_FORMAT, cl_image_format) \
-    F(cl_image_info, CL_IMAGE_ELEMENT_SIZE, size_t) \
-    F(cl_image_info, CL_IMAGE_ROW_PITCH, size_t) \
-    F(cl_image_info, CL_IMAGE_SLICE_PITCH, size_t) \
-    F(cl_image_info, CL_IMAGE_WIDTH, size_t) \
-    F(cl_image_info, CL_IMAGE_HEIGHT, size_t) \
-    F(cl_image_info, CL_IMAGE_DEPTH, size_t) \
-    F(cl_image_info, CL_IMAGE_ARRAY_SIZE, size_t) \
+    F(cl_image_info, CL_IMAGE_ELEMENT_SIZE, size_type) \
+    F(cl_image_info, CL_IMAGE_ROW_PITCH, size_type) \
+    F(cl_image_info, CL_IMAGE_SLICE_PITCH, size_type) \
+    F(cl_image_info, CL_IMAGE_WIDTH, size_type) \
+    F(cl_image_info, CL_IMAGE_HEIGHT, size_type) \
+    F(cl_image_info, CL_IMAGE_DEPTH, size_type) \
+    F(cl_image_info, CL_IMAGE_ARRAY_SIZE, size_type) \
     F(cl_image_info, CL_IMAGE_NUM_MIP_LEVELS, cl_uint) \
     F(cl_image_info, CL_IMAGE_NUM_SAMPLES, cl_uint) \
     \
@@ -801,7 +878,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_NUM_DEVICES, cl_uint) \
     F(cl_program_info, CL_PROGRAM_DEVICES, cl::vector_class<Device>) \
     F(cl_program_info, CL_PROGRAM_SOURCE, string_class) \
-    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, cl::vector_class<size_t>) \
+    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, cl::vector_class<size_type>) \
     F(cl_program_info, CL_PROGRAM_BINARIES, cl::vector_class<char *>) \
     \
     F(cl_program_build_info, CL_PROGRAM_BUILD_STATUS, cl_build_status) \
@@ -814,7 +891,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_kernel_info, CL_KERNEL_CONTEXT, cl::Context) \
     F(cl_kernel_info, CL_KERNEL_PROGRAM, cl::Program) \
     \
-    F(cl_kernel_work_group_info, CL_KERNEL_WORK_GROUP_SIZE, size_t) \
+    F(cl_kernel_work_group_info, CL_KERNEL_WORK_GROUP_SIZE, size_type) \
     F(cl_kernel_work_group_info, CL_KERNEL_COMPILE_WORK_GROUP_SIZE, cl::detail::size_t_array) \
     F(cl_kernel_work_group_info, CL_KERNEL_LOCAL_MEM_SIZE, cl_ulong) \
     \
@@ -839,15 +916,15 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, string_class) \
     \
     F(cl_mem_info, CL_MEM_ASSOCIATED_MEMOBJECT, cl::Memory) \
-    F(cl_mem_info, CL_MEM_OFFSET, size_t) \
+    F(cl_mem_info, CL_MEM_OFFSET, size_type) \
     \
-    F(cl_kernel_work_group_info, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, size_t) \
+    F(cl_kernel_work_group_info, CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, size_type) \
     F(cl_kernel_work_group_info, CL_KERNEL_PRIVATE_MEM_SIZE, cl_ulong) \
     \
     F(cl_event_info, CL_EVENT_CONTEXT, cl::Context)
 
 #define CL_HPP_PARAM_NAME_INFO_1_2_(F) \
-    F(cl_program_info, CL_PROGRAM_NUM_KERNELS, size_t) \
+    F(cl_program_info, CL_PROGRAM_NUM_KERNELS, size_type) \
     F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, string_class) \
     \
     F(cl_program_build_info, CL_PROGRAM_BINARY_TYPE, cl_program_binary_type) \
@@ -863,7 +940,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector_class<cl_device_partition_property>) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPE, cl::vector_class<cl_device_partition_property>)  \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
-    F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, size_t) \
+    F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, size_type) \
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
     F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, string_class)
 
@@ -946,7 +1023,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_PROFILING_TIMER_OFFSET_AM
 #endif
 
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, vector_class<size_t>)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, vector_class<size_type>)
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD, cl_uint)
@@ -1012,7 +1089,7 @@ struct GetInfoFunctor0
 {
     Func f_; const Arg0& arg0_;
     cl_int operator ()(
-        cl_uint param, size_t size, void* value, size_t* size_ret)
+        cl_uint param, size_type size, void* value, size_type* size_ret)
     { return f_(arg0_, param, size, value, size_ret); }
 };
 
@@ -1021,7 +1098,7 @@ struct GetInfoFunctor1
 {
     Func f_; const Arg0& arg0_; const Arg1& arg1_;
     cl_int operator ()(
-        cl_uint param, size_t size, void* value, size_t* size_ret)
+        cl_uint param, size_type size, void* value, size_type* size_ret)
     { return f_(arg0_, arg1_, param, size, value, size_ret); }
 };
 
@@ -1189,7 +1266,7 @@ static cl_uint getVersion(const vector_class<char> &versionInfo)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
 static cl_uint getPlatformVersion(cl_platform_id platform)
 {
-    size_t size = 0;
+    size_type size = 0;
     clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size);
     
     vector_class<char> versionInfo(size);
@@ -1208,7 +1285,7 @@ static cl_uint getContextPlatformVersion(cl_context context)
 {
     // The platform cannot be queried directly, so we first have to grab a
     // device and obtain its context
-    size_t size = 0;
+    size_type size = 0;
     clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &size);
     if (size == 0)
         return 0;
@@ -1651,7 +1728,7 @@ public:
 
             // Assign to param, constructing with retain behaviour
             // to correctly capture each underlying CL object
-            for (::size_t i = 0; i < ids.size(); i++) {
+            for (size_type i = 0; i < ids.size(); i++) {
                 // We do not need to retain because this device is being created 
                 // by the runtime
                 (*devices)[i] = Device(ids[i], false);
@@ -1698,7 +1775,7 @@ public:
 
             // Assign to param, constructing with retain behaviour
             // to correctly capture each underlying CL object
-            for (::size_t i = 0; i < ids.size(); i++) {
+            for (size_type i = 0; i < ids.size(); i++) {
                 // We do not need to retain because this device is being created 
                 // by the runtime
                 (*devices)[i] = Device(ids[i], false);
@@ -1894,7 +1971,7 @@ public:
 
             // Assign to param, constructing with retain behaviour
             // to correctly capture each underlying CL object
-            for (::size_t i = 0; i < ids.size(); i++) {
+            for (size_type i = 0; i < ids.size(); i++) {
                 (*devices)[i] = Device(ids[i], true);
             }
         }
@@ -1982,7 +2059,7 @@ public:
 
             // Assign to param, constructing with retain behaviour
             // to correctly capture each underlying CL object
-            for (::size_t i = 0; i < ids.size(); i++) {
+            for (size_type i = 0; i < ids.size(); i++) {
                 (*devices)[i] = Device(ids[i], true);
             }
         }
@@ -2018,7 +2095,7 @@ public:
             platforms->resize(ids.size());
 
             // Platforms don't reference count
-            for (::size_t i = 0; i < ids.size(); i++) {
+            for (size_type i = 0; i < ids.size(); i++) {
                 (*platforms)[i] = Platform(ids[i]);
             }
         }
@@ -2177,17 +2254,17 @@ public:
         void (CL_CALLBACK * notifyFptr)(
             const char *,
             const void *,
-            size_t,
+            size_type,
             void *) = NULL,
         void* data = NULL,
         cl_int* err = NULL)
     {
         cl_int error;
 
-        size_t numDevices = devices.size();
+        size_type numDevices = devices.size();
         vector_class<cl_device_id> deviceIDs(numDevices);
 
-        for( size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
+        for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
@@ -2208,7 +2285,7 @@ public:
         void (CL_CALLBACK * notifyFptr)(
             const char *,
             const void *,
-            size_t,
+            size_type,
             void *) = NULL,
         void* data = NULL,
         cl_int* err = NULL)
@@ -2238,7 +2315,7 @@ public:
         void (CL_CALLBACK * notifyFptr)(
             const char *,
             const void *,
-            size_t,
+            size_type,
             void *) = NULL,
         void* data = NULL,
         cl_int* err = NULL)
@@ -2821,7 +2898,7 @@ public:
     Buffer(
         const Context& context,
         cl_mem_flags flags,
-        size_t size,
+        size_type size,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -2845,7 +2922,7 @@ public:
      */
     Buffer(
          cl_mem_flags flags,
-        size_t size,
+        size_type size,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -2888,7 +2965,7 @@ public:
             flags |= CL_MEM_USE_HOST_PTR;
         }
         
-        size_t size = sizeof(DataType)*(endIterator - startIterator);
+        size_type size = sizeof(DataType)*(endIterator - startIterator);
 
         Context context = Context::getDefault(err);
 
@@ -3417,7 +3494,7 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ImageFormat format,
-        size_t width,
+        size_type width,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -3505,7 +3582,7 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ImageFormat format,
-        size_t width,
+        size_type width,
         const Buffer &buffer,
         cl_int* err = NULL)
     {
@@ -3589,9 +3666,9 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ImageFormat format,
-        size_t arraySize,
-        size_t width,
-        size_t rowPitch,
+        size_type arraySize,
+        size_type width,
+        size_type rowPitch,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -3687,9 +3764,9 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ImageFormat format,
-        size_t width,
-        size_t height,
-        size_t row_pitch = 0,
+        size_type width,
+        size_type height,
+        size_type row_pitch = 0,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -3758,9 +3835,9 @@ public:
         const Context& context,
         ImageFormat format,
         const Buffer &sourceBuffer,
-        size_t width,
-        size_t height,
-        size_t row_pitch = 0,
+        size_type width,
+        size_type height,
+        size_type row_pitch = 0,
         cl_int* err = nullptr)
     {
         cl_int error;
@@ -3813,11 +3890,11 @@ public:
         cl_int error;
 
         // Descriptor fields have to match source image
-        size_t sourceWidth = 
+        size_type sourceWidth = 
             sourceImage.getImageInfo<CL_IMAGE_WIDTH>();
-        size_t sourceHeight = 
+        size_type sourceHeight = 
             sourceImage.getImageInfo<CL_IMAGE_HEIGHT>();
-        size_t sourceRowPitch =
+        size_type sourceRowPitch =
             sourceImage.getImageInfo<CL_IMAGE_ROW_PITCH>();
         cl_uint sourceNumMIPLevels =
             sourceImage.getImageInfo<CL_IMAGE_NUM_MIP_LEVELS>();
@@ -4018,11 +4095,11 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ImageFormat format,
-        size_t arraySize,
-        size_t width,
-        size_t height,
-        size_t rowPitch,
-        size_t slicePitch,
+        size_type arraySize,
+        size_type width,
+        size_type height,
+        size_type rowPitch,
+        size_type slicePitch,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -4116,11 +4193,11 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ImageFormat format,
-        size_t width,
-        size_t height,
-        size_t depth,
-        size_t row_pitch = 0,
-        size_t slice_pitch = 0,
+        size_type width,
+        size_type height,
+        size_type depth,
+        size_type row_pitch = 0,
+        size_type slice_pitch = 0,
         void* host_ptr = NULL,
         cl_int* err = NULL)
     {
@@ -4432,8 +4509,8 @@ public:
      */
     Pipe(
         const Context& context,
-        ::size_t packet_size,
-        ::size_t max_packets,
+        size_type packet_size,
+        size_type max_packets,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -4456,8 +4533,8 @@ public:
      *
      */
     Pipe(
-        ::size_t packet_size,
-        ::size_t max_packets,
+        size_type packet_size,
+        size_type max_packets,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -4690,7 +4767,7 @@ class Kernel;
 class NDRange
 {
 private:
-    ::size_t sizes_[3];
+    size_type sizes_[3];
     cl_uint dimensions_;
 
 public:
@@ -4704,7 +4781,7 @@ public:
     }
 
     //! \brief Constructs one-dimensional range.
-    NDRange(size_t size0)
+    NDRange(size_type size0)
         : dimensions_(1)
     {
         sizes_[0] = size0;
@@ -4713,7 +4790,7 @@ public:
     }
 
     //! \brief Constructs two-dimensional range.
-    NDRange(size_t size0, size_t size1)
+    NDRange(size_type size0, size_type size1)
         : dimensions_(2)
     {
         sizes_[0] = size0;
@@ -4722,7 +4799,7 @@ public:
     }
 
     //! \brief Constructs three-dimensional range.
-    NDRange(size_t size0, size_t size1, size_t size2)
+    NDRange(size_type size0, size_type size1, size_type size2)
         : dimensions_(3)
     {
         sizes_[0] = size0;
@@ -4730,33 +4807,33 @@ public:
         sizes_[2] = size2;
     }
 
-    /*! \brief Conversion operator to const size_t *.
+    /*! \brief Conversion operator to const size_type *.
      *  
      *  \returns a pointer to the size of the first dimension.
      */
-    operator const size_t*() const { 
+    operator const size_type*() const { 
         return sizes_; 
     }
 
     //! \brief Queries the number of dimensions in the range.
-    size_t dimensions() const 
+    size_type dimensions() const 
     { 
         return dimensions_; 
     }
 
     //! \brief Returns the size of the object in bytes based on the
     // runtime number of dimensions
-    size_t size() const
+    size_type size() const
     {
-        return dimensions_*sizeof(size_t);
+        return dimensions_*sizeof(size_type);
     }
 
-    size_t* get()
+    size_type* get()
     {
         return sizes_;
     }
     
-    const size_t* get() const
+    const size_type* get() const
     {
         return sizes_;
     }
@@ -4768,7 +4845,7 @@ static const NDRange NullRange;
 //! \brief Local address wrapper for use with Kernel::setArg
 struct LocalSpaceArg
 {
-    size_t size_;
+    size_type size_;
 };
 
 namespace detail {
@@ -4781,7 +4858,7 @@ struct KernelArgumentHandler;
 template <typename T>
 struct KernelArgumentHandler<T, typename std::enable_if<!std::is_base_of<cl::Memory, T>::value>::type>
 {
-    static size_t size(const T&) { return sizeof(T); }
+    static size_type size(const T&) { return sizeof(T); }
     static const T* ptr(const T& value) { return &value; }
 };
 
@@ -4790,14 +4867,14 @@ struct KernelArgumentHandler<T, typename std::enable_if<!std::is_base_of<cl::Mem
 template <typename T>
 struct KernelArgumentHandler<T, typename std::enable_if<std::is_base_of<cl::Memory, T>::value>::type>
 {
-    static size_t size(const T&) { return sizeof(cl_mem); }
+    static size_type size(const T&) { return sizeof(cl_mem); }
     static const cl_mem* ptr(const T& value) { return &(value()); }
 };
 
 template <>
 struct KernelArgumentHandler<LocalSpaceArg, void>
 {
-    static size_t size(const LocalSpaceArg& value) { return value.size_; }
+    static size_type size(const LocalSpaceArg& value) { return value.size_; }
     static const void* ptr(const LocalSpaceArg&) { return NULL; }
 };
 
@@ -4808,7 +4885,7 @@ struct KernelArgumentHandler<LocalSpaceArg, void>
  * \brief Helper function for generating LocalSpaceArg objects.
  */
 inline LocalSpaceArg
-Local(size_t size)
+Local(size_type size)
 {
     LocalSpaceArg ret = { size };
     return ret;
@@ -4949,21 +5026,21 @@ public:
     
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
-    cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, ::size_t* param) const
+    cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, size_type* param) const
     {
         typedef clGetKernelSubGroupInfoKHR_fn PFN_clGetKernelSubGroupInfoKHR;
         static PFN_clGetKernelSubGroupInfoKHR pfn_clGetKernelSubGroupInfoKHR = NULL;
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetKernelSubGroupInfoKHR);
 
         return detail::errHandler(
-            pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(::size_t), param, nullptr),
+            pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
             __GET_KERNEL_ARG_INFO_ERR);
     }
 
     template <cl_int name> typename
-        ::size_t getSubGroupInfo(const cl::Device &dev, const cl::NDRange &range, cl_int* err = NULL) const
+        size_type getSubGroupInfo(const cl::Device &dev, const cl::NDRange &range, cl_int* err = NULL) const
     {
-        ::size_t param;
+        size_type param;
         cl_int result = getSubGroupInfo(dev, name, range, &param);
         if (err != NULL) {
             *err = result;
@@ -4985,7 +5062,7 @@ public:
             __SET_KERNEL_ARGS_ERR);
     }
 
-    cl_int setArg(cl_uint index, size_t size, const void* argPtr)
+    cl_int setArg(cl_uint index, size_type size, const void* argPtr)
     {
         return detail::errHandler(
             ::clSetKernelArg(object_, index, size, argPtr),
@@ -4999,8 +5076,8 @@ public:
 class Program : public detail::Wrapper<cl_program>
 {
 public:
-    typedef vector_class<std::pair<const void*, size_t> > Binaries;
-    typedef vector_class<std::pair<const char*, size_t> > Sources;
+    typedef vector_class<std::pair<const void*, size_type> > Binaries;
+    typedef vector_class<std::pair<const char*, size_type> > Sources;
 
     Program(
         const string_class& source,
@@ -5010,7 +5087,7 @@ public:
         cl_int error;
 
         const char * strings = source.c_str();
-        const size_t length  = source.size();
+        const size_type length  = source.size();
 
         Context context = Context::getDefault(err);
 
@@ -5046,7 +5123,7 @@ public:
         cl_int error;
 
         const char * strings = source.c_str();
-        const size_t length  = source.size();
+        const size_type length  = source.size();
 
         object_ = ::clCreateProgramWithSource(
             context(), (cl_uint)1, &strings, &length, &error);
@@ -5078,12 +5155,12 @@ public:
     {
         cl_int error;
 
-        const size_t n = (size_t)sources.size();
+        const size_type n = (size_type)sources.size();
 
-        vector_class<size_t> lengths(n);
+        vector_class<size_type> lengths(n);
         vector_class<const char*> strings(n);
 
-        for (size_t i = 0; i < n; ++i) {
+        for (size_type i = 0; i < n; ++i) {
             strings[i] = sources[(int)i].first;
             lengths[i] = sources[(int)i].second;
         }
@@ -5125,7 +5202,7 @@ public:
     {
         cl_int error;
         
-        const size_t numDevices = devices.size();
+        const size_type numDevices = devices.size();
         
         // Catch size mismatch early and return
         if(binaries.size() != numDevices) {
@@ -5137,17 +5214,17 @@ public:
             return;
         }
 
-        vector_class<size_t> lengths(numDevices);
+        vector_class<size_type> lengths(numDevices);
         vector_class<const unsigned char*> images(numDevices);
         vector_class<cl_device_id> deviceIDs(numDevices);
 
-        for (size_t i = 0; i < numDevices; ++i) {
+        for (size_type i = 0; i < numDevices; ++i) {
             images[i] = (const unsigned char*)binaries[i].first;
             lengths[i] = binaries[(int)i].second;
         }
 
 
-        for( size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
+        for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
@@ -5183,9 +5260,9 @@ public:
         cl_int error;
 
 
-        size_t numDevices = devices.size();
+        size_type numDevices = devices.size();
         vector_class<cl_device_id> deviceIDs(numDevices);
-        for( size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
+        for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
         
@@ -5255,10 +5332,10 @@ public:
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
     {
-        size_t numDevices = devices.size();
+        size_type numDevices = devices.size();
         vector_class<cl_device_id> deviceIDs(numDevices);
         
-        for( size_t deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
+        for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
@@ -5376,7 +5453,7 @@ public:
 
             // Assign to param, constructing with retain behaviour
             // to correctly capture each underlying CL object
-            for (::size_t i = 0; i < value.size(); i++) {
+            for (size_type i = 0; i < value.size(); i++) {
                 // We do not need to retain because this kernel is being created 
                 // by the runtime
                 (*kernels)[i] = Kernel(value[i], false);
@@ -5468,9 +5545,9 @@ inline Program linkProgram(
 template<>
 inline vector_class<char *> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
 {
-    vector_class<size_t> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
+    vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
     vector_class<char *> binaries;
-    for (vector_class<size_t>::iterator s = sizes.begin(); s != sizes.end(); ++s) 
+    for (vector_class<size_type>::iterator s = sizes.begin(); s != sizes.end(); ++s) 
     {
         char *ptr = NULL;
         if (*s != 0) 
@@ -5797,8 +5874,8 @@ public:
     cl_int enqueueReadBuffer(
         const Buffer& buffer,
         cl_bool blocking,
-        size_t offset,
-        size_t size,
+        size_type offset,
+        size_type size,
         void* ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
@@ -5822,8 +5899,8 @@ public:
     cl_int enqueueWriteBuffer(
         const Buffer& buffer,
         cl_bool blocking,
-        size_t offset,
-        size_t size,
+        size_type offset,
+        size_type size,
         const void* ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
@@ -5847,9 +5924,9 @@ public:
     cl_int enqueueCopyBuffer(
         const Buffer& src,
         const Buffer& dst,
-        size_t src_offset,
-        size_t dst_offset,
-        size_t size,
+        size_type src_offset,
+        size_type dst_offset,
+        size_type size,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -5871,13 +5948,13 @@ public:
     cl_int enqueueReadBufferRect(
         const Buffer& buffer,
         cl_bool blocking,
-        const array_class<size_t, 3>& buffer_offset,
-        const array_class<size_t, 3>& host_offset,
-        const array_class<size_t, 3>& region,
-        size_t buffer_row_pitch,
-        size_t buffer_slice_pitch,
-        size_t host_row_pitch,
-        size_t host_slice_pitch,
+        const array_class<size_type, 3>& buffer_offset,
+        const array_class<size_type, 3>& host_offset,
+        const array_class<size_type, 3>& region,
+        size_type buffer_row_pitch,
+        size_type buffer_slice_pitch,
+        size_type host_row_pitch,
+        size_type host_slice_pitch,
         void *ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
@@ -5910,13 +5987,13 @@ public:
     cl_int enqueueWriteBufferRect(
         const Buffer& buffer,
         cl_bool blocking,
-        const array_class<size_t, 3>& buffer_offset,
-        const array_class<size_t, 3>& host_offset,
-        const array_class<size_t, 3>& region,
-        size_t buffer_row_pitch,
-        size_t buffer_slice_pitch,
-        size_t host_row_pitch,
-        size_t host_slice_pitch,
+        const array_class<size_type, 3>& buffer_offset,
+        const array_class<size_type, 3>& host_offset,
+        const array_class<size_type, 3>& region,
+        size_type buffer_row_pitch,
+        size_type buffer_slice_pitch,
+        size_type host_row_pitch,
+        size_type host_slice_pitch,
         void *ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
@@ -5949,13 +6026,13 @@ public:
     cl_int enqueueCopyBufferRect(
         const Buffer& src,
         const Buffer& dst,
-        const array_class<size_t, 3>& src_origin,
-        const array_class<size_t, 3>& dst_origin,
-        const array_class<size_t, 3>& region,
-        size_t src_row_pitch,
-        size_t src_slice_pitch,
-        size_t dst_row_pitch,
-        size_t dst_slice_pitch,
+        const array_class<size_type, 3>& src_origin,
+        const array_class<size_type, 3>& dst_origin,
+        const array_class<size_type, 3>& region,
+        size_type src_row_pitch,
+        size_type src_slice_pitch,
+        size_type dst_row_pitch,
+        size_type dst_slice_pitch,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -5994,8 +6071,8 @@ public:
     cl_int enqueueFillBuffer(
         const Buffer& buffer,
         PatternType pattern,
-        size_t offset,
-        size_t size,
+        size_type offset,
+        size_type size,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6023,10 +6100,10 @@ public:
     cl_int enqueueReadImage(
         const Image& image,
         cl_bool blocking,
-        const array_class<size_t, 3>& origin,
-        const array_class<size_t, 3>& region,
-        size_t row_pitch,
-        size_t slice_pitch,
+        const array_class<size_type, 3>& origin,
+        const array_class<size_type, 3>& region,
+        size_type row_pitch,
+        size_type slice_pitch,
         void* ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
@@ -6056,10 +6133,10 @@ public:
     cl_int enqueueWriteImage(
         const Image& image,
         cl_bool blocking,
-        const array_class<size_t, 3>& origin,
-        const array_class<size_t, 3>& region,
-        size_t row_pitch,
-        size_t slice_pitch,
+        const array_class<size_type, 3>& origin,
+        const array_class<size_type, 3>& region,
+        size_type row_pitch,
+        size_type slice_pitch,
         void* ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
@@ -6089,9 +6166,9 @@ public:
     cl_int enqueueCopyImage(
         const Image& src,
         const Image& dst,
-        const array_class<size_t, 3>& src_origin,
-        const array_class<size_t, 3>& dst_origin,
-        const array_class<size_t, 3>& region,
+        const array_class<size_type, 3>& src_origin,
+        const array_class<size_type, 3>& dst_origin,
+        const array_class<size_type, 3>& region,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6126,8 +6203,8 @@ public:
     cl_int enqueueFillImage(
         const Image& image,
         cl_float4 fillColor,
-        const array_class<size_t, 3>& origin,
-        const array_class<size_t, 3>& region,
+        const array_class<size_type, 3>& origin,
+        const array_class<size_type, 3>& region,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6160,8 +6237,8 @@ public:
     cl_int enqueueFillImage(
         const Image& image,
         cl_int4 fillColor,
-        const array_class<size_t, 3>& origin,
-        const array_class<size_t, 3>& region,
+        const array_class<size_type, 3>& origin,
+        const array_class<size_type, 3>& region,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6194,8 +6271,8 @@ public:
     cl_int enqueueFillImage(
         const Image& image,
         cl_uint4 fillColor,
-        const array_class<size_t, 3>& origin,
-        const array_class<size_t, 3>& region,
+        const array_class<size_type, 3>& origin,
+        const array_class<size_type, 3>& region,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6222,9 +6299,9 @@ public:
     cl_int enqueueCopyImageToBuffer(
         const Image& src,
         const Buffer& dst,
-        const array_class<size_t, 3>& src_origin,
-        const array_class<size_t, 3>& region,
-        size_t dst_offset,
+        const array_class<size_type, 3>& src_origin,
+        const array_class<size_type, 3>& region,
+        size_type dst_offset,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6251,9 +6328,9 @@ public:
     cl_int enqueueCopyBufferToImage(
         const Buffer& src,
         const Image& dst,
-        size_t src_offset,
-        const array_class<size_t, 3>& dst_origin,
-        const array_class<size_t, 3>& region,
+        size_type src_offset,
+        const array_class<size_type, 3>& dst_origin,
+        const array_class<size_type, 3>& region,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -6281,8 +6358,8 @@ public:
         const Buffer& buffer,
         cl_bool blocking,
         cl_map_flags flags,
-        size_t offset,
-        size_t size,
+        size_type offset,
+        size_type size,
         const vector_class<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL) const
@@ -6310,10 +6387,10 @@ public:
         const Image& buffer,
         cl_bool blocking,
         cl_map_flags flags,
-        const array_class<size_t, 3>& origin,
-        const array_class<size_t, 3>& region,
-        size_t * row_pitch,
-        size_t * slice_pitch,
+        const array_class<size_type, 3>& origin,
+        const array_class<size_type, 3>& region,
+        size_type * row_pitch,
+        size_type * slice_pitch,
         const vector_class<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL) const
@@ -6471,9 +6548,9 @@ public:
         cl_int err = detail::errHandler(
             ::clEnqueueNDRangeKernel(
                 object_, kernel(), (cl_uint) global.dimensions(),
-                offset.dimensions() != 0 ? (const size_t*) offset : NULL,
-                (const size_t*) global,
-                local.dimensions() != 0 ? (const size_t*) local : NULL,
+                offset.dimensions() != 0 ? (const size_type*) offset : NULL,
+                (const size_type*) global,
+                local.dimensions() != 0 ? (const size_type*) local : NULL,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
                 (event != NULL) ? &tmp : NULL),
@@ -6509,13 +6586,13 @@ public:
 
     cl_int enqueueNativeKernel(
         void (CL_CALLBACK *userFptr)(void *),
-        std::pair<void*, size_t> args,
+        std::pair<void*, size_type> args,
         const vector_class<Memory>* mem_objects = NULL,
         const vector_class<const void*>* mem_locs = NULL,
         const vector_class<Event>* events = NULL,
         Event* event = NULL) const
     {
-        ::size_t elements = 0;
+        size_type elements = 0;
         if (mem_objects != NULL) {
             elements = mem_objects->size();
         }
@@ -6933,7 +7010,7 @@ Buffer::Buffer(
         flags |= CL_MEM_USE_HOST_PTR;
     }
     
-    size_t size = sizeof(DataType)*(endIterator - startIterator);
+    size_type size = sizeof(DataType)*(endIterator - startIterator);
 
     if( useHostPtr ) {
         object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
@@ -6984,7 +7061,7 @@ Buffer::Buffer(
         flags |= CL_MEM_USE_HOST_PTR;
     }
 
-    size_t size = sizeof(DataType)*(endIterator - startIterator);
+    size_type size = sizeof(DataType)*(endIterator - startIterator);
 
     Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
@@ -7012,8 +7089,8 @@ Buffer::Buffer(
 inline cl_int enqueueReadBuffer(
     const Buffer& buffer,
     cl_bool blocking,
-    size_t offset,
-    size_t size,
+    size_type offset,
+    size_type size,
     void* ptr,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
@@ -7031,8 +7108,8 @@ inline cl_int enqueueReadBuffer(
 inline cl_int enqueueWriteBuffer(
         const Buffer& buffer,
         cl_bool blocking,
-        size_t offset,
-        size_t size,
+        size_type offset,
+        size_type size,
         const void* ptr,
         const vector_class<Event>* events = NULL,
         Event* event = NULL)
@@ -7051,8 +7128,8 @@ inline void* enqueueMapBuffer(
         const Buffer& buffer,
         cl_bool blocking,
         cl_map_flags flags,
-        size_t offset,
-        size_t size,
+        size_type offset,
+        size_type size,
         const vector_class<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL)
@@ -7109,9 +7186,9 @@ inline cl_int enqueueUnmapMemObject(
 inline cl_int enqueueCopyBuffer(
         const Buffer& src,
         const Buffer& dst,
-        size_t src_offset,
-        size_t dst_offset,
-        size_t size,
+        size_type src_offset,
+        size_type dst_offset,
+        size_type size,
         const vector_class<Event>* events = NULL,
         Event* event = NULL)
 {
@@ -7168,8 +7245,8 @@ inline cl_int copy( const CommandQueue &queue, IteratorType startIterator, Itera
     typedef typename std::iterator_traits<IteratorType>::value_type DataType;
     cl_int error;
     
-    size_t length = endIterator-startIterator;
-    size_t byteLength = length*sizeof(DataType);
+    size_type length = endIterator-startIterator;
+    size_type byteLength = length*sizeof(DataType);
 
     DataType *pointer = 
         static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_WRITE, 0, byteLength, 0, 0, &error));
@@ -7207,8 +7284,8 @@ inline cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, Iterato
     typedef typename std::iterator_traits<IteratorType>::value_type DataType;
     cl_int error;
         
-    size_t length = endIterator-startIterator;
-    size_t byteLength = length*sizeof(DataType);
+    size_type length = endIterator-startIterator;
+    size_type byteLength = length*sizeof(DataType);
 
     DataType *pointer = 
         static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_READ, 0, byteLength, 0, 0, &error));
@@ -7231,13 +7308,13 @@ inline cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, Iterato
 inline cl_int enqueueReadBufferRect(
     const Buffer& buffer,
     cl_bool blocking,
-    const array_class<size_t, 3>& buffer_offset,
-    const array_class<size_t, 3>& host_offset,
-    const array_class<size_t, 3>& region,
-    size_t buffer_row_pitch,
-    size_t buffer_slice_pitch,
-    size_t host_row_pitch,
-    size_t host_slice_pitch,
+    const array_class<size_type, 3>& buffer_offset,
+    const array_class<size_type, 3>& host_offset,
+    const array_class<size_type, 3>& region,
+    size_type buffer_row_pitch,
+    size_type buffer_slice_pitch,
+    size_type host_row_pitch,
+    size_type host_slice_pitch,
     void *ptr,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
@@ -7267,13 +7344,13 @@ inline cl_int enqueueReadBufferRect(
 inline cl_int enqueueWriteBufferRect(
     const Buffer& buffer,
     cl_bool blocking,
-    const array_class<size_t, 3>& buffer_offset,
-    const array_class<size_t, 3>& host_offset,
-    const array_class<size_t, 3>& region,
-    size_t buffer_row_pitch,
-    size_t buffer_slice_pitch,
-    size_t host_row_pitch,
-    size_t host_slice_pitch,
+    const array_class<size_type, 3>& buffer_offset,
+    const array_class<size_type, 3>& host_offset,
+    const array_class<size_type, 3>& region,
+    size_type buffer_row_pitch,
+    size_type buffer_slice_pitch,
+    size_type host_row_pitch,
+    size_type host_slice_pitch,
     void *ptr,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
@@ -7303,13 +7380,13 @@ inline cl_int enqueueWriteBufferRect(
 inline cl_int enqueueCopyBufferRect(
     const Buffer& src,
     const Buffer& dst,
-    const array_class<size_t, 3>& src_origin,
-    const array_class<size_t, 3>& dst_origin,
-    const array_class<size_t, 3>& region,
-    size_t src_row_pitch,
-    size_t src_slice_pitch,
-    size_t dst_row_pitch,
-    size_t dst_slice_pitch,
+    const array_class<size_type, 3>& src_origin,
+    const array_class<size_type, 3>& dst_origin,
+    const array_class<size_type, 3>& region,
+    size_type src_row_pitch,
+    size_type src_slice_pitch,
+    size_type dst_row_pitch,
+    size_type dst_slice_pitch,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -7338,10 +7415,10 @@ inline cl_int enqueueCopyBufferRect(
 inline cl_int enqueueReadImage(
     const Image& image,
     cl_bool blocking,
-    const array_class<size_t, 3>& origin,
-    const array_class<size_t, 3>& region,
-    size_t row_pitch,
-    size_t slice_pitch,
+    const array_class<size_type, 3>& origin,
+    const array_class<size_type, 3>& region,
+    size_type row_pitch,
+    size_type slice_pitch,
     void* ptr,
     const vector_class<Event>* events = NULL,
     Event* event = NULL) 
@@ -7368,10 +7445,10 @@ inline cl_int enqueueReadImage(
 inline cl_int enqueueWriteImage(
     const Image& image,
     cl_bool blocking,
-    const array_class<size_t, 3>& origin,
-    const array_class<size_t, 3>& region,
-    size_t row_pitch,
-    size_t slice_pitch,
+    const array_class<size_type, 3>& origin,
+    const array_class<size_type, 3>& region,
+    size_type row_pitch,
+    size_type slice_pitch,
     void* ptr,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
@@ -7398,9 +7475,9 @@ inline cl_int enqueueWriteImage(
 inline cl_int enqueueCopyImage(
     const Image& src,
     const Image& dst,
-    const array_class<size_t, 3>& src_origin,
-    const array_class<size_t, 3>& dst_origin,
-    const array_class<size_t, 3>& region,
+    const array_class<size_type, 3>& src_origin,
+    const array_class<size_type, 3>& dst_origin,
+    const array_class<size_type, 3>& region,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -7424,9 +7501,9 @@ inline cl_int enqueueCopyImage(
 inline cl_int enqueueCopyImageToBuffer(
     const Image& src,
     const Buffer& dst,
-    const array_class<size_t, 3>& src_origin,
-    const array_class<size_t, 3>& region,
-    size_t dst_offset,
+    const array_class<size_type, 3>& src_origin,
+    const array_class<size_type, 3>& region,
+    size_type dst_offset,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -7450,9 +7527,9 @@ inline cl_int enqueueCopyImageToBuffer(
 inline cl_int enqueueCopyBufferToImage(
     const Buffer& src,
     const Image& dst,
-    size_t src_offset,
-    const array_class<size_t, 3>& dst_origin,
-    const array_class<size_t, 3>& region,
+    size_type src_offset,
+    const array_class<size_type, 3>& dst_origin,
+    const array_class<size_type, 3>& region,
     const vector_class<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -7822,62 +7899,6 @@ namespace compatibility {
                 enqueueArgs, args...);
         }
     };
-
-#if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
-    /*! \brief class used to interface between C++ and
-    *  OpenCL C calls that require arrays of size_t values, whose
-    *  size is known statically.
-    */
-    template <int N>
-    class size_t
-    {
-    private:
-        ::size_t data_[N];
-
-    public:
-        //! \brief Initialize size_t to all 0s
-        size_t()
-        {
-            for (int i = 0; i < N; ++i) {
-                data_[i] = 0;
-            }
-        }
-
-        size_t(const array_class<::size_t, N> &rhs)
-        {
-            for (int i = 0; i < N; ++i) {
-                data_[i] = rhs[i];
-            }
-        }
-
-        ::size_t& operator[](int index)
-        {
-            return data_[index];
-        }
-
-        const ::size_t& operator[](int index) const
-        {
-            return data_[index];
-        }
-
-        //! \brief Conversion operator to T*.
-        operator ::size_t* ()             { return data_; }
-
-        //! \brief Conversion operator to const T*.
-        operator const ::size_t* () const { return data_; }
-
-        operator array_class<::size_t, N>() const
-        {
-            array_class<::size_t, N> ret;
-
-            for (int i = 0; i < N; ++i) {
-                ret[i] = data_[i];
-            }
-            return ret;
-        }
-    };
-
-#endif // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
 } // namespace compatibility
 
 
