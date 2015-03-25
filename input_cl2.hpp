@@ -75,6 +75,13 @@
  * CL_HPP_ENABLE_DEVICE_FISSION - Enables device fission for OpenCL 1.2 platforms
  * CL_HPP_ENABLE_EXCEPTIONS
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
+
+ * \section compatibility updates
+ * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY re-enables something similar to the old size_t class
+ * convertable to array_class, but puts it in the compatibility namespace.
+ * This can be pulled in by a using declaration, or a relatively clean search and replace for 
+ * cl::size_t with cl::compatibility::size_t.
+ * make_kernel is similarly in the compatibility namespace.
  *
  * \section example Example
  *
@@ -7815,9 +7822,61 @@ namespace compatibility {
                 enqueueArgs, args...);
         }
     };
+
 #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
-    template<int N>
-    using size_t = std::array<size_t, N>;
+    /*! \brief class used to interface between C++ and
+    *  OpenCL C calls that require arrays of size_t values, whose
+    *  size is known statically.
+    */
+    template <int N>
+    class size_t
+    {
+    private:
+        ::size_t data_[N];
+
+    public:
+        //! \brief Initialize size_t to all 0s
+        size_t()
+        {
+            for (int i = 0; i < N; ++i) {
+                data_[i] = 0;
+            }
+        }
+
+        size_t(const array_class<::size_t, N> &rhs)
+        {
+            for (int i = 0; i < N; ++i) {
+                data_[i] = rhs[i];
+            }
+        }
+
+        ::size_t& operator[](int index)
+        {
+            return data_[index];
+        }
+
+        const ::size_t& operator[](int index) const
+        {
+            return data_[index];
+        }
+
+        //! \brief Conversion operator to T*.
+        operator ::size_t* ()             { return data_; }
+
+        //! \brief Conversion operator to const T*.
+        operator const ::size_t* () const { return data_; }
+
+        operator array_class<::size_t, N>() const
+        {
+            array_class<::size_t, N> ret;
+
+            for (int i = 0; i < N; ++i) {
+                ret[i] = data_[i];
+            }
+            return ret;
+        }
+    };
+
 #endif // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
 } // namespace compatibility
 
