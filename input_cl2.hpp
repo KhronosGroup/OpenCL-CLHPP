@@ -370,79 +370,78 @@ namespace cl{
  */
 namespace cl {
 
-class Memory;
+    class Memory;
 
 #define CL_HPP_INIT_CL_EXT_FCN_PTR_(name) \
-    if(!pfn_##name) { \
-        pfn_##name = (PFN_##name) \
-            clGetExtensionFunctionAddress(#name); \
-        if(!pfn_##name) { \
-        } \
+    if (!pfn_##name) {    \
+    pfn_##name = (PFN_##name) \
+    clGetExtensionFunctionAddress(#name); \
+    if (!pfn_##name) {    \
+    } \
     }
 
 #define CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, name) \
-    if(!pfn_##name) { \
-        pfn_##name = (PFN_##name) \
-            clGetExtensionFunctionAddressForPlatform(platform, #name); \
-        if(!pfn_##name) { \
-        } \
+    if (!pfn_##name) {    \
+    pfn_##name = (PFN_##name) \
+    clGetExtensionFunctionAddressForPlatform(platform, #name); \
+    if (!pfn_##name) {    \
+    } \
     }
 
-class Program;
-class Device;
-class Context;
-class CommandQueue;
-class DeviceCommandQueue;
-class Memory;
-class Buffer;
-class Pipe;
+    class Program;
+    class Device;
+    class Context;
+    class CommandQueue;
+    class DeviceCommandQueue;
+    class Memory;
+    class Buffer;
+    class Pipe;
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
-/*! \brief Exception class 
- * 
- *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is defined.
- */
-class Error : public std::exception
-{
-private:
-    cl_int err_;
-    const char * errStr_;
-public:
-    /*! \brief Create a new CL error exception for a given error code
-     *  and corresponding message.
+    /*! \brief Exception class 
      * 
-     *  \param err error code value.
-     *
-     *  \param errStr a descriptive string that must remain in scope until
-     *                handling of the exception has concluded.  If set, it
-     *                will be returned by what().
+     *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is defined.
      */
-    Error(cl_int err, const char * errStr = NULL) : err_(err), errStr_(errStr)
-    {}
-
-    ~Error() throw() {}
-
-    /*! \brief Get error string associated with exception
-     *
-     * \return A memory pointer to the error message string.
-     */
-    virtual const char * what() const throw ()
+    class Error : public std::exception
     {
-        if (errStr_ == NULL) {
-            return "empty";
-        }
-        else {
-            return errStr_;
-        }
-    }
+    private:
+        cl_int err_;
+        const char * errStr_;
+    public:
+        /*! \brief Create a new CL error exception for a given error code
+         *  and corresponding message.
+         * 
+         *  \param err error code value.
+         *
+         *  \param errStr a descriptive string that must remain in scope until
+         *                handling of the exception has concluded.  If set, it
+         *                will be returned by what().
+         */
+        Error(cl_int err, const char * errStr = NULL) : err_(err), errStr_(errStr)
+        {}
 
-    /*! \brief Get error code associated with exception
-     *
-     *  \return The error code.
-     */
-    cl_int err(void) const { return err_; }
-};
+        ~Error() throw() {}
 
+        /*! \brief Get error string associated with exception
+         *
+         * \return A memory pointer to the error message string.
+         */
+        virtual const char * what() const throw ()
+        {
+            if (errStr_ == NULL) {
+                return "empty";
+            }
+            else {
+                return errStr_;
+            }
+        }
+
+        /*! \brief Get error code associated with exception
+         *
+         *  \return The error code.
+         */
+        cl_int err(void) const { return err_; }
+    };
 #define CL_HPP_ERR_STR_(x) #x
 #else
 #define CL_HPP_ERR_STR_(x) NULL
@@ -1118,6 +1117,7 @@ getInfo(Func f, const Arg0& arg0, const Arg1& arg1, cl_uint name, T* param)
     return getInfoHelper(f0, name, param, 0);
 }
 
+
 template<typename T>
 struct ReferenceHandler
 { };
@@ -1528,6 +1528,53 @@ inline bool operator!=(const Wrapper<T> &lhs, const Wrapper<T> &rhs)
 
 } // namespace detail
 //! \endcond
+
+
+using BuildLogType = vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, CL_PROGRAM_BUILD_LOG>::param_type>>;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+/**
+* Exception class for build errors to carry build info
+*/
+class BuildError : public Error
+{
+private:
+    BuildLogType buildLogs;
+public:
+    BuildError(cl_int err, const char * errStr, const BuildLogType &vec) : Error(err, errStr), buildLogs(vec)
+    {
+    }
+
+    BuildLogType getBuildLog() const
+    {
+        return buildLogs;
+    }
+};
+namespace detail {
+    static inline cl_int buildErrHandler(
+        cl_int err,
+        const char * errStr,
+        const BuildLogType &buildLogs)
+    {
+        if (err != CL_SUCCESS) {
+            throw BuildError(err, errStr, buildLogs);
+        }
+        return err;
+    }
+} // namespace detail
+
+#else
+namespace detail {
+    static inline cl_int buildErrHandler(
+        cl_int err,
+        const char * errStr,
+        const BuildLogType &buildLogs)
+    {
+        (void)buildLogs; // suppress unused variable warning
+        return err;
+    }
+} // namespace detail
+#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+
 
 /*! \stuct ImageFormat
  *  \brief Adds constructors and member functions for cl_image_format.
@@ -5118,7 +5165,7 @@ public:
                 NULL,
                 NULL);
 
-            detail::errHandler(error, __BUILD_PROGRAM_ERR);
+            detail::buildErrHandler(error, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
         }
 
         if (err != NULL) {
@@ -5151,8 +5198,8 @@ public:
                 "",
                 NULL,
                 NULL);
-
-            detail::errHandler(error, __BUILD_PROGRAM_ERR);
+            
+            detail::buildErrHandler(error, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
         }
 
         if (err != NULL) {
@@ -5351,16 +5398,16 @@ public:
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
-        return detail::errHandler(
-            ::clBuildProgram(
-                object_,
-                (cl_uint)
-                devices.size(),
-                deviceIDs.data(),
-                options,
-                notifyFptr,
-                data),
-                __BUILD_PROGRAM_ERR);
+        cl_int buildError = ::clBuildProgram(
+            object_,
+            (cl_uint)
+            devices.size(),
+            deviceIDs.data(),
+            options,
+            notifyFptr,
+            data);
+
+        return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
     }
 
     cl_int build(
@@ -5368,15 +5415,16 @@ public:
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
     {
-        return detail::errHandler(
-            ::clBuildProgram(
-                object_,
-                0,
-                NULL,
-                options,
-                notifyFptr,
-                data),
-                __BUILD_PROGRAM_ERR);
+        cl_int buildError = ::clBuildProgram(
+            object_,
+            0,
+            NULL,
+            options,
+            notifyFptr,
+            data);
+
+
+        return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -5385,18 +5433,17 @@ public:
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
     {
-        return detail::errHandler(
-            ::clCompileProgram(
-                object_,
-                0,
-                NULL,
-                options,
-                0,
-                NULL,
-                NULL,
-                notifyFptr,
-                data),
-                __COMPILE_PROGRAM_ERR);
+        cl_int error = ::clCompileProgram(
+            object_,
+            0,
+            NULL,
+            options,
+            0,
+            NULL,
+            NULL,
+            notifyFptr,
+            data);
+        return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
     }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 

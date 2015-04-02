@@ -29,6 +29,7 @@ int main(void)
         return -1;
     }
 
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
     cl::Program errorProgram(
         std::string(
         "sakfdjnksajfnksajnfsa")
@@ -45,6 +46,24 @@ int main(void)
             std::cerr << "Device: " << pair.first.getInfo<CL_DEVICE_NAME>() << std::endl << pair.second << std::endl << std::endl;
         }
     }
+
+
+    cl::Program errorProgramException(
+        std::string(
+        "sakfdjnksajfnksajnfsa")
+        , false);
+    try {
+        errorProgramException.build("-cl-std=CL2.0");
+    }
+    catch (const cl::BuildError &err) {
+        // Print build info for all devices
+        auto buildInfo = err.getBuildLog();
+        std::cerr << "Errors for failed build for all devices from thrown exception" << std::endl;
+        for (auto &pair : buildInfo) {
+            std::cerr << "Device: " << pair.first.getInfo<CL_DEVICE_NAME>() << std::endl << pair.second << std::endl << std::endl;
+        }
+    }
+#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
     cl::Program vectorAddProgram(
         std::string(
@@ -63,6 +82,7 @@ int main(void)
         "    });"
         "}")       
         , false);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
     try {
         vectorAddProgram.build("-cl-std=CL2.0");
     }
@@ -79,6 +99,13 @@ int main(void)
         
         return 1;
     }
+#else // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    cl_int buildErr = vectorAddProgram.build("-cl-std=CL2.0");
+    if (buildErr != CL_SUCCESS) {
+        std::cerr << "Build error: " << buildErr << "\n";
+        return -1;
+    }
+#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
     // Get and run kernel that initializes the program-scope global
     // A test for kernels that take no arguments
