@@ -75,6 +75,8 @@
  * CL_HPP_ENABLE_DEVICE_FISSION - Enables device fission for OpenCL 1.2 platforms
  * CL_HPP_ENABLE_EXCEPTIONS
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
+ * CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY 
+ *  - Enable older vector of pairs interface for construction of programs.
 
  * \section compatibility updates
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY re-enables something similar to the old size_t class
@@ -5136,9 +5138,14 @@ public:
 class Program : public detail::Wrapper<cl_program>
 {
 public:
+#if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+    typedef vector_class<vector_class<unsigned char>> Binaries;
+    typedef vector_class<string_class> Sources;
+#else // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
     typedef vector_class<std::pair<const void*, size_type> > Binaries;
     typedef vector_class<std::pair<const char*, size_type> > Sources;
-
+#endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+    
     Program(
         const string_class& source,
         bool build = false,
@@ -5208,6 +5215,45 @@ public:
         }
     }
 
+    /**
+     * Create a program from a vector of source strings and the default context.
+     * Does not compile or link the program.
+     */
+    Program(
+        const Sources& sources,
+        cl_int* err = NULL)
+    {
+        cl_int error;
+        Context context = Context::getDefault(err);
+
+        const size_type n = (size_type)sources.size();
+
+        vector_class<size_type> lengths(n);
+        vector_class<const char*> strings(n);
+
+        for (size_type i = 0; i < n; ++i) {
+#if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+            strings[i] = sources[(int)i].data();
+            lengths[i] = sources[(int)i].length();
+#else // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+            strings[i] = sources[(int)i].first;
+            lengths[i] = sources[(int)i].second;
+#endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+        }
+
+        object_ = ::clCreateProgramWithSource(
+            context(), (cl_uint)n, strings.data(), lengths.data(), &error);
+
+        detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+
+    /**
+     * Create a program from a vector of source strings and a provided context.
+     * Does not compile or link the program.
+     */
     Program(
         const Context& context,
         const Sources& sources,
@@ -5221,8 +5267,13 @@ public:
         vector_class<const char*> strings(n);
 
         for (size_type i = 0; i < n; ++i) {
+#if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+            strings[i] = sources[(int)i].data();
+            lengths[i] = sources[(int)i].length();
+#else // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
             strings[i] = sources[(int)i].first;
             lengths[i] = sources[(int)i].second;
+#endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
         }
 
         object_ = ::clCreateProgramWithSource(
@@ -5274,16 +5325,22 @@ public:
             return;
         }
 
+
         vector_class<size_type> lengths(numDevices);
         vector_class<const unsigned char*> images(numDevices);
-        vector_class<cl_device_id> deviceIDs(numDevices);
-
+#if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+        for (size_type i = 0; i < numDevices; ++i) {
+            images[i] = binaries[i].data();
+            lengths[i] = binaries[(int)i].size();
+        }
+#else // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
         for (size_type i = 0; i < numDevices; ++i) {
             images[i] = (const unsigned char*)binaries[i].first;
             lengths[i] = binaries[(int)i].second;
         }
-
-
+#endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+        
+        vector_class<cl_device_id> deviceIDs(numDevices);
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }

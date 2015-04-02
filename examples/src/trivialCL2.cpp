@@ -1,5 +1,6 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
+//#define CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY
 #include <CL/cl2.hpp>
 #include <iostream>
 #include <vector>
@@ -65,12 +66,12 @@ int main(void)
     }
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
-    cl::Program vectorAddProgram(
-        std::string(
-        "global int globalA;"
+
+    std::string kernel1{"global int globalA;"
         "kernel void updateGlobal(){"
         "  globalA = 75;"
-        "}"
+        "}"};
+    std::string kernel2{
         "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe){"
         "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val;"
         "  write_pipe(outPipe, &val);"
@@ -80,16 +81,25 @@ int main(void)
         "    ^{"
         "      output[get_global_size(0)+get_global_id(0)] = inputA[get_global_size(0)+get_global_id(0)] + inputB[get_global_size(0)+get_global_id(0)] + globalA;"
         "    });"
-        "}")       
-        , false);
+        "}" };
+#if defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+    // Old interface style
+    cl::Program::Sources programStrings;
+    programStrings.push_back(std::pair<const char*, size_t>(kernel1.data(), kernel1.length()));
+    programStrings.push_back(std::pair<const char*, size_t>(kernel2.data(), kernel2.length()));
+#else // #if defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+    // New simpler string interface style
+    std::vector<std::string> programStrings;
+    programStrings.push_back(kernel1);        
+    programStrings.push_back(kernel2);
+#endif // #if defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
+    cl::Program vectorAddProgram(
+        programStrings);
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
     try {
         vectorAddProgram.build("-cl-std=CL2.0");
     }
     catch (...) {
-        std::string bl = vectorAddProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(cl::Device::getDefault());
-        std::cerr << bl << std::endl;
-        
         // Print build info for all devices
         cl_int buildErr = CL_SUCCESS;
         auto buildInfo = vectorAddProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(&buildErr);
