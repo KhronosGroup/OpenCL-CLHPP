@@ -119,7 +119,7 @@ int main(void)
         cl::KernelFunctor<
             cl::Buffer&,
             cl::Buffer&,
-            cl::Buffer&,
+            cl::Buffer,
             int,
             cl::Pipe&
             >(vectorAddProgram, "vectorAdd");

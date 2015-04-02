@@ -7873,14 +7873,14 @@ private:
     Kernel kernel_;
 
     template<int index, typename T0, typename... T1s>
-    void setArgs(T0 t0, T1s... t1s)
+    void setArgs(T0&& t0, T1s&&... t1s)
     {
         kernel_.setArg(index, t0);
-        setArgs<index + 1, T1s...>(t1s...);
+        setArgs<index + 1, T1s...>(std::forward<T1s>(t1s)...);
     }
 
     template<int index, typename T0>
-    void setArgs(T0 t0)
+    void setArgs(T0&& t0)
     {
         kernel_.setArg(index, t0);
     }
@@ -7915,7 +7915,7 @@ public:
         Ts... ts)
     {
         Event event;
-        setArgs<0, Ts...>(ts...);
+        setArgs<0>(std::forward<Ts>(ts)...);
         
         int err = args.queue_.enqueueNDRangeKernel(
             kernel_,
@@ -7940,7 +7940,7 @@ public:
         cl_int &error)
     {
         Event event;
-        setArgs<0, Ts...>(ts...);
+        setArgs<0>(std::forward<Ts>(ts)...);
 
         error = args.queue_.enqueueNDRangeKernel(
             kernel_,
