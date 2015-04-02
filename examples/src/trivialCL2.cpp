@@ -28,6 +28,24 @@ int main(void)
         std::cout << "Error setting default platform.";
         return -1;
     }
+
+    cl::Program errorProgram(
+        std::string(
+        "sakfdjnksajfnksajnfsa")
+        , false);
+    try {
+        errorProgram.build("-cl-std=CL2.0");
+    }
+    catch (...) {
+        // Print build info for all devices
+        cl_int buildErr = CL_SUCCESS;
+        auto buildInfo = errorProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(&buildErr);
+        std::cerr << "Errors for failed build for all devices" << std::endl;
+        for (auto &pair : buildInfo) {
+            std::cerr << "Device: " << pair.first.getInfo<CL_DEVICE_NAME>() << std::endl << pair.second << std::endl << std::endl;
+        }
+    }
+
     cl::Program vectorAddProgram(
         std::string(
         "global int globalA;"
@@ -51,6 +69,15 @@ int main(void)
     catch (...) {
         std::string bl = vectorAddProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(cl::Device::getDefault());
         std::cerr << bl << std::endl;
+        
+        // Print build info for all devices
+        cl_int buildErr = CL_SUCCESS;
+        auto buildInfo = vectorAddProgram.getBuildInfo<CL_PROGRAM_BUILD_LOG>(&buildErr);
+        for (auto &pair : buildInfo) {
+            std::cerr << pair.second << std::endl << std::endl;
+        }
+        
+        return 1;
     }
 
     // Get and run kernel that initializes the program-scope global
@@ -60,7 +87,7 @@ int main(void)
     program2Kernel(
         cl::EnqueueArgs(
         cl::NDRange(1)));
-
+    
     auto vectorAddKernel =
         cl::KernelFunctor<
             cl::Buffer&,
@@ -118,4 +145,5 @@ int main(void)
     }
     std::cout << "\n\n";
 
+    return 0;
 }

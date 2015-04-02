@@ -5443,6 +5443,46 @@ public:
         }
         return param;
     }
+    
+    /**
+     * Build info function that returns a vector of device/info pairs for the specified 
+     * info type and for all devices in the program.
+     */
+    template <cl_int name>
+    vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
+        getBuildInfo(cl_int *err = NULL) const
+    {
+        cl_int result = CL_SUCCESS;
+
+        auto devs = getInfo<CL_PROGRAM_DEVICES>(&result);
+        vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
+            devInfo;
+
+        // If there was an initial error from getInfo return the error
+        if (result != CL_SUCCESS) {
+            if (err != NULL) {
+                *err = result;
+            }
+            return devInfo;
+        }
+
+        for (cl::Device d : devs) {
+            detail::param_traits<
+                detail::cl_program_build_info, name>::param_type param;
+            result = getBuildInfo(d, name, &param);
+            devInfo.push_back(
+                std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>
+                (d, param));
+            if (result != CL_SUCCESS) {
+                // On error, leave the loop and return the error code
+                break;
+            }
+        }
+        if (err != NULL) {
+            *err = result;
+        }
+        return devInfo;
+    }
 
     cl_int createKernels(vector_class<Kernel>* kernels)
     {
