@@ -88,6 +88,7 @@ extern "C" {
     void testKernelSetArgLocal();
     void testCopyHostToBuffer();
     void testGetBuildInfo();
+    void testGetSupportedImageFormats();
     void testCreateSubDevice();
     void testGetContextInfoDevices();
 } // extern "C"

@@ -2502,6 +2502,11 @@ public:
         vector_class<ImageFormat>* formats) const
     {
         cl_uint numEntries;
+        
+        if (!formats) {
+            return CL_SUCCESS;
+        }
+
         cl_int err = ::clGetSupportedImageFormats(
            object_, 
            flags,
@@ -2513,19 +2518,26 @@ public:
             return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
         }
 
-        vector_class<ImageFormat> value(numEntries);
-        err = ::clGetSupportedImageFormats(
-            object_, 
-            flags, 
-            type, 
-            numEntries,
-            (cl_image_format*) value.data(), 
-            NULL);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
+        if (numEntries > 0) {
+            vector_class<ImageFormat> value(numEntries);
+            err = ::clGetSupportedImageFormats(
+                object_,
+                flags,
+                type,
+                numEntries,
+                (cl_image_format*)value.data(),
+                NULL);
+            if (err != CL_SUCCESS) {
+                return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
+            }
+
+            formats->assign(begin(value), end(value));
+        }
+        else {
+            // If no values are being returned, ensure an empty vector comes back
+            formats->clear();
         }
 
-        formats->assign(&value[0], &value[numEntries]);
         return CL_SUCCESS;
     }
 };

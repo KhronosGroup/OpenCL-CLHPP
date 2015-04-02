@@ -1724,6 +1724,74 @@ void testGetBuildInfo()
     dev() = NULL;
 }
 
+/**
+* Stub implementation of clGetCommandQueueInfo that returns first one image then none
+*/
+static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint num_entries,
+    cl_image_format *image_formats,
+    cl_uint *num_image_formats,
+    int num_calls)
+{        
+    // Catch failure case that causes error in bugzilla 13355:
+    // returns CL_INVALID_VALUE if flags or image_type are not valid, 
+    // or if num_entries is 0 and image_formats is not NULL.
+    if (num_entries == 0 && image_formats != nullptr) {
+        return CL_INVALID_VALUE;
+    }
+    if (num_entries == 0)  {
+        // If num_entries was 0 this is the query for number
+        if (num_image_formats) {
+            if (num_calls == 0) {
+                *num_image_formats = 1;
+            }
+            else {
+                *num_image_formats = 0;
+            }
+        }
+    }
+    else {
+        // Should return something
+        TEST_ASSERT_NOT_NULL(image_formats);
+        
+        // For first call we should return one format here
+        if (num_calls == 1) {
+            TEST_ASSERT_EQUAL(num_entries, 1);
+            image_formats[0] = cl::ImageFormat(CL_RGB, CL_FLOAT);
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testGetSupportedImageFormats()
+{
+    cl_context ctx_cl = make_context(0);
+
+    clGetSupportedImageFormats_StubWithCallback(clGetSupportedImageFormats_testGetSupportedImageFormats);
+    clGetSupportedImageFormats_StubWithCallback(clGetSupportedImageFormats_testGetSupportedImageFormats);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context ctx(ctx_cl);
+    std::vector<cl::ImageFormat> formats;
+    cl_int ret = CL_SUCCESS;
+
+    ret = ctx.getSupportedImageFormats(
+        CL_MEM_READ_WRITE,
+        CL_MEM_OBJECT_IMAGE2D,
+        &formats);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(formats.size(), 1);
+    ret = ctx.getSupportedImageFormats(
+        CL_MEM_READ_WRITE,
+        CL_MEM_OBJECT_IMAGE2D,
+        &formats);
+    TEST_ASSERT_EQUAL(formats.size(), 0);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+}
 
 void testCreateSubDevice()
 {
