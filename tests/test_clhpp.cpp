@@ -1739,7 +1739,7 @@ static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
     // Catch failure case that causes error in bugzilla 13355:
     // returns CL_INVALID_VALUE if flags or image_type are not valid, 
     // or if num_entries is 0 and image_formats is not NULL.
-    if (num_entries == 0 && image_formats != nullptr) {
+    if (num_entries == 0 && image_formats != NULL) {
         return CL_INVALID_VALUE;
     }
     if (num_entries == 0)  {

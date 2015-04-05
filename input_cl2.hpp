@@ -5099,7 +5099,7 @@ public:
             __GET_KERNEL_ARG_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_int name>
         size_type getSubGroupInfo(const cl::Device &dev, const cl::NDRange &range, cl_int* err = NULL) const
     {
         size_type param;
@@ -5572,7 +5572,7 @@ public:
         }
 
         for (cl::Device d : devs) {
-            detail::param_traits<
+            typename detail::param_traits<
                 detail::cl_program_build_info, name>::param_type param;
             result = getBuildInfo(d, name, &param);
             devInfo.push_back(
@@ -7974,7 +7974,7 @@ public:
         Event event;
         setArgs<0>(std::forward<Ts>(ts)...);
         
-        int err = args.queue_.enqueueNDRangeKernel(
+        args.queue_.enqueueNDRangeKernel(
             kernel_,
             args.offset_,
             args.global_,
