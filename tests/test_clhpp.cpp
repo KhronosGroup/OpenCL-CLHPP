@@ -1,8 +1,8 @@
 #ifdef TEST_CL2
 # include <CL/cl2.hpp>
 # define TEST_RVALUE_REFERENCES
-# define VECTOR_CLASS CL_HPP_VECTOR_CLASS
-# define STRING_CLASS CL_HPP_STRING_CLASS
+# define VECTOR_CLASS cl::vector_class
+# define STRING_CLASS cl::string_class
 #else
 # include <CL/cl.hpp>
 // cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
@@ -58,6 +58,11 @@ static inline cl_command_queue make_command_queue(int index)
 static inline cl_kernel make_kernel(int index)
 {
     return (cl_kernel) (size_t) (0xcececece + index);
+}
+
+static inline cl_program make_program(int index)
+{
+    return (cl_program)(size_t)(0xcfcfcfcf + index);
 }
 
 /* Pools of pre-allocated wrapped objects for tests. There is no device pool,
@@ -604,6 +609,13 @@ void testContextFromType()
 {
     clGetPlatformIDs_StubWithCallback(clGetPlatformIDs_testContextFromType);
     clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_testContextFromType);
+#if defined(TEST_CL2)
+    // The cl2.hpp header will perform an extra retain here to be consistent
+    // with other APIs retaining runtime-owned objects before releasing them
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+#endif
+
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
 
@@ -729,8 +741,25 @@ static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContex
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT(properties == 0);
     return make_command_queue(0);
-
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+// stub for clCreateCommandQueueWithProperties - returns queue zero
+static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext(
+    cl_context context,
+    cl_device_id device,
+    const cl_queue_properties *properties,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+    TEST_ASSERT(properties[0] == CL_QUEUE_PROPERTIES);
+    TEST_ASSERT(properties[1] == 0);
+    return make_command_queue(0);
+}
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
 void testCommandQueueFromSpecifiedContext()
 {
@@ -746,12 +775,21 @@ void testCommandQueueFromSpecifiedContext()
     // This is the context we will pass in to test
     cl::Context context = contextPool[0];
 
-    // Assumes the context contains the first device
+    // Assumes the context contains the fi rst device
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clCreateCommandQueueWithProperties_StubWithCallback(clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clCreateCommandQueue_StubWithCallback(clCreateCommandQueue_testCommandQueueFromSpecifiedContext);
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clReleaseCommandQueue_ExpectAndReturn(expected, CL_SUCCESS);
 
     cl::CommandQueue queue(context);
@@ -1028,7 +1066,11 @@ void testBufferConstructorContextIterator()
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clCreateCommandQueueWithProperties_StubWithCallback(clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clCreateCommandQueue_StubWithCallback(clCreateCommandQueue_testCommandQueueFromSpecifiedContext);
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clEnqueueMapBuffer_StubWithCallback(clEnqueueMapBuffer_testCopyHostToBuffer);
     clEnqueueUnmapMemObject_StubWithCallback(clEnqueueUnmapMemObject_testCopyHostToBuffer);
@@ -1608,6 +1650,158 @@ void testCopyHostToBuffer()
 
     free(some_host_memory);
 
+}
+
+
+/****************************************************************************
+* Tests for getBuildInfo
+****************************************************************************/
+
+static cl_int clGetDeviceInfo_testGetBuildInfo(
+    cl_device_id device,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(param_name, CL_DEVICE_PLATFORM);
+    TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_platform_id));
+    TEST_ASSERT_NOT_EQUAL(param_value, NULL);
+    TEST_ASSERT_EQUAL(param_value_size_ret, NULL);
+    cl_platform_id temp = make_platform_id(0);
+    memcpy(param_value, &temp, sizeof(cl_platform_id));
+    return CL_SUCCESS;
+}
+
+
+static  cl_int clGetProgramBuildInfo_testGetBuildInfo(
+    cl_program program,
+    cl_device_id device,
+    cl_program_build_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_BUILD_LOG);
+
+    const char returnString[] = 
+        "This is the string returned by the build info function.";
+    if (param_value) {
+        ::size_t returnSize = param_value_size;
+        if (sizeof(returnString) < returnSize) {
+            returnSize = sizeof(returnString);
+        }
+        memcpy(param_value, returnString, returnSize);
+    }
+    else {
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(returnString);
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testGetBuildInfo()
+{
+    cl_device_id fakeDevice = make_device_id(0);
+    clGetDeviceInfo_ExpectAndReturn(fakeDevice, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), NULL, NULL, CL_SUCCESS);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_testGetBuildInfo);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+
+    cl::Program prog(make_program(0));
+    cl::Device dev(fakeDevice);
+    
+    cl_int err;
+    std::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
+
+    prog() = NULL;
+    dev() = NULL;
+}
+
+/**
+* Stub implementation of clGetCommandQueueInfo that returns first one image then none
+*/
+static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
+    cl_context context,
+    cl_mem_flags flags,
+    cl_mem_object_type image_type,
+    cl_uint num_entries,
+    cl_image_format *image_formats,
+    cl_uint *num_image_formats,
+    int num_calls)
+{        
+    // Catch failure case that causes error in bugzilla 13355:
+    // returns CL_INVALID_VALUE if flags or image_type are not valid, 
+    // or if num_entries is 0 and image_formats is not NULL.
+    if (num_entries == 0 && image_formats != NULL) {
+        return CL_INVALID_VALUE;
+    }
+    if (num_entries == 0)  {
+        // If num_entries was 0 this is the query for number
+        if (num_image_formats) {
+            if (num_calls == 0) {
+                *num_image_formats = 1;
+            }
+            else {
+                *num_image_formats = 0;
+            }
+        }
+    }
+    else {
+        // Should return something
+        TEST_ASSERT_NOT_NULL(image_formats);
+        
+        // For first call we should return one format here
+        if (num_calls == 1) {
+            TEST_ASSERT_EQUAL(num_entries, 1);
+            image_formats[0] = cl::ImageFormat(CL_RGB, CL_FLOAT);
+        }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testGetSupportedImageFormats()
+{
+    cl_context ctx_cl = make_context(0);
+
+    clGetSupportedImageFormats_StubWithCallback(clGetSupportedImageFormats_testGetSupportedImageFormats);
+    clGetSupportedImageFormats_StubWithCallback(clGetSupportedImageFormats_testGetSupportedImageFormats);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context ctx(ctx_cl);
+    std::vector<cl::ImageFormat> formats;
+    cl_int ret = CL_SUCCESS;
+
+    ret = ctx.getSupportedImageFormats(
+        CL_MEM_READ_WRITE,
+        CL_MEM_OBJECT_IMAGE2D,
+        &formats);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(formats.size(), 1);
+    ret = ctx.getSupportedImageFormats(
+        CL_MEM_READ_WRITE,
+        CL_MEM_OBJECT_IMAGE2D,
+        &formats);
+    TEST_ASSERT_EQUAL(formats.size(), 0);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+}
+
+void testCreateSubDevice()
+{
+    // TODO
+
+}
+
+void testGetContextInfoDevices()
+{
+    // TODO
 }
 
 } // extern "C"

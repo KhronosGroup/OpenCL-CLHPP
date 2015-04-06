@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Generation for the 1.x version of cl.hpp where expansion of variadic interfaces is required.
+
 import re
 import sys
 from optparse import OptionParser

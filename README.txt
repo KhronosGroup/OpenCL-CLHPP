@@ -2,11 +2,16 @@ cl.hpp base sources.
 
 Components:
   input_cl.hpp:
-    Acts as the master source for the header.
+    Acts as the master source for the 1.x version of the header.
     The reason for doing it this way is to generate an appropriate set of functors with varying argument counts without assuming variadic template support in the header.
 
+  input_cl.hpp:
+    Acts as the master source for the 2.x version of the header.
+    Directly copied as cl2.hpp
+	
   gen_cl_hpp.py:
     A generator script written in python to convert input_cl.hpp into cl.hpp, generating the functor expansions as necessary.
+	cl2.hpp does not require this as it uses variadic templates expanded in the compiler.
 
   examples:
     A simple example application using the very basic features of the header and generating cl.hpp dynamically through the build system.
