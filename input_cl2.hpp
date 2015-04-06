@@ -3089,16 +3089,14 @@ public:
             0);
         pointer retValue = reinterpret_cast<pointer>(
             voidPointer);
-        if (!retValue) {
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+        if (!retValue) {
             std::bad_alloc excep;
             throw excep;
-#else // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
-#error Solve exception disabled case in allocator
-            // TODO: exceptions not enabled
-#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
         }
+#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
+        // If exceptions disabled, return null pointer from allocator
         return retValue;
     }
 
