@@ -1573,6 +1573,7 @@ namespace detail {
         const BuildLogType &buildLogs)
     {
         (void)buildLogs; // suppress unused variable warning
+        (void)errStr;
         return err;
     }
 } // namespace detail
@@ -5552,6 +5553,7 @@ public:
     /**
      * Build info function that returns a vector of device/info pairs for the specified 
      * info type and for all devices in the program.
+     * On an error reading the info for any device, an empty vector of info will be returned.
      */
     template <cl_int name>
     vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
@@ -5585,6 +5587,9 @@ public:
         }
         if (err != NULL) {
             *err = result;
+        }
+        if (result != CL_SUCCESS) {
+            devInfo.clear();
         }
         return devInfo;
     }
