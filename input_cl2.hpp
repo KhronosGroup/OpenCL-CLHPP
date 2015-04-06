@@ -686,14 +686,33 @@ inline cl_int getInfoHelper(
 }
 
 // Specialized for getInfo<CL_PROGRAM_BINARIES>
+// Will resize the input vector as necessary
 template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<char *>* param, int)
+inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsigned char>>* param, int)
 {
-    cl_int err = f(name, param->size() * sizeof(char *), &(*param)[0], NULL);
+    if (param) {
+        // Resize the parameter array appropriately for each allocation
+        // and create an array of binary pointers for the base pointers for each allocation
+        // to match the interface needed by the C API
+        vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
+        size_t numBinaries = sizes.size();
+        param->resize(numBinaries);                
+        vector_class<unsigned char*> binariesPointers(numBinaries);
+        
 
-    if (err != CL_SUCCESS) {
-        return err;
+        for (size_t i = 0; i < numBinaries; ++i)
+        {
+            (*param)[i].resize(sizes[i]);
+            binariesPointers[i] = (*param)[i].data();
+        }
+
+        cl_int err = f(name, binariesPointers.size() * sizeof(char *), binariesPointers.data(), NULL);
+
+        if (err != CL_SUCCESS) {
+            return err;
+        }
     }
+    
 
     return CL_SUCCESS;
 }
@@ -880,7 +899,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_DEVICES, cl::vector_class<Device>) \
     F(cl_program_info, CL_PROGRAM_SOURCE, string_class) \
     F(cl_program_info, CL_PROGRAM_BINARY_SIZES, cl::vector_class<size_type>) \
-    F(cl_program_info, CL_PROGRAM_BINARIES, cl::vector_class<char *>) \
+    F(cl_program_info, CL_PROGRAM_BINARIES, cl::vector_class<cl::vector_class<unsigned char>>) \
     \
     F(cl_program_build_info, CL_PROGRAM_BUILD_STATUS, cl_build_status) \
     F(cl_program_build_info, CL_PROGRAM_BUILD_OPTIONS, string_class) \
@@ -4572,8 +4591,8 @@ public:
      */
     Pipe(
         const Context& context,
-        size_type packet_size,
-        size_type max_packets,
+        cl_uint packet_size,
+        cl_uint max_packets,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -4596,8 +4615,8 @@ public:
      *
      */
     Pipe(
-        size_type packet_size,
-        size_type max_packets,
+        cl_uint packet_size,
+        cl_uint max_packets,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -5704,24 +5723,44 @@ inline Program linkProgram(
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
-template<>
-inline vector_class<char *> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
-{
-    vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
-    vector_class<char *> binaries;
-    for (vector_class<size_type>::iterator s = sizes.begin(); s != sizes.end(); ++s) 
-    {
-        char *ptr = NULL;
-        if (*s != 0) 
-            ptr = new char[*s];
-        binaries.push_back(ptr);
+template <>
+cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsigned char>>* param) const
+{   
+    if (param) {
+        // Resize the parameter array appropriately for each allocation
+        // and create an array of binary pointers for the base pointers for each allocation
+        // to match the interface needed by the C API
+
+        vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
+        size_t numBinaries = sizes.size();
+
+        param->resize(numBinaries);
+        vector_class<unsigned char*> binariesPointers(numBinaries);
+
+        for (size_t i = 0; i < numBinaries; ++i)
+        {
+            (*param)[i].resize(sizes[i]);
+            binariesPointers[i] = (*param)[i].data();
+        }
+        
+        return detail::errHandler(
+            detail::getInfo(&::clGetProgramInfo, object_, name, binariesPointers.data()),
+            __GET_PROGRAM_INFO_ERR);
     }
-    
-    cl_int result = getInfo(CL_PROGRAM_BINARIES, &binaries);
+
+    return CL_SUCCESS;
+}
+
+template<>
+inline vector_class<vector_class<unsigned char>> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
+{
+    vector_class<vector_class<unsigned char>> binariesVectors;
+
+    cl_int result = getInfo(CL_PROGRAM_BINARIES, &binariesVectors);
     if (err != NULL) {
         *err = result;
     }
-    return binaries;
+    return binariesVectors;
 }
 
 inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)

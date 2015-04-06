@@ -181,6 +181,19 @@ int main(void)
     std::cout << "\tCL_DEVICE_SVM_FINE_GRAIN_SYSTEM = " << CL_DEVICE_SVM_FINE_GRAIN_SYSTEM << "\n";
     std::cout << "\tCL_DEVICE_SVM_ATOMICS = " << CL_DEVICE_SVM_ATOMICS << "\n";
 
+    auto v = vectorAddProgram.getInfo<CL_PROGRAM_BINARIES>();    
+    auto v2 = vectorAddProgram.getInfo<CL_PROGRAM_BINARY_SIZES>();
+    std::vector<std::vector<unsigned char>> v3;
+    std::vector<size_t> v4;
+    vectorAddProgram.getInfo(CL_PROGRAM_BINARIES, &v3);
+    vectorAddProgram.getInfo(CL_PROGRAM_BINARY_SIZES, &v4);
+
+    std::cout << "Binaries: " << v.size() << "\n";
+    std::cout << "Binary sizes: " << v2.size() << "\n";
+    for (size_t s : v2) {
+        std::cout << "\t" << s << "\n";
+    }
+
     std::cout << "Output:\n";
     for (int i = 1; i < numElements; ++i) {
         std::cout << "\t" << output[i] << "\n";
