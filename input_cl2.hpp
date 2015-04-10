@@ -3092,13 +3092,11 @@ public:
     explicit SVMAllocator() :
         context_(Context::getDefault())
     {
-        // TODO: Pass optional queue for enqueued free? See how allocator is used.
     }
 
     explicit SVMAllocator(cl::Context context) :
         context_(context)
     {
-        // TODO: Pass optional queue for enqueued free? See how allocator is used.
     }
     
     SVMAllocator(const SVMAllocator &other) :
@@ -3155,7 +3153,6 @@ public:
 
     void deallocate(pointer p, size_type)
     {
-        // TODO: How to do an enqueued free? Add queue to allocator constructor?
         clSVMFree(context_(), p);
     }
 
@@ -3163,7 +3160,7 @@ public:
      * Return the maximum possible allocation size.
      * This is the minimum of the maximum sizes of all devices in the context.
      */
-    inline size_type max_size() const CL_HPP_NOEXCEPT_
+    size_type max_size() const CL_HPP_NOEXCEPT_
     {
         size_type maxSize = std::numeric_limits<size_type>::max() / sizeof(T);
 
@@ -3188,10 +3185,12 @@ public:
         p->~U();
     }
 
+    /**
+     * Returns true if the contexts match.
+     */
     inline bool operator==(SVMAllocator const&)
     {
-        // TODO: If we add a queue, only compare equal if queues match
-        return true;
+        return (context_==rhs.context_);
     }
 
     inline bool operator!=(SVMAllocator const& a)
