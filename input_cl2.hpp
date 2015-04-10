@@ -77,6 +77,8 @@
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
  * CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY 
  *  - Enable older vector of pairs interface for construction of programs.
+ * CL_HPP_CL_1_2_DEFAULT_BUILD
+ *  - Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0
 
  * \section compatibility updates
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY re-enables something similar to the old size_t class
@@ -371,7 +373,6 @@ namespace cl{
  *
  */
 namespace cl {
-
     class Memory;
 
 #define CL_HPP_INIT_CL_EXT_FCN_PTR_(name) \
@@ -533,7 +534,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR          CL_HPP_ERR_STR_(clCreateCommandQueueWithProperties)
 #define __CREATE_SAMPLER_WITH_PROPERTIES_ERR                CL_HPP_ERR_STR_(clCreateSamplerWithProperties)
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __SET_COMMAND_QUEUE_PROPERTY_ERR    CL_HPP_ERR_STR_(clSetCommandQueueProperty)
 #define __ENQUEUE_READ_BUFFER_ERR           CL_HPP_ERR_STR_(clEnqueueReadBuffer)
 #define __ENQUEUE_READ_BUFFER_RECT_ERR      CL_HPP_ERR_STR_(clEnqueueReadBufferRect)
@@ -611,6 +612,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_MARKER_WAIT_LIST_ERR                CL_HPP_ERR_STR_(clEnqueueMarkerWithWaitList)
 #define __ENQUEUE_BARRIER_WAIT_LIST_ERR               CL_HPP_ERR_STR_(clEnqueueBarrierWithWaitList)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 
 namespace detail {
 
@@ -3207,7 +3209,7 @@ public:
             }
         }
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateFromD3D10BufferKHR);
-#elif
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 110
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateFromD3D10BufferKHR);
 #endif
 
@@ -5150,6 +5152,7 @@ public:
             ::clSetKernelArg(object_, index, size, argPtr),
             __SET_KERNEL_ARGS_ERR);
     }
+
 };
 
 /*! \class Program
@@ -5189,7 +5192,11 @@ public:
                 object_,
                 0,
                 NULL,
+#if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                "-cl-std=CL2.0",
+#else
                 "",
+#endif // #if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
                 NULL,
                 NULL);
 
@@ -5218,12 +5225,15 @@ public:
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
 
         if (error == CL_SUCCESS && build) {
-
             error = ::clBuildProgram(
                 object_,
                 0,
                 NULL,
+#if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                "-cl-std=CL2.0",
+#else
                 "",
+#endif // #if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
                 NULL,
                 NULL);
             

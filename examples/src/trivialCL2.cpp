@@ -1,6 +1,7 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 //#define CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY
+//#define CL_HPP_CL_1_2_DEFAULT_BUILD
 #include <CL/cl2.hpp>
 #include <iostream>
 #include <vector>
