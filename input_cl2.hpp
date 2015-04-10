@@ -3089,7 +3089,6 @@ public:
         size_type size,
         typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
     {
-        // TODO: Decide what to do if exceptions are disabled
         // TODO: Decide how to put read-onlyness into the configuration
         void* voidPointer =
             clSVMAlloc(
