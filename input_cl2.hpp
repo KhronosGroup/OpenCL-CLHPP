@@ -3159,12 +3159,21 @@ public:
         clSVMFree(context_(), p);
     }
 
+    /**
+     * Return the maximum possible allocation size.
+     * This is the minimum of the maximum sizes of all devices in the context.
+     */
     inline size_type max_size() const CL_HPP_NOEXCEPT_
     {
-        // TODO: The max side check would require iterating through 
-        // all devices in the context. We can do that but it is 
-        // a little messy
-        return std::numeric_limits<size_type>::max() / sizeof(T);
+        size_type maxSize = std::numeric_limits<size_type>::max() / sizeof(T);
+
+        for (Device &d : context_.getInfo<CL_CONTEXT_DEVICES>()) {
+            maxSize = std::min(
+                maxSize, 
+                static_cast<size_type>(d.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>()));
+        }
+
+        return maxSize;
     }
 
     template< class U, class... Args >

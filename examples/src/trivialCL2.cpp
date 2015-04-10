@@ -143,6 +143,7 @@ int main(void)
     cl::pointer_class<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
     *anSVMInt = 5;
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
+    std::cout << "Max alloc size: " << svmAlloc.max_size() << " bytes\n";
     cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
     cl::pointer_class<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
