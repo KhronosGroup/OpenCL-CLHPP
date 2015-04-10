@@ -2997,26 +2997,93 @@ namespace detail
 class SVMTraitCoarse : detail::SVMTraitParent
 {
 public:
-    static cl_int getSVMMemFlags(){ return 0; }
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_READ_WRITE;
+    }
 };
 
 class SVMTraitFine : detail::SVMTraitParent
 {
 public:
-    static cl_int getSVMMemFlags()
+    static cl_svm_mem_flags getSVMMemFlags()
     {
-        return CL_MEM_SVM_FINE_GRAIN_BUFFER;
+        return CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_READ_WRITE;
     }
 };
 
 class SVMTraitAtomic : detail::SVMTraitParent
 {
 public:
-    static cl_int getSVMMemFlags()
+    static cl_svm_mem_flags getSVMMemFlags()
     {
         return
             CL_MEM_SVM_FINE_GRAIN_BUFFER |
-            CL_MEM_SVM_ATOMICS;
+            CL_MEM_SVM_ATOMICS |
+            CL_MEM_READ_WRITE;
+    }
+};
+
+class SVMTraitCoarseReadOnly : detail::SVMTraitParent
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_READ_ONLY;
+    }
+};
+
+class SVMTraitFineReadOnly : detail::SVMTraitParent
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_READ_WRITE;
+    }
+};
+
+class SVMTraitAtomicReadOnly : detail::SVMTraitParent
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return
+            CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_SVM_ATOMICS |
+            CL_MEM_READ_WRITE;
+    }
+};
+
+class SVMTraitCoarseWriteOnly : detail::SVMTraitParent
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_WRITE_ONLY;
+    }
+};
+
+class SVMTraitFineWriteOnly : detail::SVMTraitParent
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_WRITE_ONLY;
+    }
+};
+
+class SVMTraitAtomicWriteOnly : detail::SVMTraitParent
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return
+            CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_SVM_ATOMICS |
+            CL_MEM_WRITE_ONLY;
     }
 };
 
@@ -3089,11 +3156,10 @@ public:
         size_type size,
         typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
     {
-        // TODO: Decide how to put read-onlyness into the configuration
         void* voidPointer =
             clSVMAlloc(
             context_(),
-            SVMTrait::getSVMMemFlags() | CL_MEM_READ_WRITE,
+            SVMTrait::getSVMMemFlags(),
             size*sizeof(T),
             0);
         pointer retValue = reinterpret_cast<pointer>(
