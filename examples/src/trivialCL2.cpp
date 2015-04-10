@@ -1,5 +1,6 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
+
 //#define CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY
 #include <CL/cl2.hpp>
 #include <iostream>
@@ -136,10 +137,12 @@ int main(void)
     // SVM allocations
 
     // Store pointer to pointer here to test clSetKernelExecInfo
-    std::shared_ptr<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse>();
+    // Code using cl namespace allocators etc as a test
+    // std::shared_ptr etc should work fine too
+    cl::pointer_class<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse>();
     *anSVMInt = 5;
     cl::SVMAllocator<int, cl::SVMTraitCoarse> svmAlloc;
-    std::shared_ptr<Foo> fooPointer = std::allocate_shared<Foo>(svmAlloc);
+    cl::pointer_class<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAlloc);
     fooPointer->bar = anSVMInt.get();
 
     std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse>> inputA(numElements, 1, svmAlloc);
@@ -161,7 +164,7 @@ int main(void)
     
     auto vectorAddKernel =
         cl::KernelFunctor<
-        std::shared_ptr<Foo>,
+        cl::pointer_class<Foo>,
         int*,
         cl::coarse_svm_vector_class<int>&,
         cl::Buffer,

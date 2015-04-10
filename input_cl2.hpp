@@ -287,13 +287,23 @@ namespace cl {
 #endif // #if !defined(CL_HPP_NO_STD_STRING)
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-// TODO: Check that when this is defined, memory isn't needed
 
 #if !defined(CL_HPP_NO_STD_SHARED_PTR)
 #include <memory>
 namespace cl {
+    // Replace shared_ptr and allocate_ptr for internal use
+    // to allow user to replace them
     template<class T>
     using pointer_class = std::shared_ptr<T>;
+
+    template <class T, class Alloc, class... Args>
+    auto allocate_pointer(const Alloc &alloc, Args&&... args) -> 
+        decltype(std::allocate_shared<T>(
+            alloc, std::forward<Args>(args)...))
+    {
+        return std::allocate_shared<T>(
+            alloc, std::forward<Args>(args)...);
+    }
 } // namespace cl
 #endif 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -3160,14 +3170,14 @@ template< class T, class SVMTrait, class... Args >
 cl::pointer_class<T> allocate_svm(Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc;
-    return std::allocate_shared<T>(alloc, args...);
+    return cl::allocate_pointer<T>(alloc, args...);
 }
 
 template< class T, class SVMTrait, class... Args >
 cl::pointer_class<T> allocate_svm(const cl::Context &c, Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc(c);
-    return std::allocate_shared<T>(alloc, args...);
+    return cl::allocate_pointer<T>(alloc, args...);
 }
 
 /*! \brief Vector alias to simplify contruction of coarse-grained SVM containers.
