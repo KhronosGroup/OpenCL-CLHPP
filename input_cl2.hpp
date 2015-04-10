@@ -77,6 +77,8 @@
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
  * CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY 
  *  - Enable older vector of pairs interface for construction of programs.
+ * CL_HPP_CL_1_2_DEFAULT_BUILD
+ *  - Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0
 
  * \section compatibility updates
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY re-enables something similar to the old size_t class
@@ -5531,10 +5533,10 @@ public:
     {
         return detail::errHandler(
             ::clSetKernelExecInfo(
-            object_,
-            CL_KERNEL_EXEC_INFO_SVM_PTRS,
-            sizeof(void*)*pointerList.size(),
-            pointerList.data()));
+                object_,
+                CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                sizeof(void*)*pointerList.size(),
+                pointerList.data()));
     }
 
     /*! \brief Enable fine-grained system SVM.
@@ -5560,9 +5562,7 @@ public:
                 )
             );
     }
-
-    // TODO: probably need to add a vector_class overload here to allow that as an option
-
+    
     template<int index, int ArrayLength, typename T0, typename... Ts>
     void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0, Ts... ts)
     {
@@ -5644,7 +5644,11 @@ public:
                 object_,
                 0,
                 NULL,
+#if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                "-cl-std=CL2.0",
+#else
                 "",
+#endif // #if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
                 NULL,
                 NULL);
 
@@ -5673,13 +5677,15 @@ public:
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
 
         if (error == CL_SUCCESS && build) {
-            // TODO: Temporarily forced to CL 2.0. Decide how we want to do this
-            // whether this version of the header defaults to 2.0 or not
             error = ::clBuildProgram(
                 object_,
                 0,
                 NULL,
+#if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
                 "-cl-std=CL2.0",
+#else
+                "",
+#endif // #if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
                 NULL,
                 NULL);
             
