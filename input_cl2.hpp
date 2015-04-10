@@ -2987,33 +2987,72 @@ cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, IteratorType s
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 namespace detail
 {
-    class SVMTraitParent
+    class SVMTraitNull
     {
     public:
-        cl_int getSVMMemFlags();
+        static cl_svm_mem_flags getSVMMemFlags()
+        {
+            return 0;
+        }
     };
 } // namespace detail
 
-class SVMTraitCoarse : detail::SVMTraitParent
+template<class Trait = detail::SVMTraitNull>
+class SVMTraitReadWrite
 {
 public:
     static cl_svm_mem_flags getSVMMemFlags()
     {
-        return CL_MEM_READ_WRITE;
+        return CL_MEM_READ_WRITE |
+            Trait::getSVMMemFlags();
     }
 };
 
-class SVMTraitFine : detail::SVMTraitParent
+template<class Trait = detail::SVMTraitNull>
+class SVMTraitReadOnly
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_READ_ONLY |
+            Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = detail::SVMTraitNull>
+class SVMTraitWriteOnly
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_WRITE_ONLY |
+            Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = SVMTraitReadWrite<>>
+class SVMTraitCoarse
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = SVMTraitReadWrite<>>
+class SVMTraitFine
 {
 public:
     static cl_svm_mem_flags getSVMMemFlags()
     {
         return CL_MEM_SVM_FINE_GRAIN_BUFFER |
-            CL_MEM_READ_WRITE;
+            Trait::getSVMMemFlags();
     }
 };
 
-class SVMTraitAtomic : detail::SVMTraitParent
+template<class Trait = SVMTraitReadWrite<>>
+class SVMTraitAtomic
 {
 public:
     static cl_svm_mem_flags getSVMMemFlags()
@@ -3021,71 +3060,10 @@ public:
         return
             CL_MEM_SVM_FINE_GRAIN_BUFFER |
             CL_MEM_SVM_ATOMICS |
-            CL_MEM_READ_WRITE;
+            Trait::getSVMMemFlags();
     }
 };
 
-class SVMTraitCoarseReadOnly : detail::SVMTraitParent
-{
-public:
-    static cl_svm_mem_flags getSVMMemFlags()
-    {
-        return CL_MEM_READ_ONLY;
-    }
-};
-
-class SVMTraitFineReadOnly : detail::SVMTraitParent
-{
-public:
-    static cl_svm_mem_flags getSVMMemFlags()
-    {
-        return CL_MEM_SVM_FINE_GRAIN_BUFFER |
-            CL_MEM_READ_WRITE;
-    }
-};
-
-class SVMTraitAtomicReadOnly : detail::SVMTraitParent
-{
-public:
-    static cl_svm_mem_flags getSVMMemFlags()
-    {
-        return
-            CL_MEM_SVM_FINE_GRAIN_BUFFER |
-            CL_MEM_SVM_ATOMICS |
-            CL_MEM_READ_WRITE;
-    }
-};
-
-class SVMTraitCoarseWriteOnly : detail::SVMTraitParent
-{
-public:
-    static cl_svm_mem_flags getSVMMemFlags()
-    {
-        return CL_MEM_WRITE_ONLY;
-    }
-};
-
-class SVMTraitFineWriteOnly : detail::SVMTraitParent
-{
-public:
-    static cl_svm_mem_flags getSVMMemFlags()
-    {
-        return CL_MEM_SVM_FINE_GRAIN_BUFFER |
-            CL_MEM_WRITE_ONLY;
-    }
-};
-
-class SVMTraitAtomicWriteOnly : detail::SVMTraitParent
-{
-public:
-    static cl_svm_mem_flags getSVMMemFlags()
-    {
-        return
-            CL_MEM_SVM_FINE_GRAIN_BUFFER |
-            CL_MEM_SVM_ATOMICS |
-            CL_MEM_WRITE_ONLY;
-    }
-};
 
 template<typename T, class SVMTrait>
 class SVMAllocator {
@@ -3249,19 +3227,19 @@ cl::pointer_class<T> allocate_svm(const cl::Context &c, Args... args)
  * 
  */
 template < class T >
-using coarse_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitCoarse>>;
+using coarse_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>>;
 
 /*! \brief Vector alias to simplify contruction of fine-grained SVM containers.
 *
 */
 template < class T >
-using fine_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitFine>>;
+using fine_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitFine<>>>;
 
 /*! \brief Vector alias to simplify contruction of fine-grained SVM containers that support platform atomics.
 *
 */
 template < class T >
-using atomic_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitAtomic>>;
+using atomic_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitAtomic<>>>;
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 

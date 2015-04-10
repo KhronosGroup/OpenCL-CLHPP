@@ -139,14 +139,15 @@ int main(void)
     // Store pointer to pointer here to test clSetKernelExecInfo
     // Code using cl namespace allocators etc as a test
     // std::shared_ptr etc should work fine too
-    cl::pointer_class<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse>();
+    
+    cl::pointer_class<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
     *anSVMInt = 5;
-    cl::SVMAllocator<int, cl::SVMTraitCoarse> svmAlloc;
-    cl::SVMAllocator<int, cl::SVMTraitCoarseReadOnly> svmAllocReadOnly;
+    cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
+    cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
     cl::pointer_class<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
 
-    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse>> inputA(numElements, 1, svmAlloc);
+    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);
     
     cl::coarse_svm_vector_class<int> inputB(numElements, 2, svmAlloc);
 
