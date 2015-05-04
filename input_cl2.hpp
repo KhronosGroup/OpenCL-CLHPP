@@ -636,11 +636,11 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsi
     }
     if (param) {
         // Create array of pointers, calculate total size and pass pointer array in
-        size_t numBinaries = param->size();
+        size_type numBinaries = param->size();
         vector_class<unsigned char*> binariesPointers(numBinaries);
 
-        size_t totalSize = 0;
-        for (size_t i = 0; i < numBinaries; ++i)
+        size_type totalSize = 0;
+        for (size_type i = 0; i < numBinaries; ++i)
         {
             binariesPointers[i] = (*param)[i].data();
             totalSize += (*param)[i].size();
@@ -5747,13 +5747,13 @@ cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsi
 
 
         vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
-        size_t numBinaries = sizes.size();
+        size_type numBinaries = sizes.size();
         
         // Resize the parameter array and constituent arrays
         param->resize(numBinaries);
         vector_class<unsigned char*> binariesPointers(numBinaries);
 
-        for (size_t i = 0; i < numBinaries; ++i)
+        for (size_type i = 0; i < numBinaries; ++i)
         {
             (*param)[i].resize(sizes[i]);
         }
