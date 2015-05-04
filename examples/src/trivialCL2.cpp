@@ -121,8 +121,6 @@ int main(void)
     }
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
-
-
     typedef struct { int *bar; } Foo;
 
     // Get and run kernel that initializes the program-scope global

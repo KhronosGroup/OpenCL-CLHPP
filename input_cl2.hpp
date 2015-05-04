@@ -650,6 +650,37 @@ inline cl_int getInfoHelper(Functor f, cl_uint name, T* param, long)
     return f(name, sizeof(T), param, NULL);
 }
 
+// Specialized for getInfo<CL_PROGRAM_BINARIES>
+// Assumes that the output vector was correctly resized on the way in
+template <typename Func>
+inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsigned char>>* param, int)
+{
+    if (name != CL_PROGRAM_BINARIES) {
+        return CL_INVALID_VALUE;
+    }
+    if (param) {
+        // Create array of pointers, calculate total size and pass pointer array in
+        size_t numBinaries = param->size();
+        vector_class<unsigned char*> binariesPointers(numBinaries);
+
+        size_t totalSize = 0;
+        for (size_t i = 0; i < numBinaries; ++i)
+        {
+            binariesPointers[i] = (*param)[i].data();
+            totalSize += (*param)[i].size();
+        }
+
+        cl_int err = f(name, totalSize, binariesPointers.data(), NULL);
+
+        if (err != CL_SUCCESS) {
+            return err;
+        }
+    }
+
+
+    return CL_SUCCESS;
+}
+
 // Specialized getInfoHelper for vector_class params
 template <typename Func, typename T>
 inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
@@ -708,38 +739,6 @@ inline cl_int getInfoHelper(
             (*param)[i] = T(value[i], true);
         }
     }
-    return CL_SUCCESS;
-}
-
-// Specialized for getInfo<CL_PROGRAM_BINARIES>
-// Will resize the input vector as necessary
-template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsigned char>>* param, int)
-{
-    if (param) {
-        // Resize the parameter array appropriately for each allocation
-        // and create an array of binary pointers for the base pointers for each allocation
-        // to match the interface needed by the C API
-        vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
-        size_t numBinaries = sizes.size();
-        param->resize(numBinaries);                
-        vector_class<unsigned char*> binariesPointers(numBinaries);
-        
-
-        for (size_t i = 0; i < numBinaries; ++i)
-        {
-            (*param)[i].resize(sizes[i]);
-            binariesPointers[i] = (*param)[i].data();
-        }
-
-        cl_int err = f(name, binariesPointers.size() * sizeof(char *), binariesPointers.data(), NULL);
-
-        if (err != CL_SUCCESS) {
-            return err;
-        }
-    }
-    
-
     return CL_SUCCESS;
 }
 
@@ -3090,7 +3089,6 @@ public:
     template<typename U, typename V>
     friend class SVMAllocator;
 
-public:
     explicit SVMAllocator() :
         context_(Context::getDefault())
     {
@@ -3127,9 +3125,9 @@ public:
     }
 
     /**
-    * Allocate an SVM pointer.
-    *
-    */
+     * Allocate an SVM pointer.
+     *
+     */
     pointer allocate(
         size_type size,
         typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
@@ -6185,28 +6183,28 @@ inline Program linkProgram(
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
+// Template specialization for CL_PROGRAM_BINARIES
 template <>
 cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsigned char>>* param) const
-{   
+{
+    if (name != CL_PROGRAM_BINARIES) {
+        return CL_INVALID_VALUE;
+    }
     if (param) {
         // Resize the parameter array appropriately for each allocation
-        // and create an array of binary pointers for the base pointers for each allocation
-        // to match the interface needed by the C API
+        // and pass down to the helper
 
         vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
         size_t numBinaries = sizes.size();
 
+        // Resize the parameter array and constituent arrays
         param->resize(numBinaries);
-        vector_class<unsigned char*> binariesPointers(numBinaries);
-
-        for (size_t i = 0; i < numBinaries; ++i)
-        {
+        for (int i = 0; i < numBinaries; ++i) {
             (*param)[i].resize(sizes[i]);
-            binariesPointers[i] = (*param)[i].data();
         }
-        
+
         return detail::errHandler(
-            detail::getInfo(&::clGetProgramInfo, object_, name, binariesPointers.data()),
+            detail::getInfo(&::clGetProgramInfo, object_, name, param),
             __GET_PROGRAM_INFO_ERR);
     }
 
