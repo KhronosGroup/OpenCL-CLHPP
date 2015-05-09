@@ -4955,6 +4955,8 @@ struct KernelArgumentHandler<T, typename std::enable_if<std::is_base_of<cl::Memo
     static const cl_mem* ptr(const T& value) { return &(value()); }
 };
 
+// Specialization for DeviceCommandQueue defined later
+
 template <>
 struct KernelArgumentHandler<LocalSpaceArg, void>
 {
@@ -7199,6 +7201,17 @@ public:
         return deviceQueue;
     }
 }; // DeviceCommandQueue
+
+namespace detail
+{
+    // Specialization for device command queue
+    template <>
+    struct KernelArgumentHandler<cl::DeviceCommandQueue, void>
+    {
+        static size_type size(const cl::DeviceCommandQueue&) { return sizeof(cl_command_queue); }
+        static const cl_command_queue* ptr(const cl::DeviceCommandQueue& value) { return &(value()); }
+    };
+} // namespace detail
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 

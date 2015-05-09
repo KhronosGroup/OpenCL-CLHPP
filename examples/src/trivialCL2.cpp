@@ -73,14 +73,20 @@ int main(void)
         "  globalA = 75;"
         "}"};
     std::string kernel2{
-        "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe){"
+        "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){"
         "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val;"
         "  write_pipe(outPipe, &val);"
         "  queue_t default_queue = get_default_queue(); "
-        "  ndrange_t ndrange = ndrange_1D(get_global_size(0), get_global_size(0)); "
+        "  ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2); "
+        // Have a child kernel write into third quarter of output
         "  enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, "
         "    ^{"
-        "      output[get_global_size(0)+get_global_id(0)] = inputA[get_global_size(0)+get_global_id(0)] + inputB[get_global_size(0)+get_global_id(0)] + globalA;"
+        "      output[get_global_size(0)*2 + get_global_id(0)] = inputA[get_global_size(0)*2+get_global_id(0)] + inputB[get_global_size(0)*2+get_global_id(0)] + globalA;"
+        "    });"
+        // Have a child kernel write into last quarter of output
+        "  enqueue_kernel(childQueue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, "
+        "    ^{"
+        "      output[get_global_size(0)*3 + get_global_id(0)] = inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;"
         "    });"
         "}" };
 #if defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
@@ -132,7 +138,8 @@ int main(void)
             cl::Buffer&,
             cl::Buffer,
             int,
-            cl::Pipe&
+            cl::Pipe&,
+            cl::DeviceCommandQueue&
             >(vectorAddProgram, "vectorAdd");
 
     std::vector<int> inputA(numElements, 1);
@@ -145,7 +152,7 @@ int main(void)
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
     // so the user has to create one
     // We can't preemptively do so on device creation because they cannot then replace it
-    cl::DeviceCommandQueue deviceQueue = cl::DeviceCommandQueue::makeDefault(
+    cl::DeviceCommandQueue defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault(
         cl::Context::getDefault(), cl::Device::getDefault());
 	
     vectorAddKernel(
@@ -156,18 +163,21 @@ int main(void)
         inputBBuffer,
         outputBuffer,
         3,
-        aPipe);
+        aPipe,
+        defaultDeviceQueue
+        );
 
 	cl_int error;
 	vectorAddKernel(
 		cl::EnqueueArgs(
 	      	cl::NDRange(numElements/2),
-		    cl::NDRange(numElements/2)),
+            cl::NDRange(numElements / 2)),
 		inputABuffer,
 		inputBBuffer,
 		outputBuffer,
         3,
         aPipe,
+        defaultDeviceQueue,
 		error);
 
     cl::copy(outputBuffer, begin(output), end(output));
