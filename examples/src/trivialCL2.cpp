@@ -1,10 +1,13 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
+
 //#define CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY
 //#define CL_HPP_CL_1_2_DEFAULT_BUILD
 #include <CL/cl2.hpp>
 #include <iostream>
 #include <vector>
+#include <memory>
+#include <algorithm>
 
 const int numElements = 32;
 
@@ -73,8 +76,8 @@ int main(void)
         "  globalA = 75;"
         "}"};
     std::string kernel2{
-        "kernel void vectorAdd(global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){"
-        "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val;"
+        "typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){"
+        "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);"
         "  write_pipe(outPipe, &val);"
         "  queue_t default_queue = get_default_queue(); "
         "  ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2); "
@@ -124,6 +127,8 @@ int main(void)
     }
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
+    typedef struct { int *bar; } Foo;
+
     // Get and run kernel that initializes the program-scope global
     // A test for kernels that take no arguments
     auto program2Kernel =
@@ -131,22 +136,32 @@ int main(void)
     program2Kernel(
         cl::EnqueueArgs(
         cl::NDRange(1)));
-    
-    auto vectorAddKernel =
-        cl::KernelFunctor<
-            cl::Buffer&,
-            cl::Buffer&,
-            cl::Buffer,
-            int,
-            cl::Pipe&,
-            cl::DeviceCommandQueue&
-            >(vectorAddProgram, "vectorAdd");
 
-    std::vector<int> inputA(numElements, 1);
-    std::vector<int> inputB(numElements, 2);
+
+    //////////////////
+    // SVM allocations
+
+    // Store pointer to pointer here to test clSetKernelExecInfo
+    // Code using cl namespace allocators etc as a test
+    // std::shared_ptr etc should work fine too
+    
+    cl::pointer_class<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
+    *anSVMInt = 5;
+    cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
+    std::cout << "Max alloc size: " << svmAlloc.max_size() << " bytes\n";
+    cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
+    cl::pointer_class<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
+    fooPointer->bar = anSVMInt.get();
+
+    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);
+    
+    cl::coarse_svm_vector_class<int> inputB(numElements, 2, svmAlloc);
+
+    //
+    //////////////
+
+
     std::vector<int> output(numElements, 0xdeadbeef);
-    cl::Buffer inputABuffer(begin(inputA), end(inputA), true);
-    cl::Buffer inputBBuffer(begin(inputB), end(inputB), true);
     cl::Buffer outputBuffer(begin(output), end(output), false);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
@@ -154,31 +169,42 @@ int main(void)
     // We can't preemptively do so on device creation because they cannot then replace it
     cl::DeviceCommandQueue defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault(
         cl::Context::getDefault(), cl::Device::getDefault());
-	
-    vectorAddKernel(
-        cl::EnqueueArgs(
-            cl::NDRange(numElements/2),
-            cl::NDRange(numElements/2)),
-        inputABuffer,
-        inputBBuffer,
-        outputBuffer,
-        3,
-        aPipe,
-        defaultDeviceQueue
-        );
+    
+    auto vectorAddKernel =
+        cl::KernelFunctor<
+            cl::pointer_class<Foo>,
+            int*,
+            cl::coarse_svm_vector_class<int>&,
+            cl::Buffer,
+            int,
+            cl::Pipe&,
+            cl::DeviceCommandQueue
+            >(vectorAddProgram, "vectorAdd");
+
+
+    // Only the last of these will actually be used
+    // but this will check that the API is working for all
+    // of them
+    cl::vector_class<void*> ptrs;
+    ptrs.push_back(static_cast<void*>(fooPointer.get()));
+    vectorAddKernel.setSVMPointers(ptrs);
+    vectorAddKernel.setSVMPointers(fooPointer.get());
+    vectorAddKernel.setSVMPointers(fooPointer);
 
 	cl_int error;
 	vectorAddKernel(
-		cl::EnqueueArgs(
-	      	cl::NDRange(numElements/2),
-            cl::NDRange(numElements / 2)),
-		inputABuffer,
-		inputBBuffer,
-		outputBuffer,
+        cl::EnqueueArgs(
+            cl::NDRange(numElements/2),
+            cl::NDRange(numElements/2)),
+        fooPointer,
+        inputA.data(),
+        inputB,
+        outputBuffer,
         3,
         aPipe,
         defaultDeviceQueue,
-		error);
+		error
+        );
 
     cl::copy(outputBuffer, begin(output), end(output));
 

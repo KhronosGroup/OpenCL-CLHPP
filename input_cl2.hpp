@@ -179,8 +179,8 @@
 #if CL_HPP_MINIMUM_OPENCL_VERSION <= 120 && !defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
 # define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #endif
-#if CL_HPP_MINIMUM_OPENCL_VERSION <= 200 && !defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
-# define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#if CL_HPP_MINIMUM_OPENCL_VERSION <= 200 && !defined(CL_USE_DEPRECATED_OPENCL_2_0_APIS)
+# define CL_USE_DEPRECATED_OPENCL_2_0_APIS
 #endif
 
 #ifdef _WIN32
@@ -277,16 +277,37 @@ namespace cl {
 namespace cl {
     template < class T, class Alloc = std::allocator<T> >
     using vector_class = std::vector<T, Alloc>;
-}
+} // namespace cl
 #endif // #if !defined(CL_HPP_NO_STD_VECTOR)
 
 #if !defined(CL_HPP_NO_STD_STRING)
 #include <string>
 namespace cl {
     using string_class = std::string;
-}
+} // namespace cl
 #endif // #if !defined(CL_HPP_NO_STD_STRING)
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+#if !defined(CL_HPP_NO_STD_SHARED_PTR)
+#include <memory>
+namespace cl {
+    // Replace shared_ptr and allocate_ptr for internal use
+    // to allow user to replace them
+    template<class T>
+    using pointer_class = std::shared_ptr<T>;
+
+    template <class T, class Alloc, class... Args>
+    auto allocate_pointer(const Alloc &alloc, Args&&... args) -> 
+        decltype(std::allocate_shared<T>(
+            alloc, std::forward<Args>(args)...))
+    {
+        return std::allocate_shared<T>(
+            alloc, std::forward<Args>(args)...);
+    }
+} // namespace cl
+#endif 
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if !defined(CL_HPP_NO_STD_ARRAY)
 #include <array>
 namespace cl {
@@ -717,7 +738,6 @@ inline cl_int getInfoHelper(
     }
     return CL_SUCCESS;
 }
-
 
 // Specialized GetInfoHelper for string_class params
 template <typename Func>
@@ -2962,6 +2982,273 @@ template< typename IteratorType >
 cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, IteratorType startIterator, IteratorType endIterator );
 
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+namespace detail
+{
+    class SVMTraitNull
+    {
+    public:
+        static cl_svm_mem_flags getSVMMemFlags()
+        {
+            return 0;
+        }
+    };
+} // namespace detail
+
+template<class Trait = detail::SVMTraitNull>
+class SVMTraitReadWrite
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_READ_WRITE |
+            Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = detail::SVMTraitNull>
+class SVMTraitReadOnly
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_READ_ONLY |
+            Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = detail::SVMTraitNull>
+class SVMTraitWriteOnly
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_WRITE_ONLY |
+            Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = SVMTraitReadWrite<>>
+class SVMTraitCoarse
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = SVMTraitReadWrite<>>
+class SVMTraitFine
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            Trait::getSVMMemFlags();
+    }
+};
+
+template<class Trait = SVMTraitReadWrite<>>
+class SVMTraitAtomic
+{
+public:
+    static cl_svm_mem_flags getSVMMemFlags()
+    {
+        return
+            CL_MEM_SVM_FINE_GRAIN_BUFFER |
+            CL_MEM_SVM_ATOMICS |
+            Trait::getSVMMemFlags();
+    }
+};
+
+
+template<typename T, class SVMTrait>
+class SVMAllocator {
+private:
+    Context context_;
+
+public:
+    typedef T value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+    typedef value_type& reference;
+    typedef const value_type& const_reference;
+    typedef std::size_t size_type;
+    typedef std::ptrdiff_t difference_type;
+
+    template<typename U>
+    struct rebind
+    {
+        typedef SVMAllocator<U, SVMTrait> other;
+    };
+
+    template<typename U, typename V>
+    friend class SVMAllocator;
+
+    explicit SVMAllocator() :
+        context_(Context::getDefault())
+    {
+    }
+
+    explicit SVMAllocator(cl::Context context) :
+        context_(context)
+    {
+    }
+    
+    SVMAllocator(const SVMAllocator &other) :
+        context_(other.context_)
+    {
+    }
+
+    template<typename U>
+    SVMAllocator(const SVMAllocator<U, SVMTrait> &other) :
+        context_(other.context_)
+    {
+    }
+
+    ~SVMAllocator()
+    {
+    }
+
+    pointer address(reference r) CL_HPP_NOEXCEPT_
+    {
+        return std::addressof(r);
+    }
+
+    const_pointer address(const_reference r) CL_HPP_NOEXCEPT_
+    {
+        return std::addressof(r);
+    }
+
+    /**
+     * Allocate an SVM pointer.
+     *
+     */
+    pointer allocate(
+        size_type size,
+        typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
+    {
+        void* voidPointer =
+            clSVMAlloc(
+            context_(),
+            SVMTrait::getSVMMemFlags(),
+            size*sizeof(T),
+            0);
+        pointer retValue = reinterpret_cast<pointer>(
+            voidPointer);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+        if (!retValue) {
+            std::bad_alloc excep;
+            throw excep;
+        }
+#endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+
+        // If exceptions disabled, return null pointer from allocator
+        return retValue;
+    }
+
+    void deallocate(pointer p, size_type)
+    {
+        clSVMFree(context_(), p);
+    }
+
+    /**
+     * Return the maximum possible allocation size.
+     * This is the minimum of the maximum sizes of all devices in the context.
+     */
+    size_type max_size() const CL_HPP_NOEXCEPT_
+    {
+        size_type maxSize = std::numeric_limits<size_type>::max() / sizeof(T);
+
+        for (Device &d : context_.getInfo<CL_CONTEXT_DEVICES>()) {
+            maxSize = std::min(
+                maxSize, 
+                static_cast<size_type>(d.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>()));
+        }
+
+        return maxSize;
+    }
+
+    template< class U, class... Args >
+    void construct(U* p, Args&&... args)
+    {
+        new(p)T(args...);
+    }
+
+    template< class U >
+    void destroy(U* p)
+    {
+        p->~U();
+    }
+
+    /**
+     * Returns true if the contexts match.
+     */
+    inline bool operator==(SVMAllocator const&)
+    {
+        return (context_==rhs.context_);
+    }
+
+    inline bool operator!=(SVMAllocator const& a)
+    {
+        return !operator==(a);
+    }
+}; // class SVMAllocator
+
+
+template<class SVMTrait>
+class SVMAllocator<void, SVMTrait> {
+public:
+    typedef void value_type;
+    typedef value_type* pointer;
+    typedef const value_type* const_pointer;
+
+    template<typename U>
+    struct rebind
+    {
+        typedef SVMAllocator<U, SVMTrait> other;
+    };
+
+    template<typename U, typename V>
+    friend class SVMAllocator;
+};
+
+template< class T, class SVMTrait, class... Args >
+cl::pointer_class<T> allocate_svm(Args... args)
+{
+    SVMAllocator<T, SVMTrait> alloc;
+    return cl::allocate_pointer<T>(alloc, args...);
+}
+
+template< class T, class SVMTrait, class... Args >
+cl::pointer_class<T> allocate_svm(const cl::Context &c, Args... args)
+{
+    SVMAllocator<T, SVMTrait> alloc(c);
+    return cl::allocate_pointer<T>(alloc, args...);
+}
+
+/*! \brief Vector alias to simplify contruction of coarse-grained SVM containers.
+ * 
+ */
+template < class T >
+using coarse_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>>;
+
+/*! \brief Vector alias to simplify contruction of fine-grained SVM containers.
+*
+*/
+template < class T >
+using fine_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitFine<>>>;
+
+/*! \brief Vector alias to simplify contruction of fine-grained SVM containers that support platform atomics.
+*
+*/
+template < class T >
+using atomic_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitAtomic<>>>;
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+
 /*! \brief Class interface for Buffer Memory Objects.
  * 
  *  See Memory for details about copy semantics, etc.
@@ -5136,8 +5423,46 @@ public:
 #endif // #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    /*! \brief setArg overload taking a shared_ptr type
+     */
+    template<typename T>
+    cl_int setArg(cl_uint index, const cl::pointer_class<T> argPtr)
+    {
+        return detail::errHandler(
+            ::clSetKernelArgSVMPointer(object_, index, argPtr.get()),
+            __SET_KERNEL_ARGS_ERR);
+    }
+
+    /*! \brief setArg overload taking a vector_class type.
+     */
+    template<typename T, class Alloc>
+    cl_int setArg(cl_uint index, const cl::vector_class<T, Alloc> &argPtr)
+    {
+        return detail::errHandler(
+            ::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
+            __SET_KERNEL_ARGS_ERR);
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+   
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    /*! \brief setArg overload taking a pointer type
+    */
+    template<typename T>
+    typename std::enable_if<std::is_pointer<T>::value, cl_int>::type
+        setArg(cl_uint index, const T argPtr)
+    {
+        return detail::errHandler(
+            ::clSetKernelArgSVMPointer(object_, index, argPtr),
+            __SET_KERNEL_ARGS_ERR);
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+    /*! \brief setArg overload taking a POD type
+     */
     template <typename T>
-    cl_int setArg(cl_uint index, const T &value)
+    typename std::enable_if<!std::is_pointer<T>::value, cl_int>::type
+        setArg(cl_uint index, const T &value)
     {
         return detail::errHandler(
             ::clSetKernelArg(
@@ -5155,6 +5480,102 @@ public:
             __SET_KERNEL_ARGS_ERR);
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    /*!
+     * Specify a vector of SVM pointers that the kernel may access in 
+     * addition to its arguments.
+     */
+    cl_int setSVMPointers(const vector_class<void*> &pointerList)
+    {
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+                object_,
+                CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                sizeof(void*)*pointerList.size(),
+                pointerList.data()));
+    }
+
+    /*!
+     * Specify a std::array of SVM pointers that the kernel may access in
+     * addition to its arguments.
+     */
+    template<int ArrayLength>
+    cl_int setSVMPointers(const std::array<void*, ArrayLength> &pointerList)
+    {
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+                object_,
+                CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                sizeof(void*)*pointerList.size(),
+                pointerList.data()));
+    }
+
+    /*! \brief Enable fine-grained system SVM.
+     *
+     * \note It is only possible to enable fine-grained system SVM if all devices
+     *       in the context associated with kernel support it.
+     * 
+     * \param svmEnabled True if fine-grained system SVM is requested. False otherwise.
+     * \return CL_SUCCESS if the function was executed succesfully. CL_INVALID_OPERATION
+     *         if no devices in the context support fine-grained system SVM.
+     *
+     * \see clSetKernelExecInfo
+     */
+    cl_int enableFineGrainedSystemSVM(bool svmEnabled)
+    {
+        cl_bool svmEnabled_ = svmEnabled ? CL_TRUE : CL_FALSE;
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+                object_,
+                CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,
+                sizeof(cl_bool),
+                &svmEnabled_
+                )
+            );
+    }
+    
+    template<int index, int ArrayLength, typename T0, typename... Ts>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0, Ts... ts)
+    {
+        pointerList[index] = static_cast<void*>(t0.get());
+        setSVMPointersHelper<index + 1, Ts...>(ts...);
+    }
+
+    template<int index, int ArrayLength, typename T0, typename... Ts>
+    typename std::enable_if<std::is_pointer<T0>::value, void>::type
+    setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0, Ts... ts)
+    {
+        pointerList[index] = static_cast<void*>(t0);
+        setSVMPointersHelper<index + 1, Ts...>(ts...);
+    }
+    
+    template<int index, int ArrayLength, typename T0>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0)
+    {
+        pointerList[index] = static_cast<void*>(t0.get());
+    }
+
+    template<int index, int ArrayLength, typename T0>
+    typename std::enable_if<std::is_pointer<T0>::value, void>::type
+    setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0)
+    {
+        pointerList[index] = static_cast<void*>(t0);
+    }
+
+    template<typename T0, typename... Ts>
+    cl_int setSVMPointers(T0 t0, Ts... ts)
+    {
+        std::array<void*, 1 + sizeof...(Ts)> pointerList;
+
+        setSVMPointersHelper<0, 1 + sizeof...(Ts)>(pointerList, t0, ts...);
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+            object_,
+            CL_KERNEL_EXEC_INFO_SVM_PTRS,
+            sizeof(void*)*(1 + sizeof...(Ts)),
+            pointerList.data()));
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 };
 
 /*! \class Program
@@ -5742,24 +6163,19 @@ cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsi
     if (name != CL_PROGRAM_BINARIES) {
         return CL_INVALID_VALUE;
     }
-
     if (param) {
         // Resize the parameter array appropriately for each allocation
         // and pass down to the helper
 
-
         vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
-        size_type numBinaries = sizes.size();
-        
+        size_t numBinaries = sizes.size();
+
         // Resize the parameter array and constituent arrays
         param->resize(numBinaries);
-        vector_class<unsigned char*> binariesPointers(numBinaries);
-
-        for (size_type i = 0; i < numBinaries; ++i)
-        {
+        for (int i = 0; i < numBinaries; ++i) {
             (*param)[i].resize(sizes[i]);
         }
-        
+
         return detail::errHandler(
             detail::getInfo(&::clGetProgramInfo, object_, name, param),
             __GET_PROGRAM_INFO_ERR);
@@ -8081,6 +8497,19 @@ public:
         
         return event;
     }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    cl_int setSVMPointers(const vector_class<void*> &pointerList)
+    {
+        return kernel_.setSVMPointers(pointerList);
+    }
+
+    template<typename T0, typename... Ts>
+    cl_int setSVMPointers(T0 t0, Ts... ts)
+    {
+        return kernel_.setSVMPointers(t0, ts...);
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
     Kernel getKernel()
     {
