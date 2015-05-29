@@ -6850,9 +6850,14 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     /**
      * Enqueue a command to fill a buffer object with a pattern
-     * of a given size. The pattern is specified a as vector.
+     * of a given size. The pattern is specified as a vector type.
      * \tparam PatternType The datatype of the pattern field. 
      *     The pattern type must be an accepted OpenCL data type.
+     * \tparam offset Is the offset in bytes into the buffer at 
+     *     which to start filling. This must be a multiple of 
+     *     the pattern size.
+     * \tparam size Is the size in bytes of the region to fill.
+     *     This must be a multiple of the pattern size.
      */
     template<typename PatternType>
     cl_int enqueueFillBuffer(
