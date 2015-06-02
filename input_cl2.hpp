@@ -3338,7 +3338,7 @@ public:
     /**
      * Returns true if the contexts match.
      */
-    inline bool operator==(SVMAllocator const&)
+    inline bool operator==(SVMAllocator const& rhs)
     {
         return (context_==rhs.context_);
     }
