@@ -8662,8 +8662,8 @@ public:
         return kernel_.setSVMPointers(pointerList);
     }
 
-    template<typename T0, typename... Ts>
-    cl_int setSVMPointers(T0 t0, Ts... ts)
+    template<typename T0, typename... T1s>
+    cl_int setSVMPointers(T0 t0, T1s... ts)
     {
         return kernel_.setSVMPointers(t0, ts...);
     }
