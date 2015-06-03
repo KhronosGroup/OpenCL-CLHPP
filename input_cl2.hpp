@@ -82,7 +82,7 @@
 
  * \section compatibility updates
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY re-enables something similar to the old size_t class
- * convertable to array_class, but puts it in the compatibility namespace.
+ * convertable to array, but puts it in the compatibility namespace.
  * This can be pulled in by a using declaration, or a relatively clean search and replace for 
  * cl::size_t with cl::compatibility::size_t.
  * make_kernel is similarly in the compatibility namespace.
@@ -186,14 +186,14 @@
         //////////////////
         // SVM allocations
     
-        cl::pointer_class<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
+        cl::pointer<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
         *anSVMInt = 5;
         cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
-        cl::pointer_class<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
+        cl::pointer<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
         fooPointer->bar = anSVMInt.get();
         cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
         std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);    
-        cl::coarse_svm_vector_class<int> inputB(numElements, 2, svmAlloc);
+        cl::coarse_svm_vector<int> inputB(numElements, 2, svmAlloc);
 
         //
         //////////////
@@ -209,9 +209,9 @@
     
         auto vectorAddKernel =
             cl::KernelFunctor<
-                cl::pointer_class<Foo>,
+                cl::pointer<Foo>,
                 int*,
-                cl::coarse_svm_vector_class<int>&,
+                cl::coarse_svm_vector<int>&,
                 cl::Buffer,
                 int,
                 cl::Pipe&,
@@ -281,10 +281,10 @@
 # define CL_HPP_NO_STD_STRING
 #endif
 #if defined(VECTOR_CLASS)
-# warning "VECTOR_CLASS is deprecated. Alias cl::vector_class instead"
+# warning "VECTOR_CLASS is deprecated. Alias cl::vector instead"
 #endif
 #if defined(STRING_CLASS)
-# warning "STRING_CLASS is deprecated. Alias cl::string_class instead."
+# warning "STRING_CLASS is deprecated. Alias cl::string instead."
 #endif
 #if !defined(CL_HPP_USER_OVERRIDE_ERROR_STRINGS) && defined(__CL_USER_OVERRIDE_ERROR_STRINGS)
 # warning "__CL_USER_OVERRIDE_ERROR_STRINGS is deprecated. Define CL_HPP_USER_OVERRIDE_ERROR_STRINGS instead"
@@ -429,14 +429,14 @@ namespace cl {
 #include <vector>
 namespace cl {
     template < class T, class Alloc = std::allocator<T> >
-    using vector_class = std::vector<T, Alloc>;
+    using vector = std::vector<T, Alloc>;
 } // namespace cl
 #endif // #if !defined(CL_HPP_NO_STD_VECTOR)
 
 #if !defined(CL_HPP_NO_STD_STRING)
 #include <string>
 namespace cl {
-    using string_class = std::string;
+    using string = std::string;
 } // namespace cl
 #endif // #if !defined(CL_HPP_NO_STD_STRING)
 
@@ -448,7 +448,7 @@ namespace cl {
     // Replace shared_ptr and allocate_ptr for internal use
     // to allow user to replace them
     template<class T>
-    using pointer_class = std::shared_ptr<T>;
+    using pointer = std::shared_ptr<T>;
 
     template <class T, class Alloc, class... Args>
     auto allocate_pointer(const Alloc &alloc, Args&&... args) -> 
@@ -465,7 +465,7 @@ namespace cl {
 #include <array>
 namespace cl {
     template < class T, size_type N >
-    using array_class = std::array<T, N>;
+    using array = std::array<T, N>;
 }
 #endif // #if !defined(CL_HPP_NO_STD_ARRAY)
 
@@ -493,7 +493,7 @@ namespace cl {
                 }
             }
 
-            size_t(const array_class<size_type, N> &rhs)
+            size_t(const array<size_type, N> &rhs)
             {
                 for (int i = 0; i < N; ++i) {
                     data_[i] = rhs[i];
@@ -516,9 +516,9 @@ namespace cl {
             //! \brief Conversion operator to const T*.
             operator const size_type* () const { return data_; }
 
-            operator array_class<size_type, N>() const
+            operator array<size_type, N>() const
             {
-                array_class<size_type, N> ret;
+                array<size_type, N> ret;
 
                 for (int i = 0; i < N; ++i) {
                     ret[i] = data_[i];
@@ -536,7 +536,7 @@ namespace cl {
 // Helper alias to avoid confusing the macros
 namespace cl{
     namespace detail {
-        using size_t_array = array_class<size_type, 3>;
+        using size_t_array = array<size_type, 3>;
     }
 }
 
@@ -803,7 +803,7 @@ inline cl_int getInfoHelper(Functor f, cl_uint name, T* param, long)
 // Specialized for getInfo<CL_PROGRAM_BINARIES>
 // Assumes that the output vector was correctly resized on the way in
 template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsigned char>>* param, int)
+inline cl_int getInfoHelper(Func f, cl_uint name, vector<vector<unsigned char>>* param, int)
 {
     if (name != CL_PROGRAM_BINARIES) {
         return CL_INVALID_VALUE;
@@ -811,7 +811,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsi
     if (param) {
         // Create array of pointers, calculate total size and pass pointer array in
         size_type numBinaries = param->size();
-        vector_class<unsigned char*> binariesPointers(numBinaries);
+        vector<unsigned char*> binariesPointers(numBinaries);
 
         size_type totalSize = 0;
         for (size_type i = 0; i < numBinaries; ++i)
@@ -831,9 +831,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<vector_class<unsi
     return CL_SUCCESS;
 }
 
-// Specialized getInfoHelper for vector_class params
+// Specialized getInfoHelper for vector params
 template <typename Func, typename T>
-inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
+inline cl_int getInfoHelper(Func f, cl_uint name, vector<T>* param, long)
 {
     size_type required;
     cl_int err = f(name, 0, NULL, &required);
@@ -843,7 +843,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
     const size_type elements = required / sizeof(T);
 
     // Temporary to avoid changing param on an error
-    vector_class<T> localData(elements);
+    vector<T> localData(elements);
     err = f(name, required, localData.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
@@ -863,7 +863,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector_class<T>* param, long)
  */
 template <typename Func, typename T>
 inline cl_int getInfoHelper(
-    Func f, cl_uint name, vector_class<T>* param, int, typename T::cl_type = 0)
+    Func f, cl_uint name, vector<T>* param, int, typename T::cl_type = 0)
 {
     size_type required;
     cl_int err = f(name, 0, NULL, &required);
@@ -873,7 +873,7 @@ inline cl_int getInfoHelper(
 
     const size_type elements = required / sizeof(typename T::cl_type);
 
-    vector_class<typename T::cl_type> value(elements);
+    vector<typename T::cl_type> value(elements);
     err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
@@ -892,9 +892,9 @@ inline cl_int getInfoHelper(
     return CL_SUCCESS;
 }
 
-// Specialized GetInfoHelper for string_class params
+// Specialized GetInfoHelper for string params
 template <typename Func>
-inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
+inline cl_int getInfoHelper(Func f, cl_uint name, string* param, long)
 {
     size_type required;
     cl_int err = f(name, 0, NULL, &required);
@@ -904,7 +904,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
 
     // std::string has a constant data member
     // a char vector does not
-    vector_class<char> value(required);
+    vector<char> value(required);
     err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
         return err;
@@ -917,7 +917,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string_class* param, long)
 
 // Specialized GetInfoHelper for clsize_t params
 template <typename Func, size_type N>
-inline cl_int getInfoHelper(Func f, cl_uint name, array_class<size_type, N>* param, long)
+inline cl_int getInfoHelper(Func f, cl_uint name, array<size_type, N>* param, long)
 {
     size_type required;
     cl_int err = f(name, 0, NULL, &required);
@@ -926,7 +926,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, array_class<size_type, N>* par
     }
 
     size_type elements = required / sizeof(size_type);
-    vector_class<size_type> value(elements, 0);
+    vector<size_type> value(elements, 0);
 
     err = f(name, required, value.data(), NULL);
     if (err != CL_SUCCESS) {
@@ -973,18 +973,18 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 }
 
 #define CL_HPP_PARAM_NAME_INFO_1_0_(F) \
-    F(cl_platform_info, CL_PLATFORM_PROFILE, string_class) \
-    F(cl_platform_info, CL_PLATFORM_VERSION, string_class) \
-    F(cl_platform_info, CL_PLATFORM_NAME, string_class) \
-    F(cl_platform_info, CL_PLATFORM_VENDOR, string_class) \
-    F(cl_platform_info, CL_PLATFORM_EXTENSIONS, string_class) \
+    F(cl_platform_info, CL_PLATFORM_PROFILE, string) \
+    F(cl_platform_info, CL_PLATFORM_VERSION, string) \
+    F(cl_platform_info, CL_PLATFORM_NAME, string) \
+    F(cl_platform_info, CL_PLATFORM_VENDOR, string) \
+    F(cl_platform_info, CL_PLATFORM_EXTENSIONS, string) \
     \
     F(cl_device_info, CL_DEVICE_TYPE, cl_device_type) \
     F(cl_device_info, CL_DEVICE_VENDOR_ID, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_COMPUTE_UNITS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_DIMENSIONS, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_WORK_GROUP_SIZE, size_type) \
-    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, cl::vector_class<size_type>) \
+    F(cl_device_info, CL_DEVICE_MAX_WORK_ITEM_SIZES, cl::vector<size_type>) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_CHAR, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_SHORT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_INT, cl_uint) \
@@ -1022,16 +1022,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_COMPILER_AVAILABLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_EXECUTION_CAPABILITIES, cl_device_exec_capabilities) \
     F(cl_device_info, CL_DEVICE_PLATFORM, cl_platform_id) \
-    F(cl_device_info, CL_DEVICE_NAME, string_class) \
-    F(cl_device_info, CL_DEVICE_VENDOR, string_class) \
-    F(cl_device_info, CL_DRIVER_VERSION, string_class) \
-    F(cl_device_info, CL_DEVICE_PROFILE, string_class) \
-    F(cl_device_info, CL_DEVICE_VERSION, string_class) \
-    F(cl_device_info, CL_DEVICE_EXTENSIONS, string_class) \
+    F(cl_device_info, CL_DEVICE_NAME, string) \
+    F(cl_device_info, CL_DEVICE_VENDOR, string) \
+    F(cl_device_info, CL_DRIVER_VERSION, string) \
+    F(cl_device_info, CL_DEVICE_PROFILE, string) \
+    F(cl_device_info, CL_DEVICE_VERSION, string) \
+    F(cl_device_info, CL_DEVICE_EXTENSIONS, string) \
     \
     F(cl_context_info, CL_CONTEXT_REFERENCE_COUNT, cl_uint) \
-    F(cl_context_info, CL_CONTEXT_DEVICES, cl::vector_class<Device>) \
-    F(cl_context_info, CL_CONTEXT_PROPERTIES, cl::vector_class<cl_context_properties>) \
+    F(cl_context_info, CL_CONTEXT_DEVICES, cl::vector<Device>) \
+    F(cl_context_info, CL_CONTEXT_PROPERTIES, cl::vector<cl_context_properties>) \
     \
     F(cl_event_info, CL_EVENT_COMMAND_QUEUE, cl::CommandQueue) \
     F(cl_event_info, CL_EVENT_COMMAND_TYPE, cl_command_type) \
@@ -1071,16 +1071,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_REFERENCE_COUNT, cl_uint) \
     F(cl_program_info, CL_PROGRAM_CONTEXT, cl::Context) \
     F(cl_program_info, CL_PROGRAM_NUM_DEVICES, cl_uint) \
-    F(cl_program_info, CL_PROGRAM_DEVICES, cl::vector_class<Device>) \
-    F(cl_program_info, CL_PROGRAM_SOURCE, string_class) \
-    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, cl::vector_class<size_type>) \
-    F(cl_program_info, CL_PROGRAM_BINARIES, cl::vector_class<cl::vector_class<unsigned char>>) \
+    F(cl_program_info, CL_PROGRAM_DEVICES, cl::vector<Device>) \
+    F(cl_program_info, CL_PROGRAM_SOURCE, string) \
+    F(cl_program_info, CL_PROGRAM_BINARY_SIZES, cl::vector<size_type>) \
+    F(cl_program_info, CL_PROGRAM_BINARIES, cl::vector<cl::vector<unsigned char>>) \
     \
     F(cl_program_build_info, CL_PROGRAM_BUILD_STATUS, cl_build_status) \
-    F(cl_program_build_info, CL_PROGRAM_BUILD_OPTIONS, string_class) \
-    F(cl_program_build_info, CL_PROGRAM_BUILD_LOG, string_class) \
+    F(cl_program_build_info, CL_PROGRAM_BUILD_OPTIONS, string) \
+    F(cl_program_build_info, CL_PROGRAM_BUILD_LOG, string) \
     \
-    F(cl_kernel_info, CL_KERNEL_FUNCTION_NAME, string_class) \
+    F(cl_kernel_info, CL_KERNEL_FUNCTION_NAME, string) \
     F(cl_kernel_info, CL_KERNEL_NUM_ARGS, cl_uint) \
     F(cl_kernel_info, CL_KERNEL_REFERENCE_COUNT, cl_uint) \
     F(cl_kernel_info, CL_KERNEL_CONTEXT, cl::Context) \
@@ -1108,7 +1108,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF, cl_uint) \
     F(cl_device_info, CL_DEVICE_DOUBLE_FP_CONFIG, cl_device_fp_config) \
     F(cl_device_info, CL_DEVICE_HALF_FP_CONFIG, cl_device_fp_config) \
-    F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, string_class) \
+    F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, string) \
     \
     F(cl_mem_info, CL_MEM_ASSOCIATED_MEMOBJECT, cl::Memory) \
     F(cl_mem_info, CL_MEM_OFFSET, size_type) \
@@ -1120,24 +1120,24 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 
 #define CL_HPP_PARAM_NAME_INFO_1_2_(F) \
     F(cl_program_info, CL_PROGRAM_NUM_KERNELS, size_type) \
-    F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, string_class) \
+    F(cl_program_info, CL_PROGRAM_KERNEL_NAMES, string) \
     \
     F(cl_program_build_info, CL_PROGRAM_BINARY_TYPE, cl_program_binary_type) \
     \
-    F(cl_kernel_info, CL_KERNEL_ATTRIBUTES, string_class) \
+    F(cl_kernel_info, CL_KERNEL_ATTRIBUTES, string) \
     \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_ADDRESS_QUALIFIER, cl_kernel_arg_address_qualifier) \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_ACCESS_QUALIFIER, cl_kernel_arg_access_qualifier) \
-    F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_NAME, string_class) \
-    F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string_class) \
+    F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_NAME, string) \
+    F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string) \
     \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl_device_id) \
-    F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector_class<cl_device_partition_property>) \
-    F(cl_device_info, CL_DEVICE_PARTITION_TYPE, cl::vector_class<cl_device_partition_property>)  \
+    F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector<cl_device_partition_property>) \
+    F(cl_device_info, CL_DEVICE_PARTITION_TYPE, cl::vector<cl_device_partition_property>)  \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, size_type) \
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
-    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, string_class)
+    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, string)
 
 #define CL_HPP_PARAM_NAME_INFO_2_0_(F) \
     F(cl_device_info, CL_DEVICE_QUEUE_ON_HOST_PROPERTIES, cl_command_queue_properties) \
@@ -1155,10 +1155,10 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
-    F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector_class<cl_device_partition_property_ext>) \
-    F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector_class<cl_device_partition_property_ext>) \
+    F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector<cl_device_partition_property_ext>) \
+    F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
-    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector_class<cl_device_partition_property_ext>)
+    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector<cl_device_partition_property_ext>)
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -1211,7 +1211,7 @@ CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
 #endif // CL_HPP_USE_CL_DEVICE_FISSION
 
 #ifdef CL_PLATFORM_ICD_SUFFIX_KHR
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_platform_info, CL_PLATFORM_ICD_SUFFIX_KHR, string_class)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_platform_info, CL_PLATFORM_ICD_SUFFIX_KHR, string)
 #endif
 
 #ifdef CL_DEVICE_PROFILING_TIMER_OFFSET_AMD
@@ -1219,7 +1219,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_PROFILING_TIMER_OFFSET_AM
 #endif
 
 #ifdef CL_DEVICE_GLOBAL_FREE_MEMORY_AMD
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, vector_class<size_type>)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_GLOBAL_FREE_MEMORY_AMD, vector<size_type>)
 #endif
 #ifdef CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SIMD_PER_COMPUTE_UNIT_AMD, cl_uint)
@@ -1441,7 +1441,7 @@ struct ReferenceHandler<cl_event>
 
 
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
-static cl_uint getVersion(const vector_class<char> &versionInfo)
+static cl_uint getVersion(const vector<char> &versionInfo)
 {
     int highVersion = 0;
     int lowVersion = 0;
@@ -1466,7 +1466,7 @@ static cl_uint getPlatformVersion(cl_platform_id platform)
     size_type size = 0;
     clGetPlatformInfo(platform, CL_PLATFORM_VERSION, 0, NULL, &size);
     
-    vector_class<char> versionInfo(size);
+    vector<char> versionInfo(size);
     clGetPlatformInfo(platform, CL_PLATFORM_VERSION, size, versionInfo.data(), &size);
     return getVersion(versionInfo);
 }
@@ -1486,7 +1486,7 @@ static cl_uint getContextPlatformVersion(cl_context context)
     clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &size);
     if (size == 0)
         return 0;
-    vector_class<cl_device_id> devices(size/sizeof(cl_device_id));
+    vector<cl_device_id> devices(size/sizeof(cl_device_id));
     clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices.data(), NULL);
     return getDevicePlatformVersion(devices[0]);
 }
@@ -1688,7 +1688,7 @@ protected:
     friend inline cl_int getInfoHelper(Func, cl_uint, U*, int, typename U::cl_type);
 
     template<typename Func, typename U>
-    friend inline cl_int getInfoHelper(Func, cl_uint, vector_class<U>*, int, typename U::cl_type);
+    friend inline cl_int getInfoHelper(Func, cl_uint, vector<U>*, int, typename U::cl_type);
 
     cl_int retain() const
     {
@@ -1727,7 +1727,7 @@ inline bool operator!=(const Wrapper<T> &lhs, const Wrapper<T> &rhs)
 //! \endcond
 
 
-using BuildLogType = vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, CL_PROGRAM_BUILD_LOG>::param_type>>;
+using BuildLogType = vector<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, CL_PROGRAM_BUILD_LOG>::param_type>>;
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 /**
 * Exception class for build errors to carry build info
@@ -1952,7 +1952,7 @@ public:
     //! \brief Wrapper for clCreateSubDevices().
     cl_int createSubDevices(
         const cl_device_partition_property * properties,
-        vector_class<Device>* devices)
+        vector<Device>* devices)
     {
         cl_uint n = 0;
         cl_int err = clCreateSubDevices(object_, properties, 0, NULL, &n);
@@ -1960,7 +1960,7 @@ public:
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
         }
 
-        vector_class<cl_device_id> ids(n);
+        vector<cl_device_id> ids(n);
         err = clCreateSubDevices(object_, properties, n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
@@ -1989,7 +1989,7 @@ public:
  */
     cl_int createSubDevices(
         const cl_device_partition_property_ext * properties,
-        vector_class<Device>* devices)
+        vector<Device>* devices)
     {
         typedef CL_API_ENTRY cl_int 
             ( CL_API_CALL * PFN_clCreateSubDevicesEXT)(
@@ -2008,7 +2008,7 @@ public:
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
         }
 
-        vector_class<cl_device_id> ids(n);
+        vector<cl_device_id> ids(n);
         err = pfn_clCreateSubDevicesEXT(object_, properties, n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
@@ -2076,7 +2076,7 @@ private:
                 return;
             }
 
-            vector_class<cl_platform_id> ids(n);
+            vector<cl_platform_id> ids(n);
             err = ::clGetPlatformIDs(n, ids.data(), NULL);
             if (err != CL_SUCCESS) {
                 default_error_ = err;
@@ -2163,7 +2163,7 @@ public:
     }
 
     //! \brief Wrapper for clGetPlatformInfo().
-    cl_int getInfo(cl_platform_info name, string_class* param) const
+    cl_int getInfo(cl_platform_info name, string* param) const
     {
         return detail::errHandler(
             detail::getInfo(&::clGetPlatformInfo, object_, name, param),
@@ -2190,7 +2190,7 @@ public:
      */
     cl_int getDevices(
         cl_device_type type,
-        vector_class<Device>* devices) const
+        vector<Device>* devices) const
     {
         cl_uint n = 0;
         if( devices == NULL ) {
@@ -2201,7 +2201,7 @@ public:
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        vector_class<cl_device_id> ids(n);
+        vector<cl_device_id> ids(n);
         err = ::clGetDeviceIDs(object_, type, n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
@@ -2251,7 +2251,7 @@ public:
         cl_d3d10_device_source_khr d3d_device_source,
         void *                     d3d_object,
         cl_d3d10_device_set_khr    d3d_device_set,
-        vector_class<Device>* devices) const
+        vector<Device>* devices) const
     {
         typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clGetDeviceIDsFromD3D10KHR)(
             cl_platform_id platform, 
@@ -2282,7 +2282,7 @@ public:
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        vector_class<cl_device_id> ids(n);
+        vector<cl_device_id> ids(n);
         err = pfn_clGetDeviceIDsFromD3D10KHR(
             object_, 
             d3d_device_source, 
@@ -2317,7 +2317,7 @@ public:
      *  Wraps clGetPlatformIDs().
      */
     static cl_int get(
-        vector_class<Platform>* platforms)
+        vector<Platform>* platforms)
     {
         cl_uint n = 0;
 
@@ -2330,7 +2330,7 @@ public:
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
-        vector_class<cl_platform_id> ids(n);
+        vector<cl_platform_id> ids(n);
         err = ::clGetPlatformIDs(n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
@@ -2494,7 +2494,7 @@ public:
      *  Wraps clCreateContext().
      */
     Context(
-        const vector_class<Device>& devices,
+        const vector<Device>& devices,
         cl_context_properties* properties = NULL,
         void (CL_CALLBACK * notifyFptr)(
             const char *,
@@ -2507,7 +2507,7 @@ public:
         cl_int error;
 
         size_type numDevices = devices.size();
-        vector_class<cl_device_id> deviceIDs(numDevices);
+        vector<cl_device_id> deviceIDs(numDevices);
 
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
@@ -2572,7 +2572,7 @@ public:
 
         if (properties == NULL) {
             // Get a valid platform ID as we cannot send in a blank one
-            vector_class<Platform> platforms;
+            vector<Platform> platforms;
             error = Platform::get(&platforms);
             if (error != CL_SUCCESS) {
                 detail::errHandler(error, __CREATE_CONTEXT_FROM_TYPE_ERR);
@@ -2586,7 +2586,7 @@ public:
             cl_context_properties platform_id = 0;
             for (unsigned int i = 0; i < platforms.size(); i++) {
 
-                vector_class<Device> devices;
+                vector<Device> devices;
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
                 try {
@@ -2744,7 +2744,7 @@ public:
     cl_int getSupportedImageFormats(
         cl_mem_flags flags,
         cl_mem_object_type type,
-        vector_class<ImageFormat>* formats) const
+        vector<ImageFormat>* formats) const
     {
         cl_uint numEntries;
         
@@ -2764,7 +2764,7 @@ public:
         }
 
         if (numEntries > 0) {
-            vector_class<ImageFormat> value(numEntries);
+            vector<ImageFormat> value(numEntries);
             err = ::clGetSupportedImageFormats(
                 object_,
                 flags,
@@ -2938,7 +2938,7 @@ public:
      *  Wraps clWaitForEvents().
      */
     static cl_int
-    waitForEvents(const vector_class<Event>& events)
+    waitForEvents(const vector<Event>& events)
     {
         return detail::errHandler(
             ::clWaitForEvents(
@@ -2995,7 +2995,7 @@ public:
  *  Wraps clWaitForEvents().
  */
 inline static cl_int
-WaitForEvents(const vector_class<Event>& events)
+WaitForEvents(const vector<Event>& events)
 {
     return detail::errHandler(
         ::clWaitForEvents(
@@ -3368,14 +3368,14 @@ public:
 };
 
 template< class T, class SVMTrait, class... Args >
-cl::pointer_class<T> allocate_svm(Args... args)
+cl::pointer<T> allocate_svm(Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc;
     return cl::allocate_pointer<T>(alloc, args...);
 }
 
 template< class T, class SVMTrait, class... Args >
-cl::pointer_class<T> allocate_svm(const cl::Context &c, Args... args)
+cl::pointer<T> allocate_svm(const cl::Context &c, Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc(c);
     return cl::allocate_pointer<T>(alloc, args...);
@@ -3385,19 +3385,19 @@ cl::pointer_class<T> allocate_svm(const cl::Context &c, Args... args)
  * 
  */
 template < class T >
-using coarse_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>>;
+using coarse_svm_vector = vector<T, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>>;
 
 /*! \brief Vector alias to simplify contruction of fine-grained SVM containers.
 *
 */
 template < class T >
-using fine_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitFine<>>>;
+using fine_svm_vector = vector<T, cl::SVMAllocator<int, cl::SVMTraitFine<>>>;
 
 /*! \brief Vector alias to simplify contruction of fine-grained SVM containers that support platform atomics.
 *
 */
 template < class T >
-using atomic_svm_vector_class = vector_class<T, cl::SVMAllocator<int, cl::SVMTraitAtomic<>>>;
+using atomic_svm_vector = vector<T, cl::SVMAllocator<int, cl::SVMTraitAtomic<>>>;
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
@@ -5580,17 +5580,17 @@ public:
     /*! \brief setArg overload taking a shared_ptr type
      */
     template<typename T>
-    cl_int setArg(cl_uint index, const cl::pointer_class<T> argPtr)
+    cl_int setArg(cl_uint index, const cl::pointer<T> argPtr)
     {
         return detail::errHandler(
             ::clSetKernelArgSVMPointer(object_, index, argPtr.get()),
             __SET_KERNEL_ARGS_ERR);
     }
 
-    /*! \brief setArg overload taking a vector_class type.
+    /*! \brief setArg overload taking a vector type.
      */
     template<typename T, class Alloc>
-    cl_int setArg(cl_uint index, const cl::vector_class<T, Alloc> &argPtr)
+    cl_int setArg(cl_uint index, const cl::vector<T, Alloc> &argPtr)
     {
         return detail::errHandler(
             ::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
@@ -5638,7 +5638,7 @@ public:
      * Specify a vector of SVM pointers that the kernel may access in 
      * addition to its arguments.
      */
-    cl_int setSVMPointers(const vector_class<void*> &pointerList)
+    cl_int setSVMPointers(const vector<void*> &pointerList)
     {
         return detail::errHandler(
             ::clSetKernelExecInfo(
@@ -5688,7 +5688,7 @@ public:
     }
     
     template<int index, int ArrayLength, typename T0, typename... Ts>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0, Ts... ts)
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer<T0> &t0, Ts... ts)
     {
         pointerList[index] = static_cast<void*>(t0.get());
         setSVMPointersHelper<index + 1, Ts...>(ts...);
@@ -5703,7 +5703,7 @@ public:
     }
     
     template<int index, int ArrayLength, typename T0>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer_class<T0> &t0)
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer<T0> &t0)
     {
         pointerList[index] = static_cast<void*>(t0.get());
     }
@@ -5738,15 +5738,15 @@ class Program : public detail::Wrapper<cl_program>
 {
 public:
 #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
-    typedef vector_class<vector_class<unsigned char>> Binaries;
-    typedef vector_class<string_class> Sources;
+    typedef vector<vector<unsigned char>> Binaries;
+    typedef vector<string> Sources;
 #else // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
-    typedef vector_class<std::pair<const void*, size_type> > Binaries;
-    typedef vector_class<std::pair<const char*, size_type> > Sources;
+    typedef vector<std::pair<const void*, size_type> > Binaries;
+    typedef vector<std::pair<const char*, size_type> > Sources;
 #endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
     
     Program(
-        const string_class& source,
+        const string& source,
         bool build = false,
         cl_int* err = NULL)
     {
@@ -5786,7 +5786,7 @@ public:
 
     Program(
         const Context& context,
-        const string_class& source,
+        const string& source,
         bool build = false,
         cl_int* err = NULL)
     {
@@ -5834,8 +5834,8 @@ public:
 
         const size_type n = (size_type)sources.size();
 
-        vector_class<size_type> lengths(n);
-        vector_class<const char*> strings(n);
+        vector<size_type> lengths(n);
+        vector<const char*> strings(n);
 
         for (size_type i = 0; i < n; ++i) {
 #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
@@ -5869,8 +5869,8 @@ public:
 
         const size_type n = (size_type)sources.size();
 
-        vector_class<size_type> lengths(n);
-        vector_class<const char*> strings(n);
+        vector<size_type> lengths(n);
+        vector<const char*> strings(n);
 
         for (size_type i = 0; i < n; ++i) {
 #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
@@ -5912,9 +5912,9 @@ public:
      */
     Program(
         const Context& context,
-        const vector_class<Device>& devices,
+        const vector<Device>& devices,
         const Binaries& binaries,
-        vector_class<cl_int>* binaryStatus = NULL,
+        vector<cl_int>* binaryStatus = NULL,
         cl_int* err = NULL)
     {
         cl_int error;
@@ -5932,8 +5932,8 @@ public:
         }
 
 
-        vector_class<size_type> lengths(numDevices);
-        vector_class<const unsigned char*> images(numDevices);
+        vector<size_type> lengths(numDevices);
+        vector<const unsigned char*> images(numDevices);
 #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
         for (size_type i = 0; i < numDevices; ++i) {
             images[i] = binaries[i].data();
@@ -5946,7 +5946,7 @@ public:
         }
 #endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
         
-        vector_class<cl_device_id> deviceIDs(numDevices);
+        vector<cl_device_id> deviceIDs(numDevices);
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -5976,15 +5976,15 @@ public:
      */
     Program(
         const Context& context,
-        const vector_class<Device>& devices,
-        const string_class& kernelNames,
+        const vector<Device>& devices,
+        const string& kernelNames,
         cl_int* err = NULL)
     {
         cl_int error;
 
 
         size_type numDevices = devices.size();
-        vector_class<cl_device_id> deviceIDs(numDevices);
+        vector<cl_device_id> deviceIDs(numDevices);
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -6050,13 +6050,13 @@ public:
     }
 
     cl_int build(
-        const vector_class<Device>& devices,
+        const vector<Device>& devices,
         const char* options = NULL,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
     {
         size_type numDevices = devices.size();
-        vector_class<cl_device_id> deviceIDs(numDevices);
+        vector<cl_device_id> deviceIDs(numDevices);
         
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
@@ -6161,13 +6161,13 @@ public:
      * On an error reading the info for any device, an empty vector of info will be returned.
      */
     template <cl_int name>
-    vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
+    vector<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
         getBuildInfo(cl_int *err = NULL) const
     {
         cl_int result = CL_SUCCESS;
 
         auto devs = getInfo<CL_PROGRAM_DEVICES>(&result);
-        vector_class<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
+        vector<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>>
             devInfo;
 
         // If there was an initial error from getInfo return the error
@@ -6199,7 +6199,7 @@ public:
         return devInfo;
     }
 
-    cl_int createKernels(vector_class<Kernel>* kernels)
+    cl_int createKernels(vector<Kernel>* kernels)
     {
         cl_uint numKernels;
         cl_int err = ::clCreateKernelsInProgram(object_, 0, NULL, &numKernels);
@@ -6207,7 +6207,7 @@ public:
             return detail::errHandler(err, __CREATE_KERNELS_IN_PROGRAM_ERR);
         }
 
-        vector_class<cl_kernel> value(numKernels);
+        vector<cl_kernel> value(numKernels);
         
         err = ::clCreateKernelsInProgram(
             object_, numKernels, value.data(), NULL);
@@ -6268,7 +6268,7 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
-    vector_class<Program> inputPrograms,
+    vector<Program> inputPrograms,
     const char* options = NULL,
     void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
     void* data = NULL,
@@ -6276,7 +6276,7 @@ inline Program linkProgram(
 {
     cl_int error_local = CL_SUCCESS;
 
-    vector_class<cl_program> programs(inputPrograms.size());
+    vector<cl_program> programs(inputPrograms.size());
 
     for (unsigned int i = 0; i < inputPrograms.size(); i++) {
         programs[i] = inputPrograms[i]();
@@ -6311,7 +6311,7 @@ inline Program linkProgram(
 
 // Template specialization for CL_PROGRAM_BINARIES
 template <>
-cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsigned char>>* param) const
+cl_int cl::Program::getInfo(cl_program_info name, vector<vector<unsigned char>>* param) const
 {
     if (name != CL_PROGRAM_BINARIES) {
         return CL_INVALID_VALUE;
@@ -6320,7 +6320,7 @@ cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsi
         // Resize the parameter array appropriately for each allocation
         // and pass down to the helper
 
-        vector_class<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
+        vector<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
         size_t numBinaries = sizes.size();
 
         // Resize the parameter array and constituent arrays
@@ -6338,9 +6338,9 @@ cl_int cl::Program::getInfo(cl_program_info name, vector_class<vector_class<unsi
 }
 
 template<>
-inline vector_class<vector_class<unsigned char>> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
+inline vector<vector<unsigned char>> cl::Program::getInfo<CL_PROGRAM_BINARIES>(cl_int* err) const
 {
-    vector_class<vector_class<unsigned char>> binariesVectors;
+    vector<vector<unsigned char>> binariesVectors;
 
     cl_int result = getInfo(CL_PROGRAM_BINARIES, &binariesVectors);
     if (err != NULL) {
@@ -6484,7 +6484,7 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        vector_class<cl::Device> devices;
+        vector<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
         detail::errHandler(error, __CREATE_CONTEXT_ERR);
@@ -6664,7 +6664,7 @@ public:
         size_type offset,
         size_type size,
         void* ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6689,7 +6689,7 @@ public:
         size_type offset,
         size_type size,
         const void* ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6714,7 +6714,7 @@ public:
         size_type src_offset,
         size_type dst_offset,
         size_type size,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6735,15 +6735,15 @@ public:
     cl_int enqueueReadBufferRect(
         const Buffer& buffer,
         cl_bool blocking,
-        const array_class<size_type, 3>& buffer_offset,
-        const array_class<size_type, 3>& host_offset,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& buffer_offset,
+        const array<size_type, 3>& host_offset,
+        const array<size_type, 3>& region,
         size_type buffer_row_pitch,
         size_type buffer_slice_pitch,
         size_type host_row_pitch,
         size_type host_slice_pitch,
         void *ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6774,15 +6774,15 @@ public:
     cl_int enqueueWriteBufferRect(
         const Buffer& buffer,
         cl_bool blocking,
-        const array_class<size_type, 3>& buffer_offset,
-        const array_class<size_type, 3>& host_offset,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& buffer_offset,
+        const array<size_type, 3>& host_offset,
+        const array<size_type, 3>& region,
         size_type buffer_row_pitch,
         size_type buffer_slice_pitch,
         size_type host_row_pitch,
         size_type host_slice_pitch,
         void *ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6813,14 +6813,14 @@ public:
     cl_int enqueueCopyBufferRect(
         const Buffer& src,
         const Buffer& dst,
-        const array_class<size_type, 3>& src_origin,
-        const array_class<size_type, 3>& dst_origin,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& src_origin,
+        const array<size_type, 3>& dst_origin,
+        const array<size_type, 3>& region,
         size_type src_row_pitch,
         size_type src_slice_pitch,
         size_type dst_row_pitch,
         size_type dst_slice_pitch,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6865,7 +6865,7 @@ public:
         PatternType pattern,
         size_type offset,
         size_type size,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6892,12 +6892,12 @@ public:
     cl_int enqueueReadImage(
         const Image& image,
         cl_bool blocking,
-        const array_class<size_type, 3>& origin,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
         size_type row_pitch,
         size_type slice_pitch,
         void* ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6925,12 +6925,12 @@ public:
     cl_int enqueueWriteImage(
         const Image& image,
         cl_bool blocking,
-        const array_class<size_type, 3>& origin,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
         size_type row_pitch,
         size_type slice_pitch,
         void* ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6958,10 +6958,10 @@ public:
     cl_int enqueueCopyImage(
         const Image& src,
         const Image& dst,
-        const array_class<size_type, 3>& src_origin,
-        const array_class<size_type, 3>& dst_origin,
-        const array_class<size_type, 3>& region,
-        const vector_class<Event>* events = NULL,
+        const array<size_type, 3>& src_origin,
+        const array<size_type, 3>& dst_origin,
+        const array<size_type, 3>& region,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -6995,9 +6995,9 @@ public:
     cl_int enqueueFillImage(
         const Image& image,
         cl_float4 fillColor,
-        const array_class<size_type, 3>& origin,
-        const array_class<size_type, 3>& region,
-        const vector_class<Event>* events = NULL,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7029,9 +7029,9 @@ public:
     cl_int enqueueFillImage(
         const Image& image,
         cl_int4 fillColor,
-        const array_class<size_type, 3>& origin,
-        const array_class<size_type, 3>& region,
-        const vector_class<Event>* events = NULL,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7063,9 +7063,9 @@ public:
     cl_int enqueueFillImage(
         const Image& image,
         cl_uint4 fillColor,
-        const array_class<size_type, 3>& origin,
-        const array_class<size_type, 3>& region,
-        const vector_class<Event>* events = NULL,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7091,10 +7091,10 @@ public:
     cl_int enqueueCopyImageToBuffer(
         const Image& src,
         const Buffer& dst,
-        const array_class<size_type, 3>& src_origin,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& src_origin,
+        const array<size_type, 3>& region,
         size_type dst_offset,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7121,9 +7121,9 @@ public:
         const Buffer& src,
         const Image& dst,
         size_type src_offset,
-        const array_class<size_type, 3>& dst_origin,
-        const array_class<size_type, 3>& region,
-        const vector_class<Event>* events = NULL,
+        const array<size_type, 3>& dst_origin,
+        const array<size_type, 3>& region,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7152,7 +7152,7 @@ public:
         cl_map_flags flags,
         size_type offset,
         size_type size,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL) const
     {
@@ -7179,11 +7179,11 @@ public:
         const Image& buffer,
         cl_bool blocking,
         cl_map_flags flags,
-        const array_class<size_type, 3>& origin,
-        const array_class<size_type, 3>& region,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
         size_type * row_pitch,
         size_type * slice_pitch,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL) const
     {
@@ -7211,7 +7211,7 @@ public:
     cl_int enqueueUnmapMemObject(
         const Memory& memory,
         void* mapped_ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7242,7 +7242,7 @@ public:
      * have completed.
      */
     cl_int enqueueMarkerWithWaitList(
-        const vector_class<Event> *events = 0,
+        const vector<Event> *events = 0,
         Event *event = 0)
     {
         cl_event tmp;
@@ -7272,7 +7272,7 @@ public:
      * before this command to command_queue, have completed.
      */
     cl_int enqueueBarrierWithWaitList(
-        const vector_class<Event> *events = 0,
+        const vector<Event> *events = 0,
         Event *event = 0)
     {
         cl_event tmp;
@@ -7295,15 +7295,15 @@ public:
      * should be associated.
      */
     cl_int enqueueMigrateMemObjects(
-        const vector_class<Memory> &memObjects,
+        const vector<Memory> &memObjects,
         cl_mem_migration_flags flags,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL
         )
     {
         cl_event tmp;
         
-        vector_class<cl_mem> localMemObjects(memObjects.size());
+        vector<cl_mem> localMemObjects(memObjects.size());
 
         for( int i = 0; i < (int)memObjects.size(); ++i ) {
             localMemObjects[i] = memObjects[i]();
@@ -7333,7 +7333,7 @@ public:
         const NDRange& offset,
         const NDRange& global,
         const NDRange& local = NullRange,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         cl_event tmp;
@@ -7357,7 +7357,7 @@ public:
 #if defined(CL_USE_DEPRECATED_OPENCL_1_2_APIS)
     CL_EXT_PREFIX__VERSION_1_2_DEPRECATED cl_int enqueueTask(
         const Kernel& kernel,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED const
     {
         cl_event tmp;
@@ -7379,16 +7379,16 @@ public:
     cl_int enqueueNativeKernel(
         void (CL_CALLBACK *userFptr)(void *),
         std::pair<void*, size_type> args,
-        const vector_class<Memory>* mem_objects = NULL,
-        const vector_class<const void*>* mem_locs = NULL,
-        const vector_class<Event>* events = NULL,
+        const vector<Memory>* mem_objects = NULL,
+        const vector<const void*>* mem_locs = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
         size_type elements = 0;
         if (mem_objects != NULL) {
             elements = mem_objects->size();
         }
-        vector_class<cl_mem> mems(elements);
+        vector<cl_mem> mems(elements);
         for (unsigned int i = 0; i < elements; i++) {
             mems[i] = ((*mem_objects)[i])();
         }
@@ -7432,7 +7432,7 @@ public:
     }
 
     CL_EXT_PREFIX__VERSION_1_1_DEPRECATED
-    cl_int enqueueWaitForEvents(const vector_class<Event>& events) const CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
+    cl_int enqueueWaitForEvents(const vector<Event>& events) const CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
     {
         return detail::errHandler(
             ::clEnqueueWaitForEvents(
@@ -7444,8 +7444,8 @@ public:
 #endif // defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
     cl_int enqueueAcquireGLObjects(
-         const vector_class<Memory>* mem_objects = NULL,
-         const vector_class<Event>* events = NULL,
+         const vector<Memory>* mem_objects = NULL,
+         const vector<Event>* events = NULL,
          Event* event = NULL) const
      {
         cl_event tmp;
@@ -7466,8 +7466,8 @@ public:
      }
 
     cl_int enqueueReleaseGLObjects(
-         const vector_class<Memory>* mem_objects = NULL,
-         const vector_class<Event>* events = NULL,
+         const vector<Memory>* mem_objects = NULL,
+         const vector<Event>* events = NULL,
          Event* event = NULL) const
      {
         cl_event tmp;
@@ -7498,8 +7498,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     const cl_event* event_wait_list, cl_event* event);
 
     cl_int enqueueAcquireD3D10Objects(
-         const vector_class<Memory>* mem_objects = NULL,
-         const vector_class<Event>* events = NULL,
+         const vector<Memory>* mem_objects = NULL,
+         const vector<Event>* events = NULL,
          Event* event = NULL) const
     {
         static PFN_clEnqueueAcquireD3D10ObjectsKHR pfn_clEnqueueAcquireD3D10ObjectsKHR = NULL;
@@ -7531,8 +7531,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
      }
 
     cl_int enqueueReleaseD3D10Objects(
-         const vector_class<Memory>* mem_objects = NULL,
-         const vector_class<Event>* events = NULL,
+         const vector<Memory>* mem_objects = NULL,
+         const vector<Event>* events = NULL,
          Event* event = NULL) const
     {
         static PFN_clEnqueueReleaseD3D10ObjectsKHR pfn_clEnqueueReleaseD3D10ObjectsKHR = NULL;
@@ -7943,7 +7943,7 @@ inline cl_int enqueueReadBuffer(
     size_type offset,
     size_type size,
     void* ptr,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -7962,7 +7962,7 @@ inline cl_int enqueueWriteBuffer(
         size_type offset,
         size_type size,
         const void* ptr,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL)
 {
     cl_int error;
@@ -7981,7 +7981,7 @@ inline void* enqueueMapBuffer(
         cl_map_flags flags,
         size_type offset,
         size_type size,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL,
         cl_int* err = NULL)
 {
@@ -8009,7 +8009,7 @@ inline void* enqueueMapBuffer(
 inline cl_int enqueueUnmapMemObject(
     const Memory& memory,
     void* mapped_ptr,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8040,7 +8040,7 @@ inline cl_int enqueueCopyBuffer(
         size_type src_offset,
         size_type dst_offset,
         size_type size,
-        const vector_class<Event>* events = NULL,
+        const vector<Event>* events = NULL,
         Event* event = NULL)
 {
     cl_int error;
@@ -8159,15 +8159,15 @@ inline cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, Iterato
 inline cl_int enqueueReadBufferRect(
     const Buffer& buffer,
     cl_bool blocking,
-    const array_class<size_type, 3>& buffer_offset,
-    const array_class<size_type, 3>& host_offset,
-    const array_class<size_type, 3>& region,
+    const array<size_type, 3>& buffer_offset,
+    const array<size_type, 3>& host_offset,
+    const array<size_type, 3>& region,
     size_type buffer_row_pitch,
     size_type buffer_slice_pitch,
     size_type host_row_pitch,
     size_type host_slice_pitch,
     void *ptr,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8195,15 +8195,15 @@ inline cl_int enqueueReadBufferRect(
 inline cl_int enqueueWriteBufferRect(
     const Buffer& buffer,
     cl_bool blocking,
-    const array_class<size_type, 3>& buffer_offset,
-    const array_class<size_type, 3>& host_offset,
-    const array_class<size_type, 3>& region,
+    const array<size_type, 3>& buffer_offset,
+    const array<size_type, 3>& host_offset,
+    const array<size_type, 3>& region,
     size_type buffer_row_pitch,
     size_type buffer_slice_pitch,
     size_type host_row_pitch,
     size_type host_slice_pitch,
     void *ptr,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8231,14 +8231,14 @@ inline cl_int enqueueWriteBufferRect(
 inline cl_int enqueueCopyBufferRect(
     const Buffer& src,
     const Buffer& dst,
-    const array_class<size_type, 3>& src_origin,
-    const array_class<size_type, 3>& dst_origin,
-    const array_class<size_type, 3>& region,
+    const array<size_type, 3>& src_origin,
+    const array<size_type, 3>& dst_origin,
+    const array<size_type, 3>& region,
     size_type src_row_pitch,
     size_type src_slice_pitch,
     size_type dst_row_pitch,
     size_type dst_slice_pitch,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8266,12 +8266,12 @@ inline cl_int enqueueCopyBufferRect(
 inline cl_int enqueueReadImage(
     const Image& image,
     cl_bool blocking,
-    const array_class<size_type, 3>& origin,
-    const array_class<size_type, 3>& region,
+    const array<size_type, 3>& origin,
+    const array<size_type, 3>& region,
     size_type row_pitch,
     size_type slice_pitch,
     void* ptr,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL) 
 {
     cl_int error;
@@ -8296,12 +8296,12 @@ inline cl_int enqueueReadImage(
 inline cl_int enqueueWriteImage(
     const Image& image,
     cl_bool blocking,
-    const array_class<size_type, 3>& origin,
-    const array_class<size_type, 3>& region,
+    const array<size_type, 3>& origin,
+    const array<size_type, 3>& region,
     size_type row_pitch,
     size_type slice_pitch,
     void* ptr,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8326,10 +8326,10 @@ inline cl_int enqueueWriteImage(
 inline cl_int enqueueCopyImage(
     const Image& src,
     const Image& dst,
-    const array_class<size_type, 3>& src_origin,
-    const array_class<size_type, 3>& dst_origin,
-    const array_class<size_type, 3>& region,
-    const vector_class<Event>* events = NULL,
+    const array<size_type, 3>& src_origin,
+    const array<size_type, 3>& dst_origin,
+    const array<size_type, 3>& region,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8352,10 +8352,10 @@ inline cl_int enqueueCopyImage(
 inline cl_int enqueueCopyImageToBuffer(
     const Image& src,
     const Buffer& dst,
-    const array_class<size_type, 3>& src_origin,
-    const array_class<size_type, 3>& region,
+    const array<size_type, 3>& src_origin,
+    const array<size_type, 3>& region,
     size_type dst_offset,
-    const vector_class<Event>* events = NULL,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8379,9 +8379,9 @@ inline cl_int enqueueCopyBufferToImage(
     const Buffer& src,
     const Image& dst,
     size_type src_offset,
-    const array_class<size_type, 3>& dst_origin,
-    const array_class<size_type, 3>& region,
-    const vector_class<Event>* events = NULL,
+    const array<size_type, 3>& dst_origin,
+    const array<size_type, 3>& region,
+    const vector<Event>* events = NULL,
     Event* event = NULL)
 {
     cl_int error;
@@ -8434,7 +8434,7 @@ private:
     const NDRange offset_;
     const NDRange global_;
     const NDRange local_;
-    vector_class<Event> events_;
+    vector<Event> events_;
 
     template<typename... Ts>
     friend class KernelFunctor;
@@ -8494,7 +8494,7 @@ public:
         events_.push_back(e);
     }
 
-    EnqueueArgs(const vector_class<Event> &events, NDRange global) : 
+    EnqueueArgs(const vector<Event> &events, NDRange global) : 
       queue_(CommandQueue::getDefault()),
       offset_(NullRange), 
       global_(global),
@@ -8504,7 +8504,7 @@ public:
 
     }
 
-    EnqueueArgs(const vector_class<Event> &events, NDRange global, NDRange local) : 
+    EnqueueArgs(const vector<Event> &events, NDRange global, NDRange local) : 
       queue_(CommandQueue::getDefault()),
       offset_(NullRange), 
       global_(global),
@@ -8514,7 +8514,7 @@ public:
 
     }
 
-    EnqueueArgs(const vector_class<Event> &events, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(const vector<Event> &events, NDRange offset, NDRange global, NDRange local) : 
       queue_(CommandQueue::getDefault()),
       offset_(offset), 
       global_(global),
@@ -8578,7 +8578,7 @@ public:
         events_.push_back(e);
     }
 
-    EnqueueArgs(CommandQueue &queue, const vector_class<Event> &events, NDRange global) : 
+    EnqueueArgs(CommandQueue &queue, const vector<Event> &events, NDRange global) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -8588,7 +8588,7 @@ public:
 
     }
 
-    EnqueueArgs(CommandQueue &queue, const vector_class<Event> &events, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, const vector<Event> &events, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(NullRange), 
       global_(global),
@@ -8598,7 +8598,7 @@ public:
 
     }
 
-    EnqueueArgs(CommandQueue &queue, const vector_class<Event> &events, NDRange offset, NDRange global, NDRange local) : 
+    EnqueueArgs(CommandQueue &queue, const vector<Event> &events, NDRange offset, NDRange global, NDRange local) : 
       queue_(queue),
       offset_(offset), 
       global_(global),
@@ -8648,7 +8648,7 @@ public:
 
     KernelFunctor(
         const Program& program,
-        const string_class name,
+        const string name,
         cl_int * err = NULL) :
         kernel_(program, name.c_str(), err)
     {}
@@ -8705,7 +8705,7 @@ public:
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-    cl_int setSVMPointers(const vector_class<void*> &pointerList)
+    cl_int setSVMPointers(const vector<void*> &pointerList)
     {
         return kernel_.setSVMPointers(pointerList);
     }
@@ -8737,7 +8737,7 @@ namespace compatibility {
 
         make_kernel(
             const Program& program,
-            const string_class name,
+            const string name,
             cl_int * err = NULL) :
             functor_(FunctorType(program, name, err))
         {}
