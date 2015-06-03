@@ -99,9 +99,9 @@ int main(void)
     programStrings.push_back(std::pair<const char*, size_t>(kernel2.data(), kernel2.length()));
 #else // #if defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
     // New simpler string interface style
-    std::vector<std::string> programStrings;
-    programStrings.push_back(kernel1);        
-    programStrings.push_back(kernel2);
+    std::vector<std::string> programStrings {
+        kernel1,
+        kernel2 };
 #endif // #if defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
     cl::Program vectorAddProgram(
         programStrings);
@@ -167,8 +167,7 @@ int main(void)
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
     // so the user has to create one
     // We can't preemptively do so on device creation because they cannot then replace it
-    cl::DeviceCommandQueue defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault(
-        cl::Context::getDefault(), cl::Device::getDefault());
+    cl::DeviceCommandQueue defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault();
     
     auto vectorAddKernel =
         cl::KernelFunctor<
@@ -179,14 +178,13 @@ int main(void)
             int,
             cl::Pipe&,
             cl::DeviceCommandQueue
-            >(vectorAddProgram, "vectorAdd");
+        >(vectorAddProgram, "vectorAdd");
 
 
     // Only the last of these will actually be used
     // but this will check that the API is working for all
     // of them
-    cl::vector_class<void*> ptrs;
-    ptrs.push_back(static_cast<void*>(anSVMInt.get()));
+    cl::vector_class<void*> ptrs{ static_cast<void*>(anSVMInt.get()) };
     vectorAddKernel.setSVMPointers(ptrs);
     vectorAddKernel.setSVMPointers(anSVMInt.get());
     vectorAddKernel.setSVMPointers(anSVMInt);
