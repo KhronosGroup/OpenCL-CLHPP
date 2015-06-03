@@ -153,9 +153,7 @@
             "}" };
 
         // New simpler string interface style
-        std::vector<std::string> programStrings;
-        programStrings.push_back(kernel1);        
-        programStrings.push_back(kernel2);
+        std::vector<std::string> programStrings {kernel1, kernel2};
 
         cl::Program vectorAddProgram(
             programStrings);
