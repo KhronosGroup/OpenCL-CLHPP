@@ -35,8 +35,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 2.0.1
- *   \date May 2015
+ *   \version 2.0.2
+ *   \date 2015-06-03
  *
  *   Optional extension support
  *
