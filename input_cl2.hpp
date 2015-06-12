@@ -35,8 +35,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 2.0.2
- *   \date 2015-06-03
+ *   \version 2.0.3
+ *   \date 2015-06-12
  *
  *   Optional extension support
  *
@@ -6319,7 +6319,7 @@ cl_int cl::Program::getInfo(cl_program_info name, vector<vector<unsigned char>>*
         // and pass down to the helper
 
         vector<size_type> sizes = getInfo<CL_PROGRAM_BINARY_SIZES>();
-        size_t numBinaries = sizes.size();
+        size_type numBinaries = sizes.size();
 
         // Resize the parameter array and constituent arrays
         param->resize(numBinaries);
