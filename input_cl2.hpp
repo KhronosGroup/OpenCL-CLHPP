@@ -6309,7 +6309,7 @@ inline Program linkProgram(
 
 // Template specialization for CL_PROGRAM_BINARIES
 template <>
-cl_int cl::Program::getInfo(cl_program_info name, vector<vector<unsigned char>>* param) const
+inline cl_int cl::Program::getInfo(cl_program_info name, vector<vector<unsigned char>>* param) const
 {
     if (name != CL_PROGRAM_BINARIES) {
         return CL_INVALID_VALUE;
