@@ -14,7 +14,6 @@
 
 #undef _UP
 
-#include <map>
 #include <vector>
 #include <utility>
 #ifdef TEST_CPP11_ATOMICS
