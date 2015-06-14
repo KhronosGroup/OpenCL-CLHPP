@@ -6,12 +6,6 @@
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
 
-// Needs to be included before CL/opencl.h to set appropriate defines
-// Seemingly not for MSVC, though.
-#if !defined(_MSC_VER)
-#include <CL/cl2.hpp>
-#endif
-
 extern "C" {
     // Headers required to make unity use mocks correctly
     #include <unity.h>
