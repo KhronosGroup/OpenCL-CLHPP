@@ -3,6 +3,7 @@
 # define TEST_RVALUE_REFERENCES
 # define VECTOR_CLASS cl::vector
 # define STRING_CLASS cl::string
+
 #else
 # include <CL/cl.hpp>
 // cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
@@ -10,15 +11,10 @@
 #  define TEST_RVALUE_REFERENCES
 #  define TEST_CPP11_ATOMICS
 # endif // (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
+
 #endif // !CL_HPP_TEST_CL2
 
 #undef _UP
-
-#include <vector>
-#include <utility>
-#ifdef TEST_CPP11_ATOMICS
-# include <atomic>
-#endif
 
 extern "C"
 {

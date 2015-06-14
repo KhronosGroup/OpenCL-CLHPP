@@ -21,7 +21,7 @@ int main(void)
         }
     }
     if (plat() == 0)  {
-        std::cout << "No OpenCL 2.0 platform found.";
+        std::cout << "No OpenCL 2.0 platform found.\n";
         return -1;
     }
 

@@ -70,6 +70,9 @@ set(TEST_CL2HPP_SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
     test_cl2hpp.cpp)
 
+  
+#set_source_files_properties(test_cl2hpp_Runner.c PROPERTIES LANGUAGE "CXX")
+#set_source_files_properties(test_clhpp_Runner.c PROPERTIES LANGUAGE "CXX")
 add_executable(test_clhpp ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
 add_executable(test_clhpp_deprecated_1_1 ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
 set_target_properties(test_clhpp_deprecated_1_1 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_1_APIS")

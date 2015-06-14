@@ -19,12 +19,13 @@ int main(void)
     cl::Platform plat;
     for (auto &p : platforms) {
         std::string platver = p.getInfo<CL_PLATFORM_VERSION>();
+        std::cerr << "Plat: " << platver << "\n";
         if (platver.find("OpenCL 2.") != std::string::npos) {
             plat = p;
         }
     }
     if (plat() == 0)  {
-        std::cout << "No OpenCL 2.0 platform found.";
+        std::cout << "No OpenCL 2.0 platform found.\n";
         return -1;
     }
 
