@@ -35,21 +35,21 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 2.0.3
- *   \date 2015-06-12
+ *   \version 2.0.4
+ *   \date 2015-06-15
  *
  *   Optional extension support
  *
- *         cl
  *         cl_ext_device_fission
  *         #define CL_HPP_USE_CL_DEVICE_FISSION
+ *         cl_khr_d3d10_sharing
+ *         #define USE_DX_INTEROP
  */
 
 /*! \mainpage
  * \section intro Introduction
  * For many large applications C++ is the language of choice and so it seems
  * reasonable to define C++ bindings for OpenCL.
- *
  *
  * The interface is contained with a single C++ header file \em cl2.hpp and all
  * definitions are contained within the namespace \em cl. There is no additional
@@ -60,32 +60,108 @@
  * underlying C API. Using the C++ bindings introduces no additional execution
  * overhead.
  *
- * For detail documentation on the bindings see:
- *
- * The OpenCL C++ Wrapper API 2.0 (revision 01)
- *  TODO: Documentation
+ * There are numerous compatibility, portability and memory management
+ * fixes in the new header as well as additional OpenCL 2.0 features.
+ * As a result the header is not directly backward compatible and for this
+ * reason we release it as cl2.hpp rather than a new version of cl.hpp.
+ * 
  *
  * \section compatibility Compatibility
- * TODO: Describe support for OpenCL 1.1 and 1.2 platforms.
+ * Due to the evolution of the underlying OpenCL API the 2.0 C++ bindings
+ * include an updated approach to defining supported feature versions
+ * and the range of valid underlying OpenCL runtime versions supported.
+ *
+ * The combination of preprocessor macros CL_HPP_TARGET_OPENCL_VERSION and 
+ * CL_HPP_MINIMUM_OPENCL_VERSION control this range. These are three digit
+ * decimal values representing OpenCL runime versions. The default for 
+ * the target is 200, representing OpenCL 2.0 and the minimum is also 
+ * defined as 200. These settings would use 2.0 API calls only.
+ * If backward compatibility with a 1.2 runtime is required, the minimum
+ * version may be set to 120.
+ *
+ * Note that this is a compile-time setting, and so affects linking against
+ * a particular SDK version rather than the versioning of the loaded runtime.
+ *
+ * The earlier versions of the header included basic vector and string 
+ * classes based loosely on STL versions. These were difficult to 
+ * maintain and very rarely used. For the 2.0 header we now assume
+ * the presence of the standard library unless requested otherwise.
+ * We use std::array, std::vector, std::shared_ptr and std::string 
+ * throughout to safely manage memory and reduce the chance of a 
+ * recurrance of earlier memory management bugs.
+ *
+ * These classes are used through typedefs in the cl namespace: 
+ * cl::array, cl::vector, cl::pointer and cl::string.
+ * In addition cl::allocate_pointer forwards to std::allocate_shared
+ * by default.
+ * In all cases these standard library classes can be replaced with 
+ * custom interface-compatible versions using the CL_HPP_NO_STD_ARRAY, 
+ * CL_HPP_NO_STD_VECTOR, CL_HPP_NO_STD_SHARED_PTR and 
+ * CL_HPP_NO_STD_STRING macros.
+ *
+ * The OpenCL 1.x versions of the C++ bindings included a size_t wrapper
+ * class to interface with kernel enqueue. This caused unpleasant interactions
+ * with the standard size_t declaration and led to namespacing bugs.
+ * In the 2.0 version we have replaced this with a std::array-based interface.
+ * However, the old behaviour can be regained for backward compatibility
+ * using the CL_HPP_ENABLE_SIZE_T_COMPATIBILITY macro.
+ *
+ * Finally, the program construction interface used a clumsy vector-of-pairs
+ * design in the earlier versions. We have replaced that with a cleaner 
+ * vector-of-vectors and vector-of-strings design. However, for backward 
+ * compatibility old behaviour can be regained with the
+ * CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY macro.
+ * 
+ * In OpenCL 2.0 OpenCL C is not entirely backward compatibility with 
+ * earlier versions. As a result a flag must be passed to the OpenCL C
+ * compiled to request OpenCL 2.0 compilation of kernels with 1.2 as
+ * the default in the absence of the flag.
+ * In some cases the C++ bindings automatically compile code for ease.
+ * For those cases the compilation defaults to OpenCL C 2.0.
+ * If this is not wanted, the CL_HPP_CL_1_2_DEFAULT_BUILD macro may
+ * be specified to assume 1.2 compilation.
+ * If more fine-grained decisions on a per-kernel bases are required
+ * then explicit build operations that take the flag should be used.
+ *
  *
  * \section parameterization Parameters
  * This header may be parameterized by a set of preprocessor macros.
+ * CL_HPP_TARGET_OPENCL_VERSION
+ *  - Defines the target OpenCL runtime version to build the header against.
+ *    Defaults to 200, representing OpenCL 2.0.
  * CL_HPP_NO_STD_STRING
+ *  - Do not use the standard library string class.
+ *    cl::string is not defined and may be defined by the user before 
+ *    cl2.hpp is included.
  * CL_HPP_NO_STD_VECTOR
- * CL_HPP_ENABLE_DEVICE_FISSION - Enables device fission for OpenCL 1.2 platforms
+ *  - Do not use the standard library vector class.
+ *    cl::vector is not defined and may be defined by the user before
+ *    cl2.hpp is included. 
+ * CL_HPP_NO_STD_ARRAY
+ *  - Do not use the standard library array class.
+ *    cl::array is not defined and may be defined by the user before
+ *    cl2.hpp is included.
+ * CL_HPP_NO_STD_SHARED_PTR
+ *  - Do not use the standard library shared_ptr class.
+ *    cl::pointer and the cl::allocate_pointer function are not defined 
+ *    and may be defined by the user before cl2.hpp is included.
+ * CL_HPP_ENABLE_DEVICE_FISSION 
+ *  - Enables device fission for OpenCL 1.2 platforms
  * CL_HPP_ENABLE_EXCEPTIONS
+ *  - Enable exceptions for use in the C++ bindings header.
+ *    This is the preferred error handling mechanism but is not required.
  * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
+ *  - Backward compatibility option to support cl.hpp-style size_t class.
+ *    Replaces the updated std::array derived version and removal of size_t
+ *    from the namespace. Note that in this case the new size_t class
+ *    is placed in the cl::compatibility namespace and thus requires
+ *    an additional using declaration for direct backward compatibility.
  * CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY 
  *  - Enable older vector of pairs interface for construction of programs.
  * CL_HPP_CL_1_2_DEFAULT_BUILD
  *  - Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0
-
- * \section compatibility updates
- * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY re-enables something similar to the old size_t class
- * convertable to array, but puts it in the compatibility namespace.
- * This can be pulled in by a using declaration, or a relatively clean search and replace for 
- * cl::size_t with cl::compatibility::size_t.
- * make_kernel is similarly in the compatibility namespace.
+ *  - applies to use of cl::Program construction and other program build variants.
+ *
  *
  * \section example Example
  *
