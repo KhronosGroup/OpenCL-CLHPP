@@ -36,7 +36,7 @@
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
  *   \version 2.0.4
- *   \date 2015-06-15
+ *   \date 2015-06-18
  *
  *   Optional extension support
  *
@@ -335,52 +335,52 @@
  * both and hence work with either version of the bindings.
  */
 #if !defined(CL_HPP_USE_DX_INTEROP) && defined(USE_DX_INTEROP)
-# warning "USE_DX_INTEROP is deprecated. Define CL_HPP_USE_DX_INTEROP instead"
+# pragma message("cl2.hpp: USE_DX_INTEROP is deprecated. Define CL_HPP_USE_DX_INTEROP instead")
 # define CL_HPP_USE_DX_INTEROP
 #endif
 #if !defined(CL_HPP_USE_CL_DEVICE_FISSION) && defined(USE_CL_DEVICE_FISSION)
-# warning "USE_CL_DEVICE_FISSION is deprecated. Define CL_HPP_USE_CL_DEVICE_FISSION instead"
+# pragma message("cl2.hpp: USE_CL_DEVICE_FISSION is deprecated. Define CL_HPP_USE_CL_DEVICE_FISSION instead")
 # define CL_HPP_USE_CL_DEVICE_FISSION
 #endif
 #if !defined(CL_HPP_ENABLE_EXCEPTIONS) && defined(__CL_ENABLE_EXCEPTIONS)
-# warning "__CL_ENABLE_EXCEPTIONS is deprecated. Define CL_HPP_ENABLE_EXCEPTIONS instead"
+# pragma message("cl2.hpp: __CL_ENABLE_EXCEPTIONS is deprecated. Define CL_HPP_ENABLE_EXCEPTIONS instead")
 # define CL_HPP_ENABLE_EXCEPTIONS
 #endif
 #if !defined(CL_HPP_NO_STD_VECTOR) && defined(__NO_STD_VECTOR)
-# warning "__NO_STD_VECTOR is deprecated. Define CL_HPP_NO_STD_VECTOR instead"
+# pragma message("cl2.hpp: __NO_STD_VECTOR is deprecated. Define CL_HPP_NO_STD_VECTOR instead")
 # define CL_HPP_NO_STD_VECTOR
 #endif
 #if !defined(CL_HPP_NO_STD_STRING) && defined(__NO_STD_STRING)
-# warning "__NO_STD_STRING is deprecated. Define CL_HPP_NO_STD_STRING instead"
+# pragma message("cl2.hpp: __NO_STD_STRING is deprecated. Define CL_HPP_NO_STD_STRING instead")
 # define CL_HPP_NO_STD_STRING
 #endif
 #if defined(VECTOR_CLASS)
-# warning "VECTOR_CLASS is deprecated. Alias cl::vector instead"
+# pragma message("cl2.hpp: VECTOR_CLASS is deprecated. Alias cl::vector instead")
 #endif
 #if defined(STRING_CLASS)
-# warning "STRING_CLASS is deprecated. Alias cl::string instead."
+# pragma message("cl2.hpp: STRING_CLASS is deprecated. Alias cl::string instead.")
 #endif
 #if !defined(CL_HPP_USER_OVERRIDE_ERROR_STRINGS) && defined(__CL_USER_OVERRIDE_ERROR_STRINGS)
-# warning "__CL_USER_OVERRIDE_ERROR_STRINGS is deprecated. Define CL_HPP_USER_OVERRIDE_ERROR_STRINGS instead"
+# pragma message("cl2.hpp: __CL_USER_OVERRIDE_ERROR_STRINGS is deprecated. Define CL_HPP_USER_OVERRIDE_ERROR_STRINGS instead")
 # define CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 #endif
 
 /* Warn about features that are no longer supported
  */
 #if defined(__USE_DEV_VECTOR)
-# warning "__USE_DEV_VECTOR is no longer supported. Expect compilation errors"
+# pragma message("cl2.hpp: __USE_DEV_VECTOR is no longer supported. Expect compilation errors")
 #endif
 #if defined(__USE_DEV_STRING)
-# warning "__USE_DEV_STRING is no longer supported. Expect compilation errors"
+# pragma message("cl2.hpp: __USE_DEV_STRING is no longer supported. Expect compilation errors")
 #endif
 
 /* Detect which version to target */
 #if !defined(CL_HPP_TARGET_OPENCL_VERSION)
-# warning "CL_HPP_TARGET_OPENCL_VERSION is not defined. It will default to 200 (OpenCL 2.0)"
+# pragma message("cl2.hpp: CL_HPP_TARGET_OPENCL_VERSION is not defined. It will default to 200 (OpenCL 2.0)")
 # define CL_HPP_TARGET_OPENCL_VERSION 200
 #endif
 #if CL_HPP_TARGET_OPENCL_VERSION != 100 && CL_HPP_TARGET_OPENCL_VERSION != 110 && CL_HPP_TARGET_OPENCL_VERSION != 120 && CL_HPP_TARGET_OPENCL_VERSION != 200
-# warning "CL_HPP_TARGET_OPENCL_VERSION is not a valid value (100, 110, 120 or 200). It will be set to 200"
+# pragma message("cl2.hpp: CL_HPP_TARGET_OPENCL_VERSION is not a valid value (100, 110, 120 or 200). It will be set to 200")
 # undef CL_HPP_TARGET_OPENCL_VERSION
 # define CL_HPP_TARGET_OPENCL_VERSION 200
 #endif
@@ -389,7 +389,7 @@
 # define CL_HPP_MINIMUM_OPENCL_VERSION 200
 #endif
 #if CL_HPP_MINIMUM_OPENCL_VERSION != 100 && CL_HPP_MINIMUM_OPENCL_VERSION != 110 && CL_HPP_MINIMUM_OPENCL_VERSION != 120 && CL_HPP_MINIMUM_OPENCL_VERSION != 200
-# warning "CL_HPP_MINIMUM_OPENCL_VERSION is not a valid value (100, 110, 120 or 200). It will be set to 100"
+# pragma message("cl2.hpp: CL_HPP_MINIMUM_OPENCL_VERSION is not a valid value (100, 110, 120 or 200). It will be set to 100")
 # undef CL_HPP_MINIMUM_OPENCL_VERSION
 # define CL_HPP_MINIMUM_OPENCL_VERSION 100
 #endif
