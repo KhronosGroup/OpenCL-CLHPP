@@ -24,7 +24,7 @@
 /*! \file
  *
  *   \brief C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), 
- *       OpenCL 1.2 (rev 15) and OpenCL 2.0 (rev 23)
+ *       OpenCL 1.2 (rev 15) and OpenCL 2.0 (rev 29)
  *   \author Lee Howes and Bruce Merry
  *   
  *   Derived from the OpenCL 1.x C++ bindings written by 
@@ -35,8 +35,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 2.0.4
- *   \date 2015-06-18
+ *   \version 2.0.5
+ *   \date 2015-08-10
  *
  *   Optional extension support
  *
