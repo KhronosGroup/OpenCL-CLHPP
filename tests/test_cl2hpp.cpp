@@ -522,6 +522,41 @@ void testSubGroups()
     TEST_ASSERT_EQUAL(res2, 2);
 }
 
+/**
+* Stub implementation of clGetDeviceInfo that returns an absense of builtin kernels
+*/
+static cl_int clGetDeviceInfo_builtin(
+    cl_device_id id,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    // Test to verify case where empty string is returned - so size is 0
+    (void)num_calls;
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_BUILT_IN_KERNELS, param_name);
+    if (param_value == NULL) {
+        if (param_value_size_ret != NULL) {
+            *param_value_size_ret = 0;
+        }
+    }
+    return CL_SUCCESS;
+}
+
+void testBuiltInKernels()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_builtin);
+    cl::string s = d0.getInfo<CL_DEVICE_BUILT_IN_KERNELS>();
+
+}
+
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
 // We cannot remove the once_flag, so this is a hard fix

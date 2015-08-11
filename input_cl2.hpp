@@ -35,8 +35,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 2.0.5
- *   \date 2015-08-10
+ *   \version 2.0.6
+ *   \date 2015-08-11
  *
  *   Optional extension support
  *
@@ -978,13 +978,15 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string* param, long)
 
     // std::string has a constant data member
     // a char vector does not
-    vector<char> value(required);
-    err = f(name, required, value.data(), NULL);
-    if (err != CL_SUCCESS) {
-        return err;
-    }
-    if (param) {
-        param->assign(begin(value), prev(end(value)));
+    if (required > 0) {
+        vector<char> value(required);
+        err = f(name, required, value.data(), NULL);
+        if (err != CL_SUCCESS) {
+            return err;
+        }
+        if (param) {
+            param->assign(begin(value), prev(end(value)));
+        }
     }
     return CL_SUCCESS;
 }
