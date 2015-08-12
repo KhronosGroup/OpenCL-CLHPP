@@ -36,7 +36,7 @@
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
  *   \version 2.0.6
- *   \date 2015-08-11
+ *   \date 2015-08-12
  *
  *   Optional extension support
  *
@@ -987,6 +987,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string* param, long)
         if (param) {
             param->assign(begin(value), prev(end(value)));
         }
+    }
+    else if (param) {
+        param->assign("");
     }
     return CL_SUCCESS;
 }
