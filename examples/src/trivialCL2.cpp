@@ -217,6 +217,9 @@ int main(void)
     std::cout << "\tCL_DEVICE_SVM_FINE_GRAIN_SYSTEM = " << CL_DEVICE_SVM_FINE_GRAIN_SYSTEM << "\n";
     std::cout << "\tCL_DEVICE_SVM_ATOMICS = " << CL_DEVICE_SVM_ATOMICS << "\n";
 
+    cl_device_id clD = d();
+    cl_device_id clD2 = d.get();
+
     auto v = vectorAddProgram.getInfo<CL_PROGRAM_BINARIES>();    
     auto v2 = vectorAddProgram.getInfo<CL_PROGRAM_BINARY_SIZES>();
     std::vector<std::vector<unsigned char>> v3;

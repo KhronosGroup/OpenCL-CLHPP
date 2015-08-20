@@ -35,8 +35,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 2.0.6
- *   \date 2015-08-11
+ *   \version 2.0.7
+ *   \date 2015-08-20
  *
  *   Optional extension support
  *
@@ -1635,6 +1635,11 @@ public:
 
     cl_type& operator ()() { return object_; }
 
+    const cl_type get() const { return object_; }
+
+    cl_type get() { return object_; }
+
+
 protected:
     template<typename Func, typename U>
     friend inline cl_int getInfoHelper(Func, cl_uint, U*, int, typename U::cl_type);
@@ -1758,6 +1763,10 @@ public:
     const cl_type& operator ()() const { return object_; }
 
     cl_type& operator ()() { return object_; }
+
+    const cl_type get() const { return object_; }
+
+    cl_type get() { return object_; }
 
 protected:
     template<typename Func, typename U>
