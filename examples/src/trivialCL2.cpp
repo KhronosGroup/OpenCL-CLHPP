@@ -77,8 +77,9 @@ int main(void)
         "  globalA = 75;"
         "}"};
     std::string kernel2{
-        "typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){"
+        "typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, global int *output2, int val, write_only pipe int outPipe, queue_t childQueue){"
         "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);"
+        "  output2[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);"
         "  write_pipe(outPipe, &val);"
         "  queue_t default_queue = get_default_queue(); "
         "  ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2); "
@@ -161,9 +162,11 @@ int main(void)
     //
     //////////////
 
-
+    // Traditional cl_mem allocations
     std::vector<int> output(numElements, 0xdeadbeef);
     cl::Buffer outputBuffer(begin(output), end(output), false);
+
+    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> output2(numElements / 2, 0xdeadbeef);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
     // so the user has to create one
@@ -176,6 +179,7 @@ int main(void)
             int*,
             cl::coarse_svm_vector<int>&,
             cl::Buffer,
+            std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>>&,
             int,
             cl::Pipe&,
             cl::DeviceCommandQueue
@@ -199,13 +203,17 @@ int main(void)
         inputA.data(),
         inputB,
         outputBuffer,
+        output2,
         3,
         aPipe,
         defaultDeviceQueue,
 		error
         );
 
+    // Copy the cl_mem output back to the vector
     cl::copy(outputBuffer, begin(output), end(output));
+    // Grab the SVM output vector using a map
+    mapSVM(output2);
 
     cl::Device d = cl::Device::getDefault();
     std::cout << "Max pipe args: " << d.getInfo<CL_DEVICE_MAX_PIPE_ARGS>() << "\n";
@@ -233,6 +241,11 @@ int main(void)
     std::cout << "Output:\n";
     for (int i = 1; i < numElements; ++i) {
         std::cout << "\t" << output[i] << "\n";
+    }
+    std::cout << "\n\n";
+    std::cout << "Output2:\n";
+    for (auto &e : output2) {
+        std::cout << "\t" << e << "\n";
     }
     std::cout << "\n\n";
 
