@@ -519,19 +519,10 @@ namespace cl {
 #if !defined(CL_HPP_NO_STD_SHARED_PTR)
 #include <memory>
 namespace cl {
-    // Replace shared_ptr and allocate_ptr for internal use
+    // Replace shared_ptr and allocate_pointer for internal use
     // to allow user to replace them
     template<class T>
     using pointer = std::shared_ptr<T>;
-
-    template <class T, class Alloc, class... Args>
-    auto allocate_pointer(const Alloc &alloc, Args&&... args) -> 
-        decltype(std::allocate_shared<T>(
-            alloc, std::forward<Args>(args)...))
-    {
-        return std::allocate_shared<T>(
-            alloc, std::forward<Args>(args)...);
-    }
 } // namespace cl
 #endif 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -540,7 +531,7 @@ namespace cl {
 namespace cl {
     template < class T, size_type N >
     using array = std::array<T, N>;
-}
+} // namespace cl
 #endif // #if !defined(CL_HPP_NO_STD_ARRAY)
 
 // Define size_type appropriately to allow backward-compatibility
@@ -608,11 +599,11 @@ namespace cl {
 #endif // #if defined(CL_HPP_ENABLE_SIZE_T_COMPATIBILITY)
 
 // Helper alias to avoid confusing the macros
-namespace cl{
+namespace cl {
     namespace detail {
         using size_t_array = array<size_type, 3>;
-    }
-}
+    } // namespace detail
+} // namespace cl
 
 
 /*! \namespace cl
@@ -3291,7 +3282,17 @@ public:
     }
 };
 
-
+/**
+ * STL-like allocator class for managing SVM objects provided for convenience.
+ *
+ * Note that while this behaves like an allocator for the purposes of constructing vectors and similar objects,
+ * care must be taken when using with smart pointers.
+ * The allocator should not be used to construct a shared_ptr if we are using coarse-grained SVM mode because
+ * the coarse-grained management behaviour would behave incorrectly with respect to reference counting.
+ *
+ * Instead the allocator embeds a Deleter which may be used with shared_ptr and is used
+ * with the allocate_shared and allocate_ptr supplied operations.
+ */
 template<typename T, class SVMTrait>
 class SVMAllocator {
 private:
@@ -3318,17 +3319,18 @@ public:
     explicit SVMAllocator() :
         context_(Context::getDefault())
     {
-    }
+        }
 
     explicit SVMAllocator(cl::Context context) :
         context_(context)
     {
-    }
-    
+        }
+
+
     SVMAllocator(const SVMAllocator &other) :
         context_(other.context_)
     {
-    }
+        }
 
     template<typename U>
     SVMAllocator(const SVMAllocator<U, SVMTrait> &other) :
@@ -3353,6 +3355,8 @@ public:
     /**
      * Allocate an SVM pointer.
      *
+     * If the allocator is coarse-grained, this will take ownership to allow
+     * containers to correctly construct data in place. 
      */
     pointer allocate(
         size_type size,
@@ -3372,6 +3376,15 @@ public:
             throw excep;
         }
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+
+        // If allocation was coarse-grained then map it
+        if (!(SVMTrait::getSVMMemFlags() & CL_MEM_SVM_FINE_GRAIN_BUFFER)) {
+            cl_int err = enqueueMapSVM(retValue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size*sizeof(T));
+            if (err != CL_SUCCESS) {
+                std::bad_alloc excep;
+                throw excep;
+            }
+        }
 
         // If exceptions disabled, return null pointer from allocator
         return retValue;
@@ -3442,6 +3455,43 @@ public:
     template<typename U, typename V>
     friend class SVMAllocator;
 };
+
+#if !defined(CL_HPP_NO_STD_SHARED_PTR)
+/**
+* Allocation operation compatible with std::allocate_ptr.
+* Creates a shared_ptr<T>.
+* Note that this differs from the STL version in one respect:
+* the allocator is only used to allocate the requested object,
+* not the shared_ptr itself and its control block.
+* This requirement is to ensure that the control block is not
+* allocated in memory inaccessible to the host.
+*/
+template <class T, class Alloc, class... Args>
+std::shared_ptr<T> allocate_pointer(const Alloc &alloc_, Args&&... args)
+{
+    Alloc alloc(alloc_);
+    static const size_t copies = 1;
+
+    // Ensure that creation of the management block and the
+    // object are dealt with separately such that we only provide a deleter
+    T* tmp = alloc.allocate(copies);
+    if (!tmp) {
+        std::bad_alloc excep;
+        throw excep;
+    }
+    try {
+        //return std::shared_ptr <T, Alloc::Deleter>(tmp, alloc.get_deleter());
+
+
+        return std::shared_ptr <T>(tmp, [=](T* p) mutable {alloc.deallocate(p, copies); });
+    }
+    catch (std::bad_alloc b)
+    {
+        alloc.deallocate(tmp, copies);
+        throw b;
+    }
+}
+#endif // #if !defined(CL_HPP_NO_STD_SHARED_PTR)
 
 template< class T, class SVMTrait, class... Args >
 cl::pointer<T> allocate_svm(Args... args)
@@ -7420,7 +7470,7 @@ public:
      * This variant takes a cl::pointer instance.
      */
     template<typename T>
-    void* enqueueUnmapSVM(
+    cl_int enqueueUnmapSVM(
         cl::pointer<T> &ptr,
         const vector<Event>* events = NULL,
         Event* event = NULL) const
@@ -7445,7 +7495,7 @@ public:
      * This variant takes a cl::vector instance.
      */
     template<typename T, class Alloc>
-    void* enqueueUnmapSVM(
+    cl_int enqueueUnmapSVM(
         cl::vector<T, Alloc> &container,
         const vector<Event>* events = NULL,
         Event* event = NULL) const
@@ -8376,8 +8426,7 @@ inline cl_int enqueueUnmapSVM(
  */
 template<typename T>
 inline cl_int enqueueUnmapSVM(
-    cl::pointer<T> ptr,
-    void* mapped_ptr,
+    cl::pointer<T> &ptr,
     const vector<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -8398,8 +8447,7 @@ inline cl_int enqueueUnmapSVM(
  */
 template<typename T, class Alloc>
 inline cl_int enqueueUnmapSVM(
-    cl::vector<T, Alloc> container,
-    void* mapped_ptr,
+    cl::vector<T, Alloc> &container,
     const vector<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -8553,7 +8601,7 @@ inline cl_int mapSVM(cl::vector<T, Alloc> &container)
 template<typename T, class Alloc>
 inline cl_int unmapSVM(cl::vector<T, Alloc> &container)
 {
-    return enqueueMapSVM(container, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE);
+    return enqueueUnmapSVM(container);
 }
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200

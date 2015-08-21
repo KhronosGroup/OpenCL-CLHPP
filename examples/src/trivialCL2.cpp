@@ -147,11 +147,11 @@ int main(void)
     // Code using cl namespace allocators etc as a test
     // std::shared_ptr etc should work fine too
     
-    cl::pointer<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
+    auto anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
     *anSVMInt = 5;
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
     std::cout << "Max alloc size: " << svmAlloc.max_size() << " bytes\n";
-    cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
+    cl::SVMAllocator<Foo, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
     cl::pointer<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
 
@@ -194,6 +194,13 @@ int main(void)
     vectorAddKernel.setSVMPointers(anSVMInt.get());
     vectorAddKernel.setSVMPointers(anSVMInt);
 
+    // Hand control of coarse allocations to runtime
+    cl::enqueueUnmapSVM(anSVMInt);
+    cl::enqueueUnmapSVM(fooPointer);
+    cl::unmapSVM(inputB);
+    cl::unmapSVM(output2);
+
+
 	cl_int error;
 	vectorAddKernel(
         cl::EnqueueArgs(
@@ -213,7 +220,7 @@ int main(void)
     // Copy the cl_mem output back to the vector
     cl::copy(outputBuffer, begin(output), end(output));
     // Grab the SVM output vector using a map
-    mapSVM(output2);
+    cl::mapSVM(output2);
 
     cl::Device d = cl::Device::getDefault();
     std::cout << "Max pipe args: " << d.getInfo<CL_DEVICE_MAX_PIPE_ARGS>() << "\n";
