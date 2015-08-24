@@ -988,6 +988,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string* param, long)
             param->assign(begin(value), prev(end(value)));
         }
     }
+    else if (param) {
+        param->assign("");
+    }
     return CL_SUCCESS;
 }
 
