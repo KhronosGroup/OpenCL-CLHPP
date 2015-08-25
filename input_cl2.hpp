@@ -809,6 +809,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_ACQUIRE_GL_ERR            CL_HPP_ERR_STR_(clEnqueueAcquireGLObjects)
 #define __ENQUEUE_RELEASE_GL_ERR            CL_HPP_ERR_STR_(clEnqueueReleaseGLObjects)
 
+#define __CREATE_PIPE_ERR             CL_HPP_ERR_STR_(clCreatePipe)
 #define __GET_PIPE_INFO_ERR           CL_HPP_ERR_STR_(clGetPipeInfo)
 
 
@@ -5130,7 +5131,7 @@ public:
         cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
         object_ = ::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
 
-        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        detail::errHandler(error, __CREATE_PIPE_ERR);
         if (err != NULL) {
             *err = error;
         }
@@ -5156,7 +5157,7 @@ public:
         cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
         object_ = ::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
 
-        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        detail::errHandler(error, __CREATE_PIPE_ERR);
         if (err != NULL) {
             *err = error;
         }
@@ -5219,7 +5220,7 @@ public:
     {
         return detail::errHandler(
             detail::getInfo(&::clGetPipeInfo, object_, name, param),
-            __GET_MEM_OBJECT_INFO_ERR);
+            __GET_PIPE_INFO_ERR);
     }
 
     //! \brief Wrapper for clGetMemObjectInfo() that returns by value.
@@ -8922,6 +8923,10 @@ namespace compatibility {
 
 #undef __UNLOAD_COMPILER_ERR
 #undef __CREATE_SUB_DEVICES_ERR
+
+#undef __CREATE_PIPE_ERR
+#undef __GET_PIPE_INFO_ERR
+
 #endif //CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 
 // Extensions
