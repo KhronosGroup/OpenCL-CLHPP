@@ -851,9 +851,6 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_SAMPLER_ERR                CL_HPP_ERR_STR_(clCreateSampler)
 #endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
-#endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
-//! \endcond
-
 /**
  * CL 1.2 marker and barrier commands
  */
@@ -861,6 +858,9 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_MARKER_WAIT_LIST_ERR                CL_HPP_ERR_STR_(clEnqueueMarkerWithWaitList)
 #define __ENQUEUE_BARRIER_WAIT_LIST_ERR               CL_HPP_ERR_STR_(clEnqueueBarrierWithWaitList)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+
+#endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
+//! \endcond
 
 
 namespace detail {
