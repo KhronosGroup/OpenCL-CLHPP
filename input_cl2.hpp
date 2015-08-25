@@ -1234,6 +1234,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_command_queue_info, CL_QUEUE_SIZE, cl_uint) \
+    F(cl_mem_info, CL_MEM_USES_SVM_POINTER, cl_bool) \
     F(cl_pipe_info, CL_PIPE_PACKET_SIZE, cl_uint) \
     F(cl_pipe_info, CL_PIPE_MAX_PACKETS, cl_uint)
 
