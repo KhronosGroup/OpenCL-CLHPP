@@ -6488,7 +6488,7 @@ private:
                 default_error_ = error;
             }
             else {
-                Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
+                Device device = Device::getDefault();
                 default_ = CommandQueue(context, device, 0, &default_error_);
             }
         }
