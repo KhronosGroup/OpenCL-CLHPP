@@ -96,7 +96,7 @@
  * by default.
  * In all cases these standard library classes can be replaced with 
  * custom interface-compatible versions using the CL_HPP_NO_STD_ARRAY, 
- * CL_HPP_NO_STD_VECTOR, CL_HPP_NO_STD_SHARED_PTR and 
+ * CL_HPP_NO_STD_VECTOR, CL_HPP_NO_STD_UNIQUE_PTR and 
  * CL_HPP_NO_STD_STRING macros.
  *
  * The OpenCL 1.x versions of the C++ bindings included a size_t wrapper
@@ -141,8 +141,8 @@
  *  - Do not use the standard library array class.
  *    cl::array is not defined and may be defined by the user before
  *    cl2.hpp is included.
- * CL_HPP_NO_STD_SHARED_PTR
- *  - Do not use the standard library shared_ptr class.
+ * CL_HPP_NO_STD_UNIQUE_PTR
+ *  - Do not use the standard library unique_ptr class.
  *    cl::pointer and the cl::allocate_pointer function are not defined 
  *    and may be defined by the user before cl2.hpp is included.
  * CL_HPP_ENABLE_DEVICE_FISSION 
@@ -263,7 +263,7 @@
         cl::pointer<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
         *anSVMInt = 5;
         cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
-        cl::pointer<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
+        auto fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
         fooPointer->bar = anSVMInt.get();
         cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
         std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);    
@@ -283,7 +283,7 @@
     
         auto vectorAddKernel =
             cl::KernelFunctor<
-                cl::pointer<Foo>,
+                decltype(fooPointer)&,
                 int*,
                 cl::coarse_svm_vector<int>&,
                 cl::Buffer,
@@ -516,13 +516,13 @@ namespace cl {
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
-#if !defined(CL_HPP_NO_STD_SHARED_PTR)
+#if !defined(CL_HPP_NO_STD_UNIQUE_PTR)
 #include <memory>
 namespace cl {
-    // Replace shared_ptr and allocate_pointer for internal use
+    // Replace unique_ptr and allocate_pointer for internal use
     // to allow user to replace them
-    template<class T>
-    using pointer = std::shared_ptr<T>;
+    template<class T, class D>
+    using pointer = std::unique_ptr<T, D>;
 } // namespace cl
 #endif 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -3287,10 +3287,10 @@ public:
  *
  * Note that while this behaves like an allocator for the purposes of constructing vectors and similar objects,
  * care must be taken when using with smart pointers.
- * The allocator should not be used to construct a shared_ptr if we are using coarse-grained SVM mode because
+ * The allocator should not be used to construct a unique_ptr if we are using coarse-grained SVM mode because
  * the coarse-grained management behaviour would behave incorrectly with respect to reference counting.
  *
- * Instead the allocator embeds a Deleter which may be used with shared_ptr and is used
+ * Instead the allocator embeds a Deleter which may be used with unique_ptr and is used
  * with the allocate_shared and allocate_ptr supplied operations.
  */
 template<typename T, class SVMTrait>
@@ -3362,12 +3362,13 @@ public:
         size_type size,
         typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
     {
+        // Allocate memory with default alignment matching the size of the type
         void* voidPointer =
             clSVMAlloc(
             context_(),
             SVMTrait::getSVMMemFlags(),
             size*sizeof(T),
-            0);
+            sizeof(T));
         pointer retValue = reinterpret_cast<pointer>(
             voidPointer);
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
@@ -3436,7 +3437,7 @@ public:
     {
         return !operator==(a);
     }
-}; // class SVMAllocator
+}; // class SVMAllocator        return cl::pointer<T>(tmp, detail::Deleter<T, Alloc>{alloc, copies});
 
 
 template<class SVMTrait>
@@ -3456,56 +3457,79 @@ public:
     friend class SVMAllocator;
 };
 
-#if !defined(CL_HPP_NO_STD_SHARED_PTR)
+#if !defined(CL_HPP_NO_STD_UNIQUE_PTR)
+namespace detail
+{
+    template<class Alloc>
+    class Deleter {
+    private:
+        Alloc alloc_;
+        size_type copies_;
+
+    public:
+        typedef typename std::allocator_traits<Alloc>::pointer pointer;
+
+        Deleter(const Alloc &alloc, size_type copies) : alloc_{ alloc }, copies_{ copies }
+        {
+        }
+
+        void operator()(pointer ptr) const {
+            Alloc tmpAlloc{ alloc_ };
+            std::allocator_traits<Alloc>::destroy(tmpAlloc, std::addressof(*ptr));
+            std::allocator_traits<Alloc>::deallocate(tmpAlloc, ptr, copies_);
+        }
+    };
+} // namespace detail
+
 /**
-* Allocation operation compatible with std::allocate_ptr.
-* Creates a shared_ptr<T>.
-* Note that this differs from the STL version in one respect:
-* the allocator is only used to allocate the requested object,
-* not the shared_ptr itself and its control block.
-* This requirement is to ensure that the control block is not
-* allocated in memory inaccessible to the host.
-*/
+ * Allocation operation compatible with std::allocate_ptr.
+ * Creates a unique_ptr<T> by default.
+ * This requirement is to ensure that the control block is not
+ * allocated in memory inaccessible to the host.
+ */
 template <class T, class Alloc, class... Args>
-std::shared_ptr<T> allocate_pointer(const Alloc &alloc_, Args&&... args)
+cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Args&&... args)
 {
     Alloc alloc(alloc_);
     static const size_t copies = 1;
 
     // Ensure that creation of the management block and the
     // object are dealt with separately such that we only provide a deleter
-    T* tmp = alloc.allocate(copies);
+
+    T* tmp = std::allocator_traits<Alloc>::allocate(alloc, copies);
     if (!tmp) {
         std::bad_alloc excep;
         throw excep;
     }
     try {
-        //return std::shared_ptr <T, Alloc::Deleter>(tmp, alloc.get_deleter());
+        std::allocator_traits<Alloc>::construct(
+            alloc,
+            std::addressof(*tmp),
+            std::forward<Args>(args)...);
 
-
-        return std::shared_ptr <T>(tmp, [=](T* p) mutable {alloc.deallocate(p, copies); });
+        return cl::pointer<T, detail::Deleter<Alloc>>(tmp, detail::Deleter<Alloc>{alloc, copies});
     }
     catch (std::bad_alloc b)
     {
-        alloc.deallocate(tmp, copies);
-        throw b;
+        std::allocator_traits<Alloc>::deallocate(alloc, tmp, copies);
+        throw;
     }
 }
-#endif // #if !defined(CL_HPP_NO_STD_SHARED_PTR)
 
 template< class T, class SVMTrait, class... Args >
-cl::pointer<T> allocate_svm(Args... args)
+cl::pointer<T, detail::Deleter<SVMAllocator<T, SVMTrait>>> allocate_svm(Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc;
     return cl::allocate_pointer<T>(alloc, args...);
 }
 
 template< class T, class SVMTrait, class... Args >
-cl::pointer<T> allocate_svm(const cl::Context &c, Args... args)
+cl::pointer<T, detail::Deleter<SVMAllocator<T, SVMTrait>>> allocate_svm(const cl::Context &c, Args... args)
 {
     SVMAllocator<T, SVMTrait> alloc(c);
     return cl::allocate_pointer<T>(alloc, args...);
 }
+#endif // #if !defined(CL_HPP_NO_STD_UNIQUE_PTR)
 
 /*! \brief Vector alias to simplify contruction of coarse-grained SVM containers.
  * 
@@ -5705,8 +5729,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief setArg overload taking a shared_ptr type
      */
-    template<typename T>
-    cl_int setArg(cl_uint index, const cl::pointer<T> argPtr)
+    template<typename T, class D>
+    cl_int setArg(cl_uint index, const cl::pointer<T, D> &argPtr)
     {
         return detail::errHandler(
             ::clSetKernelArgSVMPointer(object_, index, argPtr.get()),
@@ -5722,11 +5746,9 @@ public:
             ::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
             __SET_KERNEL_ARGS_ERR);
     }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-   
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
     /*! \brief setArg overload taking a pointer type
-    */
+     */
     template<typename T>
     typename std::enable_if<std::is_pointer<T>::value, cl_int>::type
         setArg(cl_uint index, const T argPtr)
@@ -5813,8 +5835,8 @@ public:
             );
     }
     
-    template<int index, int ArrayLength, typename T0, typename... Ts>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer<T0> &t0, Ts... ts)
+    template<int index, int ArrayLength, class D, typename T0, typename... Ts>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, const pointer<T0, D> &t0, Ts... ts)
     {
         pointerList[index] = static_cast<void*>(t0.get());
         setSVMPointersHelper<index + 1, Ts...>(ts...);
@@ -5828,8 +5850,8 @@ public:
         setSVMPointersHelper<index + 1, Ts...>(ts...);
     }
     
-    template<int index, int ArrayLength, typename T0>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, pointer<T0> &t0)
+    template<int index, int ArrayLength, typename T0, class D>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, const pointer<T0, D> &t0)
     {
         pointerList[index] = static_cast<void*>(t0.get());
     }
@@ -5842,7 +5864,7 @@ public:
     }
 
     template<typename T0, typename... Ts>
-    cl_int setSVMPointers(T0 t0, Ts... ts)
+    cl_int setSVMPointers(const T0 &t0, Ts... ts)
     {
         std::array<void*, 1 + sizeof...(Ts)> pointerList;
 
@@ -7367,9 +7389,9 @@ public:
      * Enqueues a command that will allow the host to update a region of a coarse-grained SVM buffer.
      * This variant takes a cl::pointer instance.
      */
-    template<typename T>
+    template<typename T, class D>
     cl_int enqueueMapSVM(
-        cl::pointer<T> &ptr,
+        cl::pointer<T, D> &ptr,
         cl_bool blocking,
         cl_map_flags flags,
         size_type size,
@@ -7469,9 +7491,9 @@ public:
      * Enqueues a command that will release a coarse-grained SVM buffer back to the OpenCL runtime.
      * This variant takes a cl::pointer instance.
      */
-    template<typename T>
+    template<typename T, class D>
     cl_int enqueueUnmapSVM(
-        cl::pointer<T> &ptr,
+        cl::pointer<T, D> &ptr,
         const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -8324,9 +8346,9 @@ inline cl_int enqueueMapSVM(
  * update a region of a coarse-grained SVM buffer.
  * This variant takes a cl::pointer instance.
  */
-template<typename T>
+template<typename T, class D>
 inline cl_int enqueueMapSVM(
-    cl::pointer<T> ptr,
+    cl::pointer<T, D> ptr,
     cl_bool blocking,
     cl_map_flags flags,
     size_type size,
@@ -8424,9 +8446,9 @@ inline cl_int enqueueUnmapSVM(
  * SVM buffer back to the OpenCL runtime.
  * This variant takes a cl::pointer instance.
  */
-template<typename T>
+template<typename T, class D>
 inline cl_int enqueueUnmapSVM(
-    cl::pointer<T> &ptr,
+    cl::pointer<T, D> &ptr,
     const vector<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -9162,7 +9184,7 @@ public:
     }
 
     template<typename T0, typename... T1s>
-    cl_int setSVMPointers(T0 t0, T1s... ts)
+    cl_int setSVMPointers(const T0 &t0, T1s... ts)
     {
         return kernel_.setSVMPointers(t0, ts...);
     }

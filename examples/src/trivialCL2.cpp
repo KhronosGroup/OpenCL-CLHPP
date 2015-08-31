@@ -152,7 +152,7 @@ int main(void)
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
     std::cout << "Max alloc size: " << svmAlloc.max_size() << " bytes\n";
     cl::SVMAllocator<Foo, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
-    cl::pointer<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
+    auto fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
 
     std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);
@@ -175,7 +175,7 @@ int main(void)
     
     auto vectorAddKernel =
         cl::KernelFunctor<
-            cl::pointer<Foo>,
+            decltype(fooPointer)&,
             int*,
             cl::coarse_svm_vector<int>&,
             cl::Buffer,
