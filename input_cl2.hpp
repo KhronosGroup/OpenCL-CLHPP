@@ -3316,21 +3316,21 @@ public:
     template<typename U, typename V>
     friend class SVMAllocator;
 
-    explicit SVMAllocator() :
+    SVMAllocator() :
         context_(Context::getDefault())
     {
-        }
+    }
 
     explicit SVMAllocator(cl::Context context) :
         context_(context)
     {
-        }
+    }
 
 
     SVMAllocator(const SVMAllocator &other) :
         context_(other.context_)
     {
-        }
+    }
 
     template<typename U>
     SVMAllocator(const SVMAllocator<U, SVMTrait> &other) :
