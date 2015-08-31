@@ -7698,7 +7698,7 @@ public:
     /*!
     * Default construct device command queue on default context and device
     */
-    DeviceCommandQueue(cl_int* err = NULL)
+    DeviceCommandQueue(bool enable_profiling = false, cl_int* err = NULL)
     {
         cl_int error;
         cl::Context context = cl::Context::getDefault();
@@ -7706,6 +7706,9 @@ public:
         
         cl_command_queue_properties properties =
             CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_ON_DEVICE;
+        if (enable_profiling) {
+            properties |= CL_QUEUE_PROFILING_ENABLE;
+        }
         cl_queue_properties queue_properties[] = {
             CL_QUEUE_PROPERTIES, properties, 0 };
         object_ = ::clCreateCommandQueueWithProperties(
