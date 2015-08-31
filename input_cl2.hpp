@@ -7696,6 +7696,11 @@ class DeviceCommandQueue : public detail::Wrapper<cl_command_queue>
 {
 public:
     /*!
+     * Trivial empty constructor to create a null queue.
+     */
+    DeviceCommandQueue() { }
+
+    /*!
     * Default construct device command queue on default context and device
     */
     DeviceCommandQueue(bool enable_profiling = false, cl_int* err = NULL)
