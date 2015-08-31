@@ -35,6 +35,9 @@ int main(void)
         return -1;
     }
 
+    // Test command queue property construction
+    cl::CommandQueue q5(cl::QueueProperties::Profiling | cl::QueueProperties::OutOfOrder);
+
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
     cl::Program errorProgram(
         std::string(
