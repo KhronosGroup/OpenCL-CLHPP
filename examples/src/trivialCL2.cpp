@@ -168,7 +168,8 @@ int main(void)
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
     // so the user has to create one
     // We can't preemptively do so on device creation because they cannot then replace it
-    cl::DeviceCommandQueue defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault();
+    cl::DeviceCommandQueue defaultDeviceQueue;
+    defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault();
     
     auto vectorAddKernel =
         cl::KernelFunctor<

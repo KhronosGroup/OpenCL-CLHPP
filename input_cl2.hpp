@@ -7701,9 +7701,9 @@ public:
     DeviceCommandQueue() { }
 
     /*!
-    * Default construct device command queue on default context and device
-    */
-    DeviceCommandQueue(bool enable_profiling = false, cl_int* err = NULL)
+     * Default construct device command queue on default context and device
+     */
+    DeviceCommandQueue(bool enable_profiling, cl_int* err = NULL)
     {
         cl_int error;
         cl::Context context = cl::Context::getDefault();
