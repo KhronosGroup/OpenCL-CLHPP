@@ -7837,11 +7837,6 @@ DeviceQueueProperties  operator|(DeviceQueueProperties  lhs, DeviceQueueProperti
 class DeviceCommandQueue : public detail::Wrapper<cl_command_queue>
 {
 public:
-    enum class Properties : cl_command_queue_properties
-    {
-        None = 0,
-        Profiling = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
-    };
 
     /*!
      * Trivial empty constructor to create a null queue.
