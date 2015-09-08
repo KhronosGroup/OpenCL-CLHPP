@@ -80,8 +80,9 @@ int main(void)
         "  globalA = 75;"
         "}"};
     std::string kernel2{
-        "typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){"
+        "typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, global int *output2, int val, write_only pipe int outPipe, queue_t childQueue){"
         "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);"
+        "  output2[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);"
         "  write_pipe(outPipe, &val);"
         "  queue_t default_queue = get_default_queue(); "
         "  ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2); "
@@ -149,12 +150,12 @@ int main(void)
     // Code using cl namespace allocators etc as a test
     // std::shared_ptr etc should work fine too
     
-    cl::pointer<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
+    auto anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
     *anSVMInt = 5;
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
     std::cout << "Max alloc size: " << svmAlloc.max_size() << " bytes\n";
-    cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
-    cl::pointer<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
+    cl::SVMAllocator<Foo, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
+    auto fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
 
     std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);
@@ -164,9 +165,11 @@ int main(void)
     //
     //////////////
 
-
+    // Traditional cl_mem allocations
     std::vector<int> output(numElements, 0xdeadbeef);
     cl::Buffer outputBuffer(begin(output), end(output), false);
+
+    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> output2(numElements / 2, 0xdeadbeef);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
     // so the user has to create one
@@ -176,10 +179,11 @@ int main(void)
     
     auto vectorAddKernel =
         cl::KernelFunctor<
-            cl::pointer<Foo>,
+            decltype(fooPointer)&,
             int*,
             cl::coarse_svm_vector<int>&,
             cl::Buffer,
+            std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>>&,
             int,
             cl::Pipe&,
             cl::DeviceCommandQueue
@@ -194,6 +198,13 @@ int main(void)
     vectorAddKernel.setSVMPointers(anSVMInt.get());
     vectorAddKernel.setSVMPointers(anSVMInt);
 
+    // Hand control of coarse allocations to runtime
+    cl::enqueueUnmapSVM(anSVMInt);
+    cl::enqueueUnmapSVM(fooPointer);
+    cl::unmapSVM(inputB);
+    cl::unmapSVM(output2);
+
+
 	cl_int error;
 	vectorAddKernel(
         cl::EnqueueArgs(
@@ -203,13 +214,17 @@ int main(void)
         inputA.data(),
         inputB,
         outputBuffer,
+        output2,
         3,
         aPipe,
         defaultDeviceQueue,
 		error
         );
 
+    // Copy the cl_mem output back to the vector
     cl::copy(outputBuffer, begin(output), end(output));
+    // Grab the SVM output vector using a map
+    cl::mapSVM(output2);
 
     cl::Device d = cl::Device::getDefault();
     std::cout << "Max pipe args: " << d.getInfo<CL_DEVICE_MAX_PIPE_ARGS>() << "\n";
@@ -240,6 +255,11 @@ int main(void)
     std::cout << "Output:\n";
     for (int i = 1; i < numElements; ++i) {
         std::cout << "\t" << output[i] << "\n";
+    }
+    std::cout << "\n\n";
+    std::cout << "Output2:\n";
+    for (auto &e : output2) {
+        std::cout << "\t" << e << "\n";
     }
     std::cout << "\n\n";
 
