@@ -1304,6 +1304,14 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_pipe_info, CL_PIPE_PACKET_SIZE, cl_uint) \
     F(cl_pipe_info, CL_PIPE_MAX_PACKETS, cl_uint)
 
+#define CL_HPP_PARAM_NAME_INFO_2_1_(F) \
+    F(cl_kernel_info, CL_KERNEL_MAX_NUM_SUB_GROUPS, size_type) \
+    F(cl_kernel_info, CL_KERNEL_COMPILE_NUM_SUB_GROUPS, size_type) \
+    F(cl_device_info, CL_DEVICE_IL_VERSION, string) \
+    F(cl_device_info, CL_DEVICE_MAX_NUM_SUB_GROUPS, cl_uint) \
+    F(cl_device_info, CL_DEVICE_SUBGROUP_INDEPENDENT_FORWARD_PROGRESS, cl_bool) \
+    F(cl_command_queue_info, CL_QUEUE_DEVICE_DEFAULT, cl_command_queue)
+
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector<cl_device_partition_property_ext>) \
@@ -1332,6 +1340,9 @@ CL_HPP_PARAM_NAME_INFO_1_2_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 CL_HPP_PARAM_NAME_INFO_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+CL_HPP_PARAM_NAME_INFO_2_1_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 
 
