@@ -36,7 +36,7 @@
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
  *   \version 2.0.7
- *   \date 2015-08-20
+ *   \date 2015-09-09
  *
  *   Optional extension support
  *
