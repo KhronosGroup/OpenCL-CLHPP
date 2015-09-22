@@ -207,6 +207,14 @@
  *   applies to use of cl::Program construction and other program
  *   build variants.
  *
+ * - CL_HPP_USE_CL_SUB_GROUPS_KHR
+ *
+ *   Enable the cl_khr_subgroups extension.
+ *
+ * - CL_HPP_USE_IL_KHR
+ *
+ *   Enable the cl_khr_il_program extension.
+ *
  *
  * \section example Example
  *
@@ -806,6 +814,9 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __GET_KERNEL_ARG_INFO_ERR           CL_HPP_ERR_STR_(clGetKernelArgInfo)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#define __GET_KERNEL_SUB_GROUP_INFO_ERR     CL_HPP_ERR_STR_(clGetKernelSubGroupInfo)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __GET_KERNEL_WORK_GROUP_INFO_ERR    CL_HPP_ERR_STR_(clGetKernelWorkGroupInfo)
 #define __GET_PROGRAM_INFO_ERR              CL_HPP_ERR_STR_(clGetProgramInfo)
 #define __GET_PROGRAM_BUILD_INFO_ERR        CL_HPP_ERR_STR_(clGetProgramBuildInfo)
@@ -836,7 +847,13 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_KERNEL_ERR                 CL_HPP_ERR_STR_(clCreateKernel)
 #define __SET_KERNEL_ARGS_ERR               CL_HPP_ERR_STR_(clSetKernelArg)
 #define __CREATE_PROGRAM_WITH_SOURCE_ERR    CL_HPP_ERR_STR_(clCreateProgramWithSource)
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithIL)
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __CREATE_PROGRAM_WITH_BINARY_ERR    CL_HPP_ERR_STR_(clCreateProgramWithBinary)
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+#define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithIL)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR    CL_HPP_ERR_STR_(clCreateProgramWithBuiltInKernels)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -1307,14 +1324,25 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_pipe_info, CL_PIPE_PACKET_SIZE, cl_uint) \
     F(cl_pipe_info, CL_PIPE_MAX_PACKETS, cl_uint)
 
+#define CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(F) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR, size_type) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, size_type)
+
+#define CL_HPP_PARAM_NAME_INFO_IL_KHR_(F) \
+    F(cl_device_info, CL_DEVICE_IL_VERSION_KHR, string) \
+    F(cl_program_info, CL_PROGRAM_IL_KHR, cl::vector<unsigned char>)
+
 #define CL_HPP_PARAM_NAME_INFO_2_1_(F) \
     F(cl_program_info, CL_PROGRAM_IL, cl::vector<unsigned char>) \
     F(cl_kernel_info, CL_KERNEL_MAX_NUM_SUB_GROUPS, size_type) \
     F(cl_kernel_info, CL_KERNEL_COMPILE_NUM_SUB_GROUPS, size_type) \
-    F(cl_device_info, CL_DEVICE_IL_VERSION, string) \
     F(cl_device_info, CL_DEVICE_MAX_NUM_SUB_GROUPS, cl_uint) \
     F(cl_device_info, CL_DEVICE_SUBGROUP_INDEPENDENT_FORWARD_PROGRESS, cl_bool) \
-    F(cl_command_queue_info, CL_QUEUE_DEVICE_DEFAULT, cl_command_queue)
+    F(cl_device_info, CL_DEVICE_IL_VERSION, string) \
+    F(cl_command_queue_info, CL_QUEUE_DEVICE_DEFAULT, cl_command_queue) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE, size_type) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE, size_type) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT, cl::detail::size_t_array)
 
 #define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
@@ -1349,6 +1377,13 @@ CL_HPP_PARAM_NAME_INFO_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_2_1_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 
+#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
+CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+
+#if defined(CL_HPP_USE_IL_KHR)
+CL_HPP_PARAM_NAME_INFO_IL_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 
 // Flags deprecated in OpenCL 2.0
 #define CL_HPP_PARAM_NAME_INFO_1_0_DEPRECATED_IN_2_0_(F) \
@@ -5818,17 +5853,26 @@ public:
         return param;
     }
     
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
-#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
+#if (CL_HPP_TARGET_OPENCL_VERSION >= 200 && defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, size_type* param) const
     {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        return detail::errHandler(
+            pfn_clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
+            __GET_KERNEL_SUB_GROUP_INFO_ERR);
+
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
         typedef clGetKernelSubGroupInfoKHR_fn PFN_clGetKernelSubGroupInfoKHR;
         static PFN_clGetKernelSubGroupInfoKHR pfn_clGetKernelSubGroupInfoKHR = NULL;
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetKernelSubGroupInfoKHR);
 
         return detail::errHandler(
             pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
-            __GET_KERNEL_ARG_INFO_ERR);
+            __GET_KERNEL_SUB_GROUP_INFO_ERR);
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     }
 
     template <cl_int name>
@@ -5841,7 +5885,6 @@ public:
         }
         return param;
     }
-#endif // #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -6157,6 +6200,116 @@ public:
             *err = error;
         }
     }
+
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210 || (CL_HPP_TARGET_OPENCL_VERSION==200 && defined(CL_HPP_USE_IL_KHR))
+    /**
+     * Program constructor to allow construction of program from SPIR-V or another IL.
+     * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
+     */
+    Program(
+        const vector<char>& IL,
+        bool build = false,
+        cl_int* err = NULL)
+    {
+        cl_int error;
+
+        Context context = Context::getDefault(err);
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        object_ = ::clCreateProgramWithIL(
+            context(), static_cast<void*>(IL.data()), IL.size(), &error);
+
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
+        static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
+
+        return detail::errHandler(
+            pfn_clCreateProgramWithILKHR(
+                context(), static_cast<void*>(IL.data()), IL.size(), &error);
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
+
+        if (error == CL_SUCCESS && build) {
+
+            error = ::clBuildProgram(
+                object_,
+                0,
+                NULL,
+#if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                "-cl-std=CL2.0",
+#else
+                "",
+#endif // #if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                NULL,
+                NULL);
+
+            detail::buildErrHandler(error, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+        }
+
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+
+    /**
+     * Program constructor to allow construction of program from SPIR-V or another IL
+     * for a specific context.
+     * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
+     */
+    Program(
+        const Context& context,
+        const vector<char>& IL,
+        bool build = false,
+        cl_int* err = NULL)
+    {
+        cl_int error;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        object_ = ::clCreateProgramWithIL(
+            context(), static_cast<void*>(IL.data()), IL.size(), &error);
+
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
+        static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
+
+        return detail::errHandler(
+            pfn_clCreateProgramWithILKHR(
+            context(), static_cast<void*>(IL.data()), IL.size(), &error);
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+
+        detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
+
+        if (error == CL_SUCCESS && build) {
+            error = ::clBuildProgram(
+                object_,
+                0,
+                NULL,
+#if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                "-cl-std=CL2.0",
+#else
+                "",
+#endif // #if !defined(CL_HPP_CL_1_2_DEFAULT_BUILD)
+                NULL,
+                NULL);
+
+            detail::buildErrHandler(error, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+        }
+
+        if (err != NULL) {
+            *err = error;
+        }
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
     /**
      * Construct a program object from a list of devices and a per-device list of binaries.
