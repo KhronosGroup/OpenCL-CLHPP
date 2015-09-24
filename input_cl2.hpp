@@ -944,6 +944,10 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __ENQUEUE_BARRIER_WAIT_LIST_ERR               CL_HPP_ERR_STR_(clEnqueueBarrierWithWaitList)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+#define __CLONE_KERNEL_ERR     CL_HPP_ERR_STR_(clCloneKernel)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 //! \endcond
 
@@ -1377,13 +1381,14 @@ CL_HPP_PARAM_NAME_INFO_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_2_1_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 
-#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
+#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+#endif // #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
 
 #if defined(CL_HPP_USE_IL_KHR)
 CL_HPP_PARAM_NAME_INFO_IL_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+#endif // #if defined(CL_HPP_USE_IL_KHR)
+
 
 // Flags deprecated in OpenCL 2.0
 #define CL_HPP_PARAM_NAME_INFO_1_0_DEPRECATED_IN_2_0_(F) \
@@ -5859,7 +5864,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
         return detail::errHandler(
-            pfn_clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
+            clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
             __GET_KERNEL_SUB_GROUP_INFO_ERR);
 
 #else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
@@ -6039,6 +6044,22 @@ public:
             pointerList.data()));
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+    /**
+     * Make a deep copy of the kernel object including its arguments.
+     * @return A new kernel object with internal state entirely separate from that
+     *         of the original but with any arguments set on the original intact.
+     */
+    Kernel clone()
+    {
+        cl_int error;
+        Kernel retValue(clCloneKernel(this->get(), &error));
+
+        detail::errHandler(error, __CLONE_KERNEL_ERR);
+        return retValue;
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 };
 
 /*! \class Program
@@ -6219,7 +6240,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
         object_ = ::clCreateProgramWithIL(
-            context(), static_cast<void*>(IL.data()), IL.size(), &error);
+            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
@@ -6229,7 +6250,7 @@ public:
 
         return detail::errHandler(
             pfn_clCreateProgramWithILKHR(
-                context(), static_cast<void*>(IL.data()), IL.size(), &error);
+                context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
@@ -6273,7 +6294,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
         object_ = ::clCreateProgramWithIL(
-            context(), static_cast<void*>(IL.data()), IL.size(), &error);
+            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
@@ -6283,7 +6304,7 @@ public:
 
         return detail::errHandler(
             pfn_clCreateProgramWithILKHR(
-            context(), static_cast<void*>(IL.data()), IL.size(), &error);
+            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
@@ -9772,74 +9793,98 @@ namespace compatibility {
 
 #undef CL_HPP_ERR_STR_
 #if !defined(CL_HPP_USER_OVERRIDE_ERROR_STRINGS)
-#undef __GET_DEVICE_INFO_ERR
-#undef __GET_PLATFORM_INFO_ERR
-#undef __GET_DEVICE_IDS_ERR
-#undef __GET_CONTEXT_INFO_ERR
-#undef __GET_EVENT_INFO_ERR
-#undef __GET_EVENT_PROFILE_INFO_ERR
-#undef __GET_MEM_OBJECT_INFO_ERR
-#undef __GET_IMAGE_INFO_ERR
-#undef __GET_SAMPLER_INFO_ERR
-#undef __GET_KERNEL_INFO_ERR
-#undef __GET_KERNEL_ARG_INFO_ERR
-#undef __GET_KERNEL_WORK_GROUP_INFO_ERR
-#undef __GET_PROGRAM_INFO_ERR
-#undef __GET_PROGRAM_BUILD_INFO_ERR
-#undef __GET_COMMAND_QUEUE_INFO_ERR
-
-#undef __CREATE_CONTEXT_ERR
-#undef __CREATE_CONTEXT_FROM_TYPE_ERR
-#undef __GET_SUPPORTED_IMAGE_FORMATS_ERR
-
-#undef __CREATE_BUFFER_ERR
-#undef __CREATE_SUBBUFFER_ERR
-#undef __CREATE_IMAGE2D_ERR
-#undef __CREATE_IMAGE3D_ERR
-#undef __CREATE_SAMPLER_ERR
-#undef __SET_MEM_OBJECT_DESTRUCTOR_CALLBACK_ERR
-
-#undef __CREATE_USER_EVENT_ERR
-#undef __SET_USER_EVENT_STATUS_ERR
-#undef __SET_EVENT_CALLBACK_ERR
-#undef __SET_PRINTF_CALLBACK_ERR
-
-#undef __WAIT_FOR_EVENTS_ERR
-
-#undef __CREATE_KERNEL_ERR
-#undef __SET_KERNEL_ARGS_ERR
-#undef __CREATE_PROGRAM_WITH_SOURCE_ERR
-#undef __CREATE_PROGRAM_WITH_BINARY_ERR
-#undef __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR
-#undef __BUILD_PROGRAM_ERR
-#undef __CREATE_KERNELS_IN_PROGRAM_ERR
-
-#undef __CREATE_COMMAND_QUEUE_ERR
-#undef __SET_COMMAND_QUEUE_PROPERTY_ERR
-#undef __ENQUEUE_READ_BUFFER_ERR
-#undef __ENQUEUE_WRITE_BUFFER_ERR
-#undef __ENQUEUE_READ_BUFFER_RECT_ERR
-#undef __ENQUEUE_WRITE_BUFFER_RECT_ERR
-#undef __ENQEUE_COPY_BUFFER_ERR
-#undef __ENQEUE_COPY_BUFFER_RECT_ERR
-#undef __ENQUEUE_READ_IMAGE_ERR
-#undef __ENQUEUE_WRITE_IMAGE_ERR
-#undef __ENQUEUE_COPY_IMAGE_ERR
-#undef __ENQUEUE_COPY_IMAGE_TO_BUFFER_ERR
-#undef __ENQUEUE_COPY_BUFFER_TO_IMAGE_ERR
-#undef __ENQUEUE_MAP_BUFFER_ERR
-#undef __ENQUEUE_MAP_IMAGE_ERR
-#undef __ENQUEUE_UNMAP_MEM_OBJECT_ERR
-#undef __ENQUEUE_NDRANGE_KERNEL_ERR
-#undef __ENQUEUE_TASK_ERR
-#undef __ENQUEUE_NATIVE_KERNEL
-
-#undef __UNLOAD_COMPILER_ERR
-#undef __CREATE_SUB_DEVICES_ERR
-
-#undef __CREATE_PIPE_ERR
-#undef __GET_PIPE_INFO_ERR
-
+#undef __GET_DEVICE_INFO_ERR               
+#undef __GET_PLATFORM_INFO_ERR             
+#undef __GET_DEVICE_IDS_ERR                
+#undef __GET_PLATFORM_IDS_ERR              
+#undef __GET_CONTEXT_INFO_ERR              
+#undef __GET_EVENT_INFO_ERR                
+#undef __GET_EVENT_PROFILE_INFO_ERR        
+#undef __GET_MEM_OBJECT_INFO_ERR           
+#undef __GET_IMAGE_INFO_ERR                
+#undef __GET_SAMPLER_INFO_ERR              
+#undef __GET_KERNEL_INFO_ERR               
+#undef __GET_KERNEL_ARG_INFO_ERR           
+#undef __GET_KERNEL_SUB_GROUP_INFO_ERR     
+#undef __GET_KERNEL_WORK_GROUP_INFO_ERR    
+#undef __GET_PROGRAM_INFO_ERR              
+#undef __GET_PROGRAM_BUILD_INFO_ERR        
+#undef __GET_COMMAND_QUEUE_INFO_ERR        
+#undef __CREATE_CONTEXT_ERR                
+#undef __CREATE_CONTEXT_FROM_TYPE_ERR      
+#undef __GET_SUPPORTED_IMAGE_FORMATS_ERR   
+#undef __CREATE_BUFFER_ERR                 
+#undef __COPY_ERR                          
+#undef __CREATE_SUBBUFFER_ERR              
+#undef __CREATE_GL_BUFFER_ERR              
+#undef __CREATE_GL_RENDER_BUFFER_ERR       
+#undef __GET_GL_OBJECT_INFO_ERR            
+#undef __CREATE_IMAGE_ERR                  
+#undef __CREATE_GL_TEXTURE_ERR             
+#undef __IMAGE_DIMENSION_ERR               
+#undef __SET_MEM_OBJECT_DESTRUCTOR_CALLBACK_ERR 
+#undef __CREATE_USER_EVENT_ERR             
+#undef __SET_USER_EVENT_STATUS_ERR         
+#undef __SET_EVENT_CALLBACK_ERR            
+#undef __WAIT_FOR_EVENTS_ERR               
+#undef __CREATE_KERNEL_ERR                 
+#undef __SET_KERNEL_ARGS_ERR               
+#undef __CREATE_PROGRAM_WITH_SOURCE_ERR    
+#undef __CREATE_PROGRAM_WITH_IL_ERR        
+#undef __CREATE_PROGRAM_WITH_BINARY_ERR    
+#undef __CREATE_PROGRAM_WITH_IL_ERR        
+#undef __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR    
+#undef __BUILD_PROGRAM_ERR                 
+#undef __COMPILE_PROGRAM_ERR               
+#undef __LINK_PROGRAM_ERR                  
+#undef __CREATE_KERNELS_IN_PROGRAM_ERR     
+#undef __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR          
+#undef __CREATE_SAMPLER_WITH_PROPERTIES_ERR                
+#undef __SET_COMMAND_QUEUE_PROPERTY_ERR    
+#undef __ENQUEUE_READ_BUFFER_ERR           
+#undef __ENQUEUE_READ_BUFFER_RECT_ERR      
+#undef __ENQUEUE_WRITE_BUFFER_ERR          
+#undef __ENQUEUE_WRITE_BUFFER_RECT_ERR     
+#undef __ENQEUE_COPY_BUFFER_ERR            
+#undef __ENQEUE_COPY_BUFFER_RECT_ERR       
+#undef __ENQUEUE_FILL_BUFFER_ERR           
+#undef __ENQUEUE_READ_IMAGE_ERR            
+#undef __ENQUEUE_WRITE_IMAGE_ERR           
+#undef __ENQUEUE_COPY_IMAGE_ERR            
+#undef __ENQUEUE_FILL_IMAGE_ERR            
+#undef __ENQUEUE_COPY_IMAGE_TO_BUFFER_ERR  
+#undef __ENQUEUE_COPY_BUFFER_TO_IMAGE_ERR  
+#undef __ENQUEUE_MAP_BUFFER_ERR            
+#undef __ENQUEUE_MAP_IMAGE_ERR             
+#undef __ENQUEUE_UNMAP_MEM_OBJECT_ERR      
+#undef __ENQUEUE_NDRANGE_KERNEL_ERR        
+#undef __ENQUEUE_NATIVE_KERNEL             
+#undef __ENQUEUE_MIGRATE_MEM_OBJECTS_ERR   
+#undef __ENQUEUE_ACQUIRE_GL_ERR            
+#undef __ENQUEUE_RELEASE_GL_ERR            
+#undef __CREATE_PIPE_ERR             
+#undef __GET_PIPE_INFO_ERR           
+#undef __RETAIN_ERR                        
+#undef __RELEASE_ERR                       
+#undef __FLUSH_ERR                         
+#undef __FINISH_ERR                        
+#undef __VECTOR_CAPACITY_ERR               
+#undef __CREATE_SUB_DEVICES_ERR            
+#undef __CREATE_SUB_DEVICES_ERR            
+#undef __ENQUEUE_MARKER_ERR                
+#undef __ENQUEUE_WAIT_FOR_EVENTS_ERR       
+#undef __ENQUEUE_BARRIER_ERR               
+#undef __UNLOAD_COMPILER_ERR               
+#undef __CREATE_GL_TEXTURE_2D_ERR          
+#undef __CREATE_GL_TEXTURE_3D_ERR          
+#undef __CREATE_IMAGE2D_ERR                
+#undef __CREATE_IMAGE3D_ERR                
+#undef __CREATE_COMMAND_QUEUE_ERR          
+#undef __ENQUEUE_TASK_ERR                  
+#undef __CREATE_SAMPLER_ERR                
+#undef __ENQUEUE_MARKER_WAIT_LIST_ERR                
+#undef __ENQUEUE_BARRIER_WAIT_LIST_ERR               
+#undef __CLONE_KERNEL_ERR     
 #endif //CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 
 // Extensions
