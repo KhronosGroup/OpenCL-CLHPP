@@ -3,7 +3,7 @@
 #define CL_HPP_USE_CL_SUB_GROUPS_KHR
 
 // Want to support 2.0 but also test that 1.1 is ok
-#define CL_HPP_TARGET_OPENCL_VERSION 200
+#define CL_HPP_TARGET_OPENCL_VERSION 210
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
 
 extern "C" {
@@ -470,14 +470,15 @@ void testCreatePipe()
 #define CL_API_CALL
 #endif
 
-static cl_int CL_API_CALL clGetKernelSubGroupInfoKHR_testSubGroups(cl_kernel kernel,
+static cl_int CL_API_CALL clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
     size_t input_value_size,
     const void *input_value,
     size_t param_value_size,
     void *param_value,
-    size_t *param_value_size_ret)
+    size_t *param_value_size_ret,
+    int num_calls)
 {    
     TEST_ASSERT_NOT_NULL(input_value);
     TEST_ASSERT_NOT_NULL(param_value);
@@ -503,8 +504,7 @@ void testSubGroups()
 {
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", (void *) &clGetKernelSubGroupInfoKHR_testSubGroups);
-    //clGetKernelSubGroupInfoKHR_StubWithCallback(clGetKernelSubGroupInfoKHR_testSubGroups);
+    clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
 
@@ -556,6 +556,29 @@ void testBuiltInKernels()
     cl::string s = d0.getInfo<CL_DEVICE_BUILT_IN_KERNELS>();
 
 }
+
+/**
+ * Stub implementation of clCloneKernel that returns a new kernel object
+ */
+static cl_kernel clCloneKernel_simplecopy(
+    cl_kernel k,
+    cl_int *err,
+    int num_calls)
+{
+    // Test to verify case where empty string is returned - so size is 0
+    (void)num_calls;
+    return make_kernel(POOL_MAX);
+    return CL_SUCCESS;
+}
+
+void testCloneKernel()
+{
+    clCloneKernel_StubWithCallback(clCloneKernel_simplecopy);
+    clReleaseKernel_ExpectAndReturn(make_kernel(POOL_MAX), CL_SUCCESS);
+    cl::Kernel clone = kernelPool[0].clone();
+    TEST_ASSERT_EQUAL(clone(), make_kernel(POOL_MAX));
+}
+
 
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
