@@ -890,6 +890,10 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __ENQUEUE_MIGRATE_MEM_OBJECTS_ERR   CL_HPP_ERR_STR_(clEnqueueMigrateMemObjects)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+#define __ENQUEUE_MIGRATE_SVM_ERR   CL_HPP_ERR_STR_(clEnqueueSVMMigrateMem)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 
 #define __ENQUEUE_ACQUIRE_GL_ERR            CL_HPP_ERR_STR_(clEnqueueAcquireGLObjects)
 #define __ENQUEUE_RELEASE_GL_ERR            CL_HPP_ERR_STR_(clEnqueueReleaseGLObjects)
@@ -8199,8 +8203,7 @@ public:
         for( int i = 0; i < (int)memObjects.size(); ++i ) {
             localMemObjects[i] = memObjects[i]();
         }
-
-
+        
         cl_int err = detail::errHandler(
             ::clEnqueueMigrateMemObjects(
                 object_, 
@@ -8219,6 +8222,130 @@ public:
     }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    /**
+     * Enqueues a command that will allow the host associate ranges within a set of
+     * SVM allocations with a device.
+     * @param sizes - The length from each pointer to migrate.
+     */
+    template<typename T>
+    cl_int enqueueMigrateSVM(
+        const cl::vector<T*> &svmRawPointers,
+        const cl::vector<size_type> &sizes,
+        cl_mem_migration_flags flags = 0,
+        const vector<Event>* events = NULL,
+        Event* event = NULL) const
+    {
+        cl_event tmp;
+        cl_int err = detail::errHandler(::clEnqueueSVMMigrateMem(
+            object_,
+            svmRawPointers.size(), static_cast<void**>(svmRawPointers.data()),
+            sizes.data(), // array of sizes not passed
+            flags,
+            (events != NULL) ? (cl_uint)events->size() : 0,
+            (events != NULL && events->size() > 0) ? (cl_event*)&events->front() : NULL,
+            (event != NULL) ? &tmp : NULL),
+            __ENQUEUE_MIGRATE_SVM_ERR);
+
+        if (event != NULL && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    /**
+     * Enqueues a command that will allow the host associate a set of SVM allocations with
+     * a device.
+     */
+    template<typename T>
+    cl_int enqueueMigrateSVM(
+        const cl::vector<T*> &svmRawPointers,
+        cl_mem_migration_flags flags = 0,
+        const vector<Event>* events = NULL,
+        Event* event = NULL) const
+    {
+        return enqueueMigrateSVM(svmRawPointers, cl::vector<size_type>(svmRawPointers.size()), flags, events, event);
+    }
+
+
+    /**
+     * Enqueues a command that will allow the host associate ranges within a set of
+     * SVM allocations with a device.
+     * @param sizes - The length from each pointer to migrate.
+     */
+    template<typename T, class D>
+    cl_int enqueueMigrateSVM(
+        const cl::vector<cl::pointer<T, D>> &svmPointers,
+        const cl::vector<size_type> &sizes,
+        cl_mem_migration_flags flags = 0,
+        const vector<Event>* events = NULL,
+        Event* event = NULL) const
+    {
+        cl_event tmp;
+        cl::vector<void*> svmRawPointers;
+        svmRawPointers.reserve(svmPointers.size());
+        for (auto p : svmPointers) {
+            svmRawPointers.push_back(static_cast<void*>(p.get()));
+        }
+
+        return enqueueMigrateSVM(svmRawPointers, sizes, flags, events, event);
+    }
+
+
+    /**
+     * Enqueues a command that will allow the host associate a set of SVM allocations with
+     * a device.
+     */
+    template<typename T, class D>
+    cl_int enqueueMigrateSVM(
+        const cl::vector<cl::pointer<T, D>> &svmPointers,
+        cl_mem_migration_flags flags = 0,
+        const vector<Event>* events = NULL,
+        Event* event = NULL) const
+    {
+        return enqueueMigrateSVM(svmPointers, cl::vector<size_type>(svmPointers.size()), flags, events, event);
+    }
+
+    /**
+     * Enqueues a command that will allow the host associate ranges within a set of
+     * SVM allocations with a device.
+     * @param sizes - The length from the beginning of each container to migrate.
+     */
+    template<typename T, class Alloc>
+    cl_int enqueueMigrateSVM(
+        const cl::vector<cl::vector<T, Alloc>> &svmContainers,
+        const cl::vector<size_type> &sizes,
+        cl_mem_migration_flags flags = 0,
+        const vector<Event>* events = NULL,
+        Event* event = NULL) const
+    {
+        cl_event tmp;
+        cl::vector<void*> svmRawPointers;
+        svmRawPointers.reserve(svmContainers.size());
+        for (auto p : svmPointers) {
+            svmRawPointers.push_back(static_cast<void*>(p.data()));
+        }
+
+        return enqueueMigrateSVM(svmRawPointers, sizes, flags, events, event);
+    }
+
+    /**
+     * Enqueues a command that will allow the host associate a set of SVM allocations with
+     * a device.
+     */
+    template<typename T, class Alloc>
+    cl_int enqueueMigrateSVM(
+        const cl::vector<cl::vector<T, Alloc>> &svmContainers,
+        cl_mem_migration_flags flags = 0,
+        const vector<Event>* events = NULL,
+        Event* event = NULL) const
+    {
+        return enqueueMigrateSVM(svmContainers, cl::vector<size_type>(svmRawPointers.size()), flags, events, event);
+    }
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+    
     cl_int enqueueNDRangeKernel(
         const Kernel& kernel,
         const NDRange& offset,
@@ -9912,6 +10039,7 @@ namespace compatibility {
 #undef __ENQUEUE_NDRANGE_KERNEL_ERR        
 #undef __ENQUEUE_NATIVE_KERNEL             
 #undef __ENQUEUE_MIGRATE_MEM_OBJECTS_ERR   
+#undef __ENQUEUE_MIGRATE_SVM_ERR
 #undef __ENQUEUE_ACQUIRE_GL_ERR            
 #undef __ENQUEUE_RELEASE_GL_ERR            
 #undef __CREATE_PIPE_ERR             
