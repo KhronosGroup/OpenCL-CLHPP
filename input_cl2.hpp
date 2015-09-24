@@ -904,6 +904,12 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __FINISH_ERR                        CL_HPP_ERR_STR_(clFinish)
 #define __VECTOR_CAPACITY_ERR               CL_HPP_ERR_STR_(Vector capacity error)
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+#define __GET_HOST_TIMER_ERR           CL_HPP_ERR_STR_(clGetHostTimer)
+#define __GET_DEVICE_AND_HOST_TIMER_ERR           CL_HPP_ERR_STR_(clGetDeviceAndHostTimer)
+#endif
+
+
 /**
  * CL 1.2 version that uses device fission.
  */
@@ -1337,6 +1343,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_IL_KHR, cl::vector<unsigned char>)
 
 #define CL_HPP_PARAM_NAME_INFO_2_1_(F) \
+    F(cl_platform_info, CL_PLATFORM_HOST_TIMER_RESOLUTION, size_type) \
     F(cl_program_info, CL_PROGRAM_IL, cl::vector<unsigned char>) \
     F(cl_kernel_info, CL_KERNEL_MAX_NUM_SUB_GROUPS, size_type) \
     F(cl_kernel_info, CL_KERNEL_COMPILE_NUM_SUB_GROUPS, size_type) \
@@ -2157,6 +2164,51 @@ public:
         }
         return param;
     }
+
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+    /**
+     * Return the current value of the host clock as seen by the device.
+     * The resolution of the device timer may be queried with the
+     * CL_DEVICE_PROFILING_TIMER_RESOLUTION query.
+     * @return The host timer value.
+     */
+    cl_ulong getHostTimer(cl_int *error = nullptr)
+    {
+        cl_ulong retVal = 0;
+        cl_int err = 
+            clGetHostTimer(this->get(), &retVal);
+        detail::errHandler(
+            err,
+            __GET_HOST_TIMER_ERR);
+        if (error) {
+            *error = err;
+        }
+    }
+
+    /**
+     * Return a synchronized pair of host and device timestamps as seen by device.
+     * Use to correlate the clocks and get the host timer only using getHostTimer
+     * as a lower cost mechanism in between calls.
+     * The resolution of the host timer may be queried with the 
+     * CL_PLATFORM_HOST_TIMER_RESOLUTION query.
+     * The resolution of the device timer may be queried with the
+     * CL_DEVICE_PROFILING_TIMER_RESOLUTION query.
+     * @return A pair of (device timer, host timer) timer values.
+     */
+    std::pair<cl_ulong, cl_ulong> getDeviceAndHostTimer(cl_int *error = nullptr)
+    {
+        std::pair<cl_ulong, cl_ulong> retVal;
+        cl_int err =
+            clGetDeviceAndHostTimer(this->get(), &(retVal.first), &(retVal.second));
+        detail::errHandler(
+            err,
+            __GET_DEVICE_AND_HOST_TIMER_ERR);
+        if (error) {
+            *error = err;
+        }
+    }
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
     /**
      * CL 1.2 version
@@ -9885,6 +9937,9 @@ namespace compatibility {
 #undef __ENQUEUE_MARKER_WAIT_LIST_ERR                
 #undef __ENQUEUE_BARRIER_WAIT_LIST_ERR               
 #undef __CLONE_KERNEL_ERR     
+#undef __GET_HOST_TIMER_ERR
+#undef __GET_DEVICE_AND_HOST_TIMER_ERR
+
 #endif //CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 
 // Extensions
