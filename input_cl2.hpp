@@ -892,6 +892,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __ENQUEUE_MIGRATE_SVM_ERR   CL_HPP_ERR_STR_(clEnqueueSVMMigrateMem)
+#define __SET_DEFAULT_DEVICE_COMMAND_QUEUE_ERR   CL_HPP_ERR_STR_(clSetDefaultDeviceCommandQueue)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
 
@@ -8775,11 +8776,11 @@ public:
     }
 
     /*!
-    * Create a new default device command queue for the default device,
-    * in the default context and of the default size.
-    * If there is already a default queue for the specified device this
-    * function will return the pre-existing queue.
-    */
+     * Create a new default device command queue for the default device,
+     * in the default context and of the default size.
+     * If there is already a default queue for the specified device this
+     * function will return the pre-existing queue.
+     */
     static DeviceCommandQueue makeDefault(
         cl_int *err = nullptr)
     {
@@ -8805,11 +8806,11 @@ public:
     }
 
     /*!
-    * Create a new default device command queue for the specified device
-    * and of the default size.
-    * If there is already a default queue for the specified device this
-    * function will return the pre-existing queue.
-    */
+     * Create a new default device command queue for the specified device
+     * and of the default size.
+     * If there is already a default queue for the specified device this
+     * function will return the pre-existing queue.
+     */
     static DeviceCommandQueue makeDefault(
         const Context &context, const Device &device, cl_int *err = nullptr)
     {
@@ -8860,6 +8861,37 @@ public:
 
         return deviceQueue;
     }
+
+
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+    /*!
+     * Modify the default device command queue to be used for subsequent kernels.
+     * This can update the default command queue for a device repeatedly to account
+     * for kernels that rely on the default.
+     * @return updated default device command queue.
+     */
+    static DeviceCommandQueue updateDefault(const Context &context, const Device &device, const DeviceCommandQueue &default_queue, cl_int *err = nullptr)
+    {
+        cl_int error;
+        error = clSetDefaultDeviceCommandQueue(context.get(), device.get(), default_queue.get());
+
+        detail::errHandler(error, __SET_DEFAULT_DEVICE_COMMAND_QUEUE_ERR);
+        if (err != NULL) {
+            *err = error;
+        }
+        return default_queue;
+    }
+
+    /*!
+     * Return the current default command queue for the specified command queue
+     */
+    static DeviceCommandQueue getDefault(const CommandQueue &queue, cl_int * err = NULL)
+    {
+        return queue.getInfo<CL_QUEUE_DEVICE_DEFAULT>(err);
+    }
+
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 }; // DeviceCommandQueue
 
 namespace detail
