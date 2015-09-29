@@ -36,7 +36,7 @@
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
  *   \version 2.0.7
- *   \date 2015-09-09
+ *   \date 2015-09-29
  *
  *   Optional extension support
  *
@@ -1202,7 +1202,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_NAME, string) \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string) \
     \
-    F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl_device_id) \
+    F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl::Device) \
     F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector<cl_device_partition_property>) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPE, cl::vector<cl_device_partition_property>)  \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
