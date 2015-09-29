@@ -6878,7 +6878,7 @@ public:
      * Modify the default command queue to be used by
      * subsequent operations.
      * Will only set the default if no default was previously created.
-     * @return updated default platform.
+     * @return updated default command queue.
      *         Should be compared to the passed value to ensure that it was updated.
      */
     static CommandQueue setDefault(const CommandQueue &default_queue)
