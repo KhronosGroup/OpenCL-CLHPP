@@ -33,8 +33,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 1.2.7
- *   \date January 2015
+ *   \version 1.2.8
+ *   \date October 2015
  *
  *   Optional extension support
  *
@@ -1206,6 +1206,22 @@ inline cl_int getInfoHelper(Func f, cl_uint name, VECTOR_CLASS<char *>* param, i
 template <typename Func>
 inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
 {
+#if defined(__NO_STD_VECTOR) || defined(__NO_STD_STRING)
+    ::size_t required;
+    cl_int err = f(name, 0, NULL, &required);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+
+    char* value = (char*)alloca(required);
+    err = f(name, required, value, NULL);
+    if (err != CL_SUCCESS) {
+        return err;
+    }
+
+    *param = value;
+    return CL_SUCCESS;
+#else 
     ::size_t required;
     cl_int err = f(name, 0, NULL, &required);
     if (err != CL_SUCCESS) {
@@ -1222,6 +1238,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
     if (param) {
         param->assign(value.begin(), value.end());
     }
+#endif
     return CL_SUCCESS;
 }
 
