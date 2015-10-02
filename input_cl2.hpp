@@ -1135,9 +1135,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     \
     F(cl_sampler_info, CL_SAMPLER_REFERENCE_COUNT, cl_uint) \
     F(cl_sampler_info, CL_SAMPLER_CONTEXT, cl::Context) \
-    F(cl_sampler_info, CL_SAMPLER_NORMALIZED_COORDS, cl_addressing_mode) \
-    F(cl_sampler_info, CL_SAMPLER_ADDRESSING_MODE, cl_filter_mode) \
-    F(cl_sampler_info, CL_SAMPLER_FILTER_MODE, cl_bool) \
+    F(cl_sampler_info, CL_SAMPLER_NORMALIZED_COORDS, cl_bool) \
+    F(cl_sampler_info, CL_SAMPLER_ADDRESSING_MODE, cl_addressing_mode) \
+    F(cl_sampler_info, CL_SAMPLER_FILTER_MODE, cl_filter_mode) \
     \
     F(cl_program_info, CL_PROGRAM_REFERENCE_COUNT, cl_uint) \
     F(cl_program_info, CL_PROGRAM_CONTEXT, cl::Context) \
@@ -1201,6 +1201,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_kernel_arg_info, CL_KERNEL_ARG_ACCESS_QUALIFIER, cl_kernel_arg_access_qualifier) \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_NAME, string) \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string) \
+    F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_QUALIFIER, cl_kernel_arg_type_qualifier) \
     \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl::Device) \
     F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector<cl_device_partition_property>) \
