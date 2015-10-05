@@ -3301,6 +3301,16 @@ public:
     }
 };
 
+// Pre-declare SVM map function
+template<typename T>
+inline cl_int enqueueMapSVM(
+    T* ptr,
+    cl_bool blocking,
+    cl_map_flags flags,
+    size_type size,
+    const vector<Event>* events = NULL,
+    Event* event = NULL);
+
 /**
  * STL-like allocator class for managing SVM objects provided for convenience.
  *
@@ -8498,8 +8508,8 @@ inline cl_int enqueueMapSVM(
     cl_bool blocking,
     cl_map_flags flags,
     size_type size,
-    const vector<Event>* events = NULL,
-    Event* event = NULL)
+    const vector<Event>* events,
+    Event* event)
 {
     cl_int error;
     CommandQueue queue = CommandQueue::getDefault(&error);
