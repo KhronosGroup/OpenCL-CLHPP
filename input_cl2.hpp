@@ -6689,7 +6689,7 @@ public:
            }
 #else
            object_ = ::clCreateCommandQueue(
-               context(), device(), properties, &error);
+               context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
 
            detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
            if (err != NULL) {
@@ -6784,7 +6784,7 @@ public:
         }
 #else
         object_ = ::clCreateCommandQueue(
-            context(), devices[0](), properties, &error);
+            context(), devices[0](), static_cast<cl_command_queue_properties>(properties), &error);
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
         if (err != NULL) {
@@ -6851,7 +6851,7 @@ public:
             }
 #else
             object_ = ::clCreateCommandQueue(
-                context(), device(), properties, &error);
+                context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
             if (err != NULL) {
