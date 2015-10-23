@@ -6558,7 +6558,7 @@ enum class QueueProperties : cl_command_queue_properties
     OutOfOrder = CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE,
 };
 
-QueueProperties operator|(QueueProperties lhs, QueueProperties rhs)
+inline QueueProperties operator|(QueueProperties lhs, QueueProperties rhs)
 {
     return static_cast<QueueProperties>(static_cast<cl_command_queue_properties>(lhs) | static_cast<cl_command_queue_properties>(rhs));
 }
@@ -8081,7 +8081,7 @@ enum class DeviceQueueProperties : cl_command_queue_properties
     Profiling = CL_QUEUE_PROFILING_ENABLE,
 };
 
-DeviceQueueProperties  operator|(DeviceQueueProperties  lhs, DeviceQueueProperties  rhs)
+inline DeviceQueueProperties operator|(DeviceQueueProperties lhs, DeviceQueueProperties rhs)
 {
     return static_cast<DeviceQueueProperties>(static_cast<cl_command_queue_properties>(lhs) | static_cast<cl_command_queue_properties>(rhs));
 }
