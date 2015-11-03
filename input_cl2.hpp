@@ -34,9 +34,10 @@
  *       Matt Gruenke, April 2012.
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
- *   
- *   \version 2.0.7
- *   \date 2015-10-05
+ *       James Price, June-November 2015
+ *
+ *   \version 2.0.8
+ *   \date 2015-11-03
  *
  *   Optional extension support
  *
