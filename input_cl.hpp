@@ -38,8 +38,8 @@
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *   
- *   \version 1.2.8
- *   \date October 2015
+ *   \version 1.2.9
+ *   \date December 2015
  *
  *   Optional extension support
  *

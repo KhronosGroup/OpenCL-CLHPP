@@ -41,8 +41,8 @@
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
  *       James Price, June-November 2015
  *
- *   \version 2.0.8
- *   \date 2015-11-03
+ *   \version 2.0.9
+ *   \date 2015-12-07
  *
  *   Optional extension support
  *
