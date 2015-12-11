@@ -5,13 +5,13 @@ Components:
     Acts as the master source for the 1.x version of the header.
     The reason for doing it this way is to generate an appropriate set of functors with varying argument counts without assuming variadic template support in the header.
 
-  input_cl.hpp:
+  input_cl2.hpp:
     Acts as the master source for the 2.x version of the header.
     Directly copied as cl2.hpp
-	
+
   gen_cl_hpp.py:
     A generator script written in python to convert input_cl.hpp into cl.hpp, generating the functor expansions as necessary.
-	cl2.hpp does not require this as it uses variadic templates expanded in the compiler.
+    cl2.hpp does not require this as it uses variadic templates expanded in the compiler.
 
   examples:
     A simple example application using the very basic features of the header and generating cl.hpp dynamically through the build system.
@@ -32,7 +32,7 @@ tests/test_clhpp
 tests/test_clhpp_cxx11
 tests/test_clhpp_deprecated_1_1
 
-After building, cl.hpp appears in build/include. This is the final version that may be moved (with versioning confirmation) into the Khronos/headers tree.
+After building, the headers appear in build/include/CL/.
 
 [1] https://github.com/ThrowTheSwitch/Unity/releases/tag/v2.1.0
 [2] https://github.com/ThrowTheSwitch/CMock
