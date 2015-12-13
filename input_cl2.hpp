@@ -62,7 +62,7 @@
  * The interface is contained with a single C++ header file \em cl2.hpp and all
  * definitions are contained within the namespace \em cl. There is no additional
  * requirement to include \em cl.h and to use either the C++ or original C
- * bindings; it is enough to simply include \em cl.hpp.
+ * bindings; it is enough to simply include \em cl2.hpp.
  *
  * The bindings themselves are lightweight and correspond closely to the
  * underlying C API. Using the C++ bindings introduces no additional execution
