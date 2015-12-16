@@ -8223,7 +8223,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Enqueues a command that will allow the host associate ranges within a set of
      * SVM allocations with a device.
