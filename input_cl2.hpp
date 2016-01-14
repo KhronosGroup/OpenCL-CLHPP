@@ -3538,7 +3538,7 @@ template <class T, class Alloc, class... Args>
 cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Args&&... args)
 {
     Alloc alloc(alloc_);
-    static const size_t copies = 1;
+    static const size_type copies = 1;
 
     // Ensure that creation of the management block and the
     // object are dealt with separately such that we only provide a deleter
