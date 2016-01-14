@@ -89,10 +89,10 @@ int main(void)
     //////////////////
     // SVM allocations
     
-    cl::pointer<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
+    auto anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
     *anSVMInt = 5;
-    cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
-    cl::pointer<Foo> fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
+    cl::SVMAllocator<Foo, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
+    auto fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
     std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);    
@@ -112,7 +112,7 @@ int main(void)
     
     auto vectorAddKernel =
         cl::KernelFunctor<
-            cl::pointer<Foo>,
+            decltype(fooPointer)&,
             int*,
             cl::coarse_svm_vector<int>&,
             cl::Buffer,
