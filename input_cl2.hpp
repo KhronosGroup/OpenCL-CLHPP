@@ -7845,7 +7845,7 @@ public:
     CL_EXT_PREFIX__VERSION_1_2_DEPRECATED cl_int enqueueTask(
         const Kernel& kernel,
         const vector<Event>* events = NULL,
-        Event* event = NULL) CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED const
+        Event* event = NULL) const CL_EXT_SUFFIX__VERSION_1_2_DEPRECATED
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
