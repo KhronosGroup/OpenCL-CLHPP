@@ -486,7 +486,7 @@ typedef std::string STRING_CLASS;
  *  re-define the string class to match the std::string
  *  interface by defining STRING_CLASS
  */
-class CL_EXT_PREFIX__VERSION_1_1_DEPRECATED string CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED
+class CL_EXT_PREFIX__VERSION_1_1_DEPRECATED string
 {
 private:
     ::size_t size_;
@@ -652,7 +652,7 @@ public:
      *  or "" if empty/unset.
      */
     const char * c_str(void) const { return (str_) ? str_ : "";}
-};
+} CL_EXT_SUFFIX__VERSION_1_1_DEPRECATED;
 typedef cl::string STRING_CLASS;
 #endif // #elif !defined(__USE_DEV_STRING) 
 
