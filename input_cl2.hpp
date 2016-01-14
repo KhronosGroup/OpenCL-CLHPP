@@ -268,9 +268,9 @@
         //////////////////
         // SVM allocations
     
-        cl::pointer<int> anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
+        auto anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
         *anSVMInt = 5;
-        cl::SVMAllocator<int, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
+        cl::SVMAllocator<Foo, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
         auto fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
         fooPointer->bar = anSVMInt.get();
         cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
