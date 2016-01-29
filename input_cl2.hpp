@@ -7107,7 +7107,7 @@ public:
         size_type buffer_slice_pitch,
         size_type host_row_pitch,
         size_type host_slice_pitch,
-        void *ptr,
+        const void *ptr,
         const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -7255,7 +7255,7 @@ public:
         const array<size_type, 3>& region,
         size_type row_pitch,
         size_type slice_pitch,
-        void* ptr,
+        const void* ptr,
         const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
@@ -8873,7 +8873,7 @@ inline cl_int enqueueWriteBufferRect(
     size_type buffer_slice_pitch,
     size_type host_row_pitch,
     size_type host_slice_pitch,
-    void *ptr,
+    const void *ptr,
     const vector<Event>* events = NULL,
     Event* event = NULL)
 {
@@ -8971,7 +8971,7 @@ inline cl_int enqueueWriteImage(
     const array<size_type, 3>& region,
     size_type row_pitch,
     size_type slice_pitch,
-    void* ptr,
+    const void* ptr,
     const vector<Event>* events = NULL,
     Event* event = NULL)
 {
