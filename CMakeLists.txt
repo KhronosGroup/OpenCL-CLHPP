@@ -35,6 +35,7 @@ set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir"
 set(UNITY_DIR $ENV{UNITY_DIR} CACHE PATH "Unity dir")
 set(CMOCK_DIR $ENV{CMOCK_DIR} CACHE PATH "CMock dir")
 
+add_subdirectory(docs)
 add_subdirectory(include)
 add_subdirectory(examples)
 add_subdirectory(tests)
