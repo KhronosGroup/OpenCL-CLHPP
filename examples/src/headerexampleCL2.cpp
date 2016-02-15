@@ -21,7 +21,7 @@ int main(void)
             plat = p;
         }
     }
-    if (plat() == 0)  {
+    if (plat() == 0) {
         std::cout << "No OpenCL 2.0 platform found.";
         return -1;
     }
@@ -31,33 +31,39 @@ int main(void)
         std::cout << "Error setting default platform.";
         return -1;
     }
-    
-    std::string kernel1{
-        "global int globalA;"
-        "kernel void updateGlobal(){"
-        "  globalA = 75;"
-        "}"};
-    std::string kernel2{
-        "typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){"
-        "  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);"
-        "  write_pipe(outPipe, &val);"
-        "  queue_t default_queue = get_default_queue(); "
-        "  ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2); "
-        // Have a child kernel write into third quarter of output
-        "  enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, "
-        "    ^{"
-        "      output[get_global_size(0)*2 + get_global_id(0)] = inputA[get_global_size(0)*2+get_global_id(0)] + inputB[get_global_size(0)*2+get_global_id(0)] + globalA;"
-        "    });"
-        // Have a child kernel write into last quarter of output
-        "  enqueue_kernel(childQueue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, "
-        "    ^{"
-        "      output[get_global_size(0)*3 + get_global_id(0)] = inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;"
-        "    });"
-        "}" };
+
+    std::string kernel1{R"CLC(
+        global int globalA;
+        kernel void updateGlobal() {
+          globalA = 75;
+        }
+    )CLC"};
+    std::string kernel2{R"CLC(
+        typedef struct { global int *bar; } Foo;
+        kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue) {
+
+          output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);
+          write_pipe(outPipe, &val);
+          queue_t default_queue = get_default_queue();
+          ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2);
+
+          // Have a child kernel write into third quarter of output
+          enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange,
+            ^{
+              output[get_global_size(0)*2 + get_global_id(0)] = inputA[get_global_size(0)*2+get_global_id(0)] + inputB[get_global_size(0)*2+get_global_id(0)] + globalA;
+            });
+
+          // Have a child kernel write into last quarter of output
+          enqueue_kernel(childQueue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange,
+            ^{
+                output[get_global_size(0)*3 + get_global_id(0)] = inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;
+            });
+        }
+    )CLC"};
 
     // New simpler string interface style
     std::vector<std::string> programStrings;
-    programStrings.push_back(kernel1);        
+    programStrings.push_back(kernel1);
     programStrings.push_back(kernel2);
 
     cl::Program vectorAddProgram(
@@ -72,7 +78,7 @@ int main(void)
         for (auto &pair : buildInfo) {
             std::cerr << pair.second << std::endl << std::endl;
         }
-        
+
         return 1;
     }
 
@@ -85,17 +91,17 @@ int main(void)
     program2Kernel(
         cl::EnqueueArgs(
         cl::NDRange(1)));
-    
+
     //////////////////
     // SVM allocations
-    
+
     auto anSVMInt = cl::allocate_svm<int, cl::SVMTraitCoarse<>>();
     *anSVMInt = 5;
     cl::SVMAllocator<Foo, cl::SVMTraitCoarse<cl::SVMTraitReadOnly<>>> svmAllocReadOnly;
     auto fooPointer = cl::allocate_pointer<Foo>(svmAllocReadOnly);
     fooPointer->bar = anSVMInt.get();
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAlloc;
-    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);    
+    std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);
     cl::coarse_svm_vector<int> inputB(numElements, 2, svmAlloc);
 
     //
@@ -105,11 +111,11 @@ int main(void)
     std::vector<int> output(numElements, 0xdeadbeef);
     cl::Buffer outputBuffer(begin(output), end(output), false);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
-    
+
     // Default command queue, also passed in as a parameter
     cl::DeviceCommandQueue defaultDeviceQueue = cl::DeviceCommandQueue::makeDefault(
         cl::Context::getDefault(), cl::Device::getDefault());
-    
+
     auto vectorAddKernel =
         cl::KernelFunctor<
             decltype(fooPointer)&,
