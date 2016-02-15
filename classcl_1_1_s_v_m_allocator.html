@@ -199,7 +199,7 @@ class cl::SVMAllocator&lt; T, SVMTrait &gt;</h3>
 <p>Note that while this behaves like an allocator for the purposes of constructing vectors and similar objects, care must be taken when using with smart pointers. The allocator should not be used to construct a unique_ptr if we are using coarse-grained SVM mode because the coarse-grained management behaviour would behave incorrectly with respect to reference counting.</p>
 <p>Instead the allocator embeds a Deleter which may be used with unique_ptr and is used with the allocate_shared and allocate_ptr supplied operations. </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03346">3346</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03367">3367</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a class="anchor" id="a44858d70971c7801aa62d7a64d18df00"></a>
 <div class="memitem">
@@ -237,7 +237,7 @@ template&lt;typename T , class SVMTrait &gt; </div>
 <p>Allocate an SVM pointer.</p>
 <p>If the allocator is coarse-grained, this will take ownership to allow containers to correctly construct data in place. </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03410">3410</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03431">3431</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -265,7 +265,7 @@ template&lt;typename T , class SVMTrait &gt; </div>
 </div><div class="memdoc">
 <p>Return the maximum possible allocation size. This is the minimum of the maximum sizes of all devices in the context. </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03452">3452</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03473">3473</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -294,7 +294,7 @@ template&lt;typename T , class SVMTrait &gt; </div>
 </div><div class="memdoc">
 <p>Returns true if the contexts match. </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03480">3480</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l03501">3501</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -307,7 +307,7 @@ template&lt;typename T , class SVMTrait &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecl.html">cl</a></li><li class="navelem"><a class="el" href="classcl_1_1_s_v_m_allocator.html">SVMAllocator</a></li>
-    <li class="footer">Generated on Tue Feb 9 2016 16:04:13 for OpenCL C++ Bindings by
+    <li class="footer">Generated on Mon Feb 15 2016 12:26:14 for OpenCL C++ Bindings by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.10 </li>
   </ul>

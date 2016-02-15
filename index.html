@@ -119,18 +119,38 @@ Compatibility</h1>
 <p>In OpenCL 2.0 OpenCL C is not entirely backward compatibility with earlier versions. As a result a flag must be passed to the OpenCL C compiled to request OpenCL 2.0 compilation of kernels with 1.2 as the default in the absence of the flag. In some cases the C++ bindings automatically compile code for ease. For those cases the compilation defaults to OpenCL C 2.0. If this is not wanted, the CL_HPP_CL_1_2_DEFAULT_BUILD macro may be specified to assume 1.2 compilation. If more fine-grained decisions on a per-kernel bases are required then explicit build operations that take the flag should be used.</p>
 <h1><a class="anchor" id="parameterization"></a>
 Parameters</h1>
-<p>This header may be parameterized by a set of preprocessor macros. CL_HPP_TARGET_OPENCL_VERSION</p><ul>
-<li>Defines the target OpenCL runtime version to build the header against. Defaults to 200, representing OpenCL 2.0. CL_HPP_NO_STD_STRING</li>
-<li>Do not use the standard library string class. cl::string is not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included. CL_HPP_NO_STD_VECTOR</li>
-<li>Do not use the standard library vector class. cl::vector is not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included. CL_HPP_NO_STD_ARRAY</li>
-<li>Do not use the standard library array class. cl::array is not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included. CL_HPP_NO_STD_UNIQUE_PTR</li>
-<li>Do not use the standard library unique_ptr class. cl::pointer and the <a class="el" href="namespacecl.html#a9feaebcb39a179537588bfcd349dbbb6">cl::allocate_pointer</a> function are not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included. CL_HPP_ENABLE_DEVICE_FISSION</li>
-<li>Enables device fission for OpenCL 1.2 platforms CL_HPP_ENABLE_EXCEPTIONS</li>
-<li>Enable exceptions for use in the C++ bindings header. This is the preferred error handling mechanism but is not required. CL_HPP_ENABLE_SIZE_T_COMPATIBILITY</li>
-<li>Backward compatibility option to support cl.hpp-style size_t class. Replaces the updated std::array derived version and removal of size_t from the namespace. Note that in this case the new size_t class is placed in the cl::compatibility namespace and thus requires an additional using declaration for direct backward compatibility. CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY</li>
-<li>Enable older vector of pairs interface for construction of programs. CL_HPP_CL_1_2_DEFAULT_BUILD</li>
-<li>Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0</li>
-<li>applies to use of <a class="el" href="classcl_1_1_program.html" title="Program interface that implements cl_program. ">cl::Program</a> construction and other program build variants.</li>
+<p>This header may be parameterized by a set of preprocessor macros.</p>
+<ul>
+<li><p class="startli">CL_HPP_TARGET_OPENCL_VERSION</p>
+<p class="startli">Defines the target OpenCL runtime version to build the header against. Defaults to 200, representing OpenCL 2.0.</p>
+</li>
+<li><p class="startli">CL_HPP_NO_STD_STRING</p>
+<p class="startli">Do not use the standard library string class. cl::string is not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included.</p>
+</li>
+<li><p class="startli">CL_HPP_NO_STD_VECTOR</p>
+<p class="startli">Do not use the standard library vector class. cl::vector is not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included.</p>
+</li>
+<li><p class="startli">CL_HPP_NO_STD_ARRAY</p>
+<p class="startli">Do not use the standard library array class. cl::array is not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included.</p>
+</li>
+<li><p class="startli">CL_HPP_NO_STD_UNIQUE_PTR</p>
+<p class="startli">Do not use the standard library unique_ptr class. cl::pointer and the <a class="el" href="namespacecl.html#a9feaebcb39a179537588bfcd349dbbb6">cl::allocate_pointer</a> functions are not defined and may be defined by the user before <a class="el" href="cl2_8hpp.html" title="C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), OpenCL 1.2 (rev 15) and OpenCL 2...">cl2.hpp</a> is included.</p>
+</li>
+<li><p class="startli">CL_HPP_ENABLE_DEVICE_FISSION</p>
+<p class="startli">Enables device fission for OpenCL 1.2 platforms.</p>
+</li>
+<li><p class="startli">CL_HPP_ENABLE_EXCEPTIONS</p>
+<p class="startli">Enable exceptions for use in the C++ bindings header. This is the preferred error handling mechanism but is not required.</p>
+</li>
+<li><p class="startli">CL_HPP_ENABLE_SIZE_T_COMPATIBILITY</p>
+<p class="startli">Backward compatibility option to support cl.hpp-style size_t class. Replaces the updated std::array derived version and removal of size_t from the namespace. Note that in this case the new size_t class is placed in the cl::compatibility namespace and thus requires an additional using declaration for direct backward compatibility.</p>
+</li>
+<li><p class="startli">CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY</p>
+<p class="startli">Enable older vector of pairs interface for construction of programs.</p>
+</li>
+<li><p class="startli">CL_HPP_CL_1_2_DEFAULT_BUILD</p>
+<p class="startli">Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0 applies to use of <a class="el" href="classcl_1_1_program.html" title="Program interface that implements cl_program. ">cl::Program</a> construction and other program build variants.</p>
+</li>
 </ul>
 <h1><a class="anchor" id="example"></a>
 Example</h1>
@@ -298,7 +318,7 @@ Example</h1>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue Feb 9 2016 16:04:13 for OpenCL C++ Bindings by
+    <li class="footer">Generated on Mon Feb 15 2016 12:26:14 for OpenCL C++ Bindings by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.10 </li>
   </ul>

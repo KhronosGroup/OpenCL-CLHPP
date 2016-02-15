@@ -536,18 +536,18 @@ cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueCopyBuff
 <tr class="memitem:af05e92b70071d8b6869080ae02ac807d"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af05e92b70071d8b6869080ae02ac807d"></a>
 cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueReadBufferRect</b> (const Buffer &amp;buffer, cl_bool blocking, const array&lt; size_type, 3 &gt; &amp;buffer_offset, const array&lt; size_type, 3 &gt; &amp;host_offset, const array&lt; size_type, 3 &gt; &amp;region, size_type buffer_row_pitch, size_type buffer_slice_pitch, size_type host_row_pitch, size_type host_slice_pitch, void *ptr, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
 <tr class="separator:af05e92b70071d8b6869080ae02ac807d"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad099cc8ff4cc3c69a66003f83c7c9944"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ad099cc8ff4cc3c69a66003f83c7c9944"></a>
-cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueWriteBufferRect</b> (const Buffer &amp;buffer, cl_bool blocking, const array&lt; size_type, 3 &gt; &amp;buffer_offset, const array&lt; size_type, 3 &gt; &amp;host_offset, const array&lt; size_type, 3 &gt; &amp;region, size_type buffer_row_pitch, size_type buffer_slice_pitch, size_type host_row_pitch, size_type host_slice_pitch, void *ptr, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
-<tr class="separator:ad099cc8ff4cc3c69a66003f83c7c9944"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aca10d37fe92b6ee56b9b277f18064db9"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aca10d37fe92b6ee56b9b277f18064db9"></a>
+cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueWriteBufferRect</b> (const Buffer &amp;buffer, cl_bool blocking, const array&lt; size_type, 3 &gt; &amp;buffer_offset, const array&lt; size_type, 3 &gt; &amp;host_offset, const array&lt; size_type, 3 &gt; &amp;region, size_type buffer_row_pitch, size_type buffer_slice_pitch, size_type host_row_pitch, size_type host_slice_pitch, const void *ptr, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
+<tr class="separator:aca10d37fe92b6ee56b9b277f18064db9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aac389b8df07a4ed9809413eae7f7689e"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aac389b8df07a4ed9809413eae7f7689e"></a>
 cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueCopyBufferRect</b> (const Buffer &amp;src, const Buffer &amp;dst, const array&lt; size_type, 3 &gt; &amp;src_origin, const array&lt; size_type, 3 &gt; &amp;dst_origin, const array&lt; size_type, 3 &gt; &amp;region, size_type src_row_pitch, size_type src_slice_pitch, size_type dst_row_pitch, size_type dst_slice_pitch, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
 <tr class="separator:aac389b8df07a4ed9809413eae7f7689e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aca98dae2e67f001b26a37d60ccc8fd79"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="aca98dae2e67f001b26a37d60ccc8fd79"></a>
 cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueReadImage</b> (const Image &amp;image, cl_bool blocking, const array&lt; size_type, 3 &gt; &amp;origin, const array&lt; size_type, 3 &gt; &amp;region, size_type row_pitch, size_type slice_pitch, void *ptr, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
 <tr class="separator:aca98dae2e67f001b26a37d60ccc8fd79"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:af7b1009ee6bf9f99bdaa21be8af1fbd0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="af7b1009ee6bf9f99bdaa21be8af1fbd0"></a>
-cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueWriteImage</b> (const Image &amp;image, cl_bool blocking, const array&lt; size_type, 3 &gt; &amp;origin, const array&lt; size_type, 3 &gt; &amp;region, size_type row_pitch, size_type slice_pitch, void *ptr, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
-<tr class="separator:af7b1009ee6bf9f99bdaa21be8af1fbd0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac7b430ef533bd2f3d89092172a39eb9a"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="ac7b430ef533bd2f3d89092172a39eb9a"></a>
+cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueWriteImage</b> (const Image &amp;image, cl_bool blocking, const array&lt; size_type, 3 &gt; &amp;origin, const array&lt; size_type, 3 &gt; &amp;region, size_type row_pitch, size_type slice_pitch, const void *ptr, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
+<tr class="separator:ac7b430ef533bd2f3d89092172a39eb9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a30c5c9c18b1773b185a8cdbca81955e0"><td class="memItemLeft" align="right" valign="top"><a class="anchor" id="a30c5c9c18b1773b185a8cdbca81955e0"></a>
 cl_int&#160;</td><td class="memItemRight" valign="bottom"><b>cl::enqueueCopyImage</b> (const Image &amp;src, const Image &amp;dst, const array&lt; size_type, 3 &gt; &amp;src_origin, const array&lt; size_type, 3 &gt; &amp;dst_origin, const array&lt; size_type, 3 &gt; &amp;region, const vector&lt; Event &gt; *events=NULL, Event *event=NULL)</td></tr>
 <tr class="separator:a30c5c9c18b1773b185a8cdbca81955e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -621,7 +621,7 @@ Variables</h2></td></tr>
 <div class="line">    typedef T param_type;                            \</div>
 <div class="line">};</div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01261">1261</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01284">1284</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -645,7 +645,7 @@ Variables</h2></td></tr>
 <div class="line">    } \</div>
 <div class="line">    }</div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l00633">633</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l00656">656</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -679,7 +679,7 @@ Variables</h2></td></tr>
 <div class="line">    } \</div>
 <div class="line">    }</div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l00641">641</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l00664">664</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -702,7 +702,7 @@ Variables</h2></td></tr>
 <div class="line">    F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \</div>
 <div class="line">    F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector&lt;cl_device_partition_property_ext&gt;)</div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01251">1251</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01274">1274</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -739,10 +739,10 @@ Variables</h2></td></tr>
 <div class="line">    F(cl_kernel_work_group_info, CL_KERNEL_PRIVATE_MEM_SIZE, cl_ulong) \</div>
 <div class="line">    \</div>
 <div class="line">    F(cl_event_info, CL_EVENT_CONTEXT, <a class="code" href="classcl_1_1_context.html">cl::Context</a>)</div>
-<div class="ttc" id="classcl_1_1_memory_html"><div class="ttname"><a href="classcl_1_1_memory.html">cl::Memory</a></div><div class="ttdoc">Class interface for cl_mem. </div><div class="ttdef"><b>Definition:</b> <a href="cl2_8hpp_source.html#l03120">cl2.hpp:3120</a></div></div>
-<div class="ttc" id="classcl_1_1_context_html"><div class="ttname"><a href="classcl_1_1_context.html">cl::Context</a></div><div class="ttdoc">Class interface for cl_context. </div><div class="ttdef"><b>Definition:</b> <a href="cl2_8hpp_source.html#l02530">cl2.hpp:2530</a></div></div>
+<div class="ttc" id="classcl_1_1_memory_html"><div class="ttname"><a href="classcl_1_1_memory.html">cl::Memory</a></div><div class="ttdoc">Class interface for cl_mem. </div><div class="ttdef"><b>Definition:</b> <a href="cl2_8hpp_source.html#l03141">cl2.hpp:3141</a></div></div>
+<div class="ttc" id="classcl_1_1_context_html"><div class="ttname"><a href="classcl_1_1_context.html">cl::Context</a></div><div class="ttdoc">Class interface for cl_context. </div><div class="ttdef"><b>Definition:</b> <a href="cl2_8hpp_source.html#l02551">cl2.hpp:2551</a></div></div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01183">1183</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01206">1206</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -783,9 +783,9 @@ Variables</h2></td></tr>
 <div class="line">    F(cl_image_info, CL_IMAGE_ARRAY_SIZE, size_type) \</div>
 <div class="line">    F(cl_image_info, CL_IMAGE_NUM_MIP_LEVELS, cl_uint) \</div>
 <div class="line">    F(cl_image_info, CL_IMAGE_NUM_SAMPLES, cl_uint)</div>
-<div class="ttc" id="classcl_1_1_device_html"><div class="ttname"><a href="classcl_1_1_device.html">cl::Device</a></div><div class="ttdoc">Class interface for cl_device_id. </div><div class="ttdef"><b>Definition:</b> <a href="cl2_8hpp_source.html#l01916">cl2.hpp:1916</a></div></div>
+<div class="ttc" id="classcl_1_1_device_html"><div class="ttname"><a href="classcl_1_1_device.html">cl::Device</a></div><div class="ttdoc">Class interface for cl_device_id. </div><div class="ttdef"><b>Definition:</b> <a href="cl2_8hpp_source.html#l01939">cl2.hpp:1939</a></div></div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01205">1205</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01228">1228</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -821,7 +821,7 @@ Variables</h2></td></tr>
 <div class="line">    F(cl_pipe_info, CL_PIPE_PACKET_SIZE, cl_uint) \</div>
 <div class="line">    F(cl_pipe_info, CL_PIPE_MAX_PACKETS, cl_uint)</div>
 </div><!-- fragment -->
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01231">1231</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l01254">1254</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -831,7 +831,7 @@ Variables</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="dir_d44c64559bbebec7f509842c48db8b23.html">include</a></li><li class="navelem"><a class="el" href="dir_8358e9aed72341d13c81ba12a462bec7.html">CL</a></li><li class="navelem"><a class="el" href="cl2_8hpp.html">cl2.hpp</a></li>
-    <li class="footer">Generated on Tue Feb 9 2016 16:04:13 for OpenCL C++ Bindings by
+    <li class="footer">Generated on Mon Feb 15 2016 12:26:13 for OpenCL C++ Bindings by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.10 </li>
   </ul>
