@@ -134,41 +134,64 @@
  *
  * \section parameterization Parameters
  * This header may be parameterized by a set of preprocessor macros.
- * CL_HPP_TARGET_OPENCL_VERSION
- *  - Defines the target OpenCL runtime version to build the header against.
- *    Defaults to 200, representing OpenCL 2.0.
- * CL_HPP_NO_STD_STRING
- *  - Do not use the standard library string class.
- *    cl::string is not defined and may be defined by the user before 
- *    cl2.hpp is included.
- * CL_HPP_NO_STD_VECTOR
- *  - Do not use the standard library vector class.
- *    cl::vector is not defined and may be defined by the user before
- *    cl2.hpp is included. 
- * CL_HPP_NO_STD_ARRAY
- *  - Do not use the standard library array class.
- *    cl::array is not defined and may be defined by the user before
- *    cl2.hpp is included.
- * CL_HPP_NO_STD_UNIQUE_PTR
- *  - Do not use the standard library unique_ptr class.
- *    cl::pointer and the cl::allocate_pointer function are not defined 
- *    and may be defined by the user before cl2.hpp is included.
- * CL_HPP_ENABLE_DEVICE_FISSION 
- *  - Enables device fission for OpenCL 1.2 platforms
- * CL_HPP_ENABLE_EXCEPTIONS
- *  - Enable exceptions for use in the C++ bindings header.
- *    This is the preferred error handling mechanism but is not required.
- * CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
- *  - Backward compatibility option to support cl.hpp-style size_t class.
- *    Replaces the updated std::array derived version and removal of size_t
- *    from the namespace. Note that in this case the new size_t class
- *    is placed in the cl::compatibility namespace and thus requires
- *    an additional using declaration for direct backward compatibility.
- * CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY 
- *  - Enable older vector of pairs interface for construction of programs.
- * CL_HPP_CL_1_2_DEFAULT_BUILD
- *  - Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0
- *  - applies to use of cl::Program construction and other program build variants.
+ *
+ * - CL_HPP_TARGET_OPENCL_VERSION
+ *
+ *   Defines the target OpenCL runtime version to build the header
+ *   against. Defaults to 200, representing OpenCL 2.0.
+ *
+ * - CL_HPP_NO_STD_STRING
+ *
+ *   Do not use the standard library string class. cl::string is not
+ *   defined and may be defined by the user before cl2.hpp is
+ *   included.
+ *
+ * - CL_HPP_NO_STD_VECTOR
+ *
+ *   Do not use the standard library vector class. cl::vector is not
+ *   defined and may be defined by the user before cl2.hpp is
+ *   included.
+ *
+ * - CL_HPP_NO_STD_ARRAY
+ *
+ *   Do not use the standard library array class. cl::array is not
+ *   defined and may be defined by the user before cl2.hpp is
+ *   included.
+ *
+ * - CL_HPP_NO_STD_UNIQUE_PTR
+ *
+ *   Do not use the standard library unique_ptr class. cl::pointer and
+ *   the cl::allocate_pointer functions are not defined and may be
+ *   defined by the user before cl2.hpp is included.
+ *
+ * - CL_HPP_ENABLE_DEVICE_FISSION
+ *
+ *   Enables device fission for OpenCL 1.2 platforms.
+ *
+ * - CL_HPP_ENABLE_EXCEPTIONS
+ *
+ *   Enable exceptions for use in the C++ bindings header. This is the
+ *   preferred error handling mechanism but is not required.
+ *
+ * - CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
+ *
+ *   Backward compatibility option to support cl.hpp-style size_t
+ *   class.  Replaces the updated std::array derived version and
+ *   removal of size_t from the namespace. Note that in this case the
+ *   new size_t class is placed in the cl::compatibility namespace and
+ *   thus requires an additional using declaration for direct backward
+ *   compatibility.
+ *
+ * - CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY
+ *
+ *   Enable older vector of pairs interface for construction of
+ *   programs.
+ *
+ * - CL_HPP_CL_1_2_DEFAULT_BUILD
+ *
+ *   Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0
+ *   applies to use of cl::Program construction and other program
+ *   build variants.
  *
  *
  * \section example Example
