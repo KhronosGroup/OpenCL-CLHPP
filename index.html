@@ -189,34 +189,44 @@ Example</h1>
 <div class="line">        <span class="keywordflow">return</span> -1;</div>
 <div class="line">    }</div>
 <div class="line"></div>
-<div class="line">    std::string kernel1{</div>
-<div class="line">        <span class="stringliteral">&quot;global int globalA;&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;kernel void updateGlobal(){&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;  globalA = 75;&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;}&quot;</span>};</div>
-<div class="line">    std::string kernel2{</div>
-<div class="line">        <span class="stringliteral">&quot;typedef struct { global int *bar; } Foo; kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue){&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;  output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum-&gt;bar);&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;  write_pipe(outPipe, &amp;val);&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;  queue_t default_queue = get_default_queue(); &quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;  ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2); &quot;</span></div>
-<div class="line">        <span class="comment">// Have a child kernel write into third quarter of output</span></div>
-<div class="line">        <span class="stringliteral">&quot;  enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, &quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;    ^{&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;      output[get_global_size(0)*2 + get_global_id(0)] = inputA[get_global_size(0)*2+get_global_id(0)] + inputB[get_global_size(0)*2+get_global_id(0)] + globalA;&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;    });&quot;</span></div>
-<div class="line">        <span class="comment">// Have a child kernel write into last quarter of output</span></div>
-<div class="line">        <span class="stringliteral">&quot;  enqueue_kernel(childQueue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange, &quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;    ^{&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;      output[get_global_size(0)*3 + get_global_id(0)] = inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;    });&quot;</span></div>
-<div class="line">        <span class="stringliteral">&quot;}&quot;</span> };</div>
-<div class="line"></div>
-<div class="line">    <span class="comment">// New simpler string interface style</span></div>
+<div class="line">    <span class="comment">// Use C++11 raw string literals for kernel source code</span></div>
+<div class="line">    std::string kernel1{R<span class="stringliteral">&quot;CLC(</span></div>
+<div class="line"><span class="stringliteral">        global int globalA;</span></div>
+<div class="line"><span class="stringliteral">        kernel void updateGlobal()</span></div>
+<div class="line"><span class="stringliteral">        {</span></div>
+<div class="line"><span class="stringliteral">          globalA = 75;</span></div>
+<div class="line"><span class="stringliteral">        }</span></div>
+<div class="line"><span class="stringliteral">    )CLC&quot;};</span></div>
+<div class="line"><span class="stringliteral">    std::string kernel2{R</span><span class="stringliteral">&quot;CLC(</span></div>
+<div class="line"><span class="stringliteral">        typedef struct { global int *bar; } Foo;</span></div>
+<div class="line"><span class="stringliteral">        kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB,</span></div>
+<div class="line"><span class="stringliteral">                              global int *output, int val, write_only pipe int outPipe, queue_t childQueue)</span></div>
+<div class="line"><span class="stringliteral">        {</span></div>
+<div class="line"><span class="stringliteral">          output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum-&gt;bar);</span></div>
+<div class="line"><span class="stringliteral">          write_pipe(outPipe, &amp;val);</span></div>
+<div class="line"><span class="stringliteral">          queue_t default_queue = get_default_queue();</span></div>
+<div class="line"><span class="stringliteral">          ndrange_t ndrange = ndrange_1D(get_global_size(0)/2, get_global_size(0)/2);</span></div>
+<div class="line"><span class="stringliteral"></span></div>
+<div class="line"><span class="stringliteral">          // Have a child kernel write into third quarter of output</span></div>
+<div class="line"><span class="stringliteral">          enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange,</span></div>
+<div class="line"><span class="stringliteral">            ^{</span></div>
+<div class="line"><span class="stringliteral">                output[get_global_size(0)*2 + get_global_id(0)] =</span></div>
+<div class="line"><span class="stringliteral">                  inputA[get_global_size(0)*2 + get_global_id(0)] + inputB[get_global_size(0)*2 + get_global_id(0)] + globalA;</span></div>
+<div class="line"><span class="stringliteral">            });</span></div>
+<div class="line"><span class="stringliteral"></span></div>
+<div class="line"><span class="stringliteral">          // Have a child kernel write into last quarter of output</span></div>
+<div class="line"><span class="stringliteral">          enqueue_kernel(childQueue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange,</span></div>
+<div class="line"><span class="stringliteral">            ^{</span></div>
+<div class="line"><span class="stringliteral">                output[get_global_size(0)*3 + get_global_id(0)] =</span></div>
+<div class="line"><span class="stringliteral">                  inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;</span></div>
+<div class="line"><span class="stringliteral">            });</span></div>
+<div class="line"><span class="stringliteral">        }</span></div>
+<div class="line"><span class="stringliteral">    )CLC&quot;};</span></div>
+<div class="line"><span class="stringliteral"></span></div>
+<div class="line"><span class="stringliteral">    </span><span class="comment">// New simpler string interface style</span></div>
 <div class="line">    std::vector&lt;std::string&gt; programStrings {kernel1, kernel2};</div>
 <div class="line"></div>
-<div class="line">    <a class="code" href="classcl_1_1_program.html">cl::Program</a> vectorAddProgram(</div>
-<div class="line">        programStrings);</div>
+<div class="line">    <a class="code" href="classcl_1_1_program.html">cl::Program</a> vectorAddProgram(programStrings);</div>
 <div class="line">    <span class="keywordflow">try</span> {</div>
 <div class="line">        vectorAddProgram.build(<span class="stringliteral">&quot;-cl-std=CL2.0&quot;</span>);</div>
 <div class="line">    }</div>
@@ -227,7 +237,7 @@ Example</h1>
 <div class="line">        <span class="keywordflow">for</span> (<span class="keyword">auto</span> &amp;pair : buildInfo) {</div>
 <div class="line">            std::cerr &lt;&lt; pair.second &lt;&lt; std::endl &lt;&lt; std::endl;</div>
 <div class="line">        }</div>
-<div class="line">    </div>
+<div class="line"></div>
 <div class="line">        <span class="keywordflow">return</span> 1;</div>
 <div class="line">    }</div>
 <div class="line"></div>
@@ -249,7 +259,7 @@ Example</h1>
 <div class="line">    <span class="keyword">auto</span> fooPointer = cl::allocate_pointer&lt;Foo&gt;(svmAllocReadOnly);</div>
 <div class="line">    fooPointer-&gt;bar = anSVMInt.get();</div>
 <div class="line">    <a class="code" href="classcl_1_1_s_v_m_allocator.html">cl::SVMAllocator&lt;int, cl::SVMTraitCoarse&lt;&gt;</a>&gt; svmAlloc;</div>
-<div class="line">    std::vector&lt;int, cl::SVMAllocator&lt;int, cl::SVMTraitCoarse&lt;&gt;&gt;&gt; inputA(numElements, 1, svmAlloc);    </div>
+<div class="line">    std::vector&lt;int, cl::SVMAllocator&lt;int, cl::SVMTraitCoarse&lt;&gt;&gt;&gt; inputA(numElements, 1, svmAlloc);</div>
 <div class="line">    <a class="code" href="namespacecl.html#a51ad881a3d0a77bca3eecd01af8501c0">cl::coarse_svm_vector&lt;int&gt;</a> inputB(numElements, 2, svmAlloc);</div>
 <div class="line"></div>
 <div class="line">    <span class="comment">//</span></div>
@@ -318,7 +328,7 @@ Example</h1>
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Mon Feb 15 2016 12:26:14 for OpenCL C++ Bindings by
+    <li class="footer">Generated on Wed Feb 17 2016 13:58:27 for OpenCL C++ Bindings by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.10 </li>
   </ul>

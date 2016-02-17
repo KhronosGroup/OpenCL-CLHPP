@@ -239,7 +239,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <dl class="section note"><dt>Note</dt><dd>Copies of these objects are shallow, meaning that the copy will refer to the same underlying cl_context as the original. For details, see clRetainContext() and clReleaseContext().</dd></dl>
 <dl class="section see"><dt>See also</dt><dd>cl_context </dd></dl>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02551">2551</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02573">2573</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a class="anchor" id="ac6e1091d7a0682f275150e859c15c32e"></a>
 <div class="memitem">
@@ -294,7 +294,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <p>Constructs a context including a list of specified devices. </p>
 <p>Wraps clCreateContext(). </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02623">2623</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02645">2645</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -351,7 +351,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <p>Constructs a context including all or a subset of devices of a specified type. </p>
 <p>Wraps clCreateContextFromType(). </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02684">2684</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02706">2706</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -390,7 +390,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <p>Constructor from cl_context - takes ownership. </p>
 <p>This effectively transfers ownership of a refcount on the cl_context into the new <a class="el" href="classcl_1_1_context.html" title="Class interface for cl_context. ">Context</a> object. </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02830">2830</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02852">2852</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -420,7 +420,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <p>Returns a singleton context including all devices of CL_DEVICE_TYPE_DEFAULT. </p>
 <dl class="section note"><dt>Note</dt><dd>All calls to this function return the same cl_context as the first. </dd></dl>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02798">2798</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02820">2820</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -465,7 +465,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <p>Gets a list of supported image formats. </p>
 <p>Wraps clGetSupportedImageFormats(). </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02871">2871</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02893">2893</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -494,7 +494,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <p>Assignment operator from cl_context - takes ownership. </p>
 <p>This effectively transfers ownership of a refcount on the rhs and calls clReleaseContext() on the value previously held by this instance. </p>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02838">2838</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02860">2860</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -521,7 +521,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 </div><div class="memdoc">
 <p>Modify the default context to be used by subsequent operations. Will only set the default if no default was previously created. </p><dl class="section return"><dt>Returns</dt><dd>updated default context. Should be compared to the passed value to ensure that it was updated. </dd></dl>
 
-<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02815">2815</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
+<p>Definition at line <a class="el" href="cl2_8hpp_source.html#l02837">2837</a> of file <a class="el" href="cl2_8hpp_source.html">cl2.hpp</a>.</p>
 
 </div>
 </div>
@@ -534,7 +534,7 @@ cl_type&#160;</td><td class="memItemRight" valign="bottom"><b>object_</b></td></
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="namespacecl.html">cl</a></li><li class="navelem"><a class="el" href="classcl_1_1_context.html">Context</a></li>
-    <li class="footer">Generated on Mon Feb 15 2016 12:26:14 for OpenCL C++ Bindings by
+    <li class="footer">Generated on Wed Feb 17 2016 13:58:27 for OpenCL C++ Bindings by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.10 </li>
   </ul>
