@@ -28,11 +28,11 @@
 
 /*! \file
  *
- *   \brief C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33), 
+ *   \brief C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33),
  *       OpenCL 1.2 (rev 15) and OpenCL 2.0 (rev 29)
  *   \author Lee Howes and Bruce Merry
- *   
- *   Derived from the OpenCL 1.x C++ bindings written by 
+ *
+ *   Derived from the OpenCL 1.x C++ bindings written by
  *   Benedict R. Gaster, Laurent Morichetti and Lee Howes
  *   With additions and fixes from:
  *       Brian Cole, March 3rd 2010 and April 2012
@@ -52,6 +52,18 @@
  *         #define CL_HPP_USE_DX_INTEROP
  *         cl_khr_sub_groups
  *         #define CL_HPP_USE_CL_SUB_GROUPS_KHR
+ *
+ *   Doxygen documentation for this header is available here:
+ *
+ *       http://khronosgroup.github.io/OpenCL-CLHPP/
+ *
+ *   The latest version of this header can be found on the GitHub releases page:
+ *
+ *       https://github.com/KhronosGroup/OpenCL-CLHPP/releases
+ *
+ *   Bugs and patches can be submitted to the GitHub repository:
+ *
+ *       https://github.com/KhronosGroup/OpenCL-CLHPP
  */
 
 /*! \mainpage
