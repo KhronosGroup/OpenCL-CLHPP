@@ -1,4 +1,9 @@
-cl.hpp base sources.
+Sources for the OpenCL C++ bindings (cl.hpp and cl2.hpp).
+
+Doxgen documentation for the cl2.hpp header is available here:
+
+  http://khronosgroup.github.io/OpenCL-CLHPP/
+
 
 Components:
   input_cl.hpp:
@@ -12,6 +17,9 @@ Components:
   gen_cl_hpp.py:
     A generator script written in python to convert input_cl.hpp into cl.hpp, generating the functor expansions as necessary.
     cl2.hpp does not require this as it uses variadic templates expanded in the compiler.
+
+  docs:
+    Doxygen file used to generate HTML documentation for cl2.hpp.
 
   examples:
     A simple example application using the very basic features of the header and generating cl.hpp dynamically through the build system.
@@ -32,7 +40,7 @@ tests/test_clhpp
 tests/test_clhpp_cxx11
 tests/test_clhpp_deprecated_1_1
 
-After building, the headers appear in build/include/CL/.
+After building, the headers appear in build/include/CL/. If Doxygen is available, you can generate HTML documentation by typing `make docs`.
 
 [1] https://github.com/ThrowTheSwitch/Unity/releases/tag/v2.1.0
 [2] https://github.com/ThrowTheSwitch/CMock
