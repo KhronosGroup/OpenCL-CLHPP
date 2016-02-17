@@ -236,16 +236,19 @@
             return -1;
         }
 
+        // Use C++11 raw string literals for kernel source code
         std::string kernel1{R"CLC(
             global int globalA;
-            kernel void updateGlobal() {
+            kernel void updateGlobal()
+            {
               globalA = 75;
             }
         )CLC"};
         std::string kernel2{R"CLC(
             typedef struct { global int *bar; } Foo;
-            kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB, global int *output, int val, write_only pipe int outPipe, queue_t childQueue) {
-
+            kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB,
+                                  global int *output, int val, write_only pipe int outPipe, queue_t childQueue)
+            {
               output[get_global_id(0)] = inputA[get_global_id(0)] + inputB[get_global_id(0)] + val + *(aNum->bar);
               write_pipe(outPipe, &val);
               queue_t default_queue = get_default_queue();
@@ -254,13 +257,15 @@
               // Have a child kernel write into third quarter of output
               enqueue_kernel(default_queue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange,
                 ^{
-                  output[get_global_size(0)*2 + get_global_id(0)] = inputA[get_global_size(0)*2+get_global_id(0)] + inputB[get_global_size(0)*2+get_global_id(0)] + globalA;
+                    output[get_global_size(0)*2 + get_global_id(0)] =
+                      inputA[get_global_size(0)*2 + get_global_id(0)] + inputB[get_global_size(0)*2 + get_global_id(0)] + globalA;
                 });
 
               // Have a child kernel write into last quarter of output
               enqueue_kernel(childQueue, CLK_ENQUEUE_FLAGS_WAIT_KERNEL, ndrange,
                 ^{
-                    output[get_global_size(0)*3 + get_global_id(0)] = inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;
+                    output[get_global_size(0)*3 + get_global_id(0)] =
+                      inputA[get_global_size(0)*3 + get_global_id(0)] + inputB[get_global_size(0)*3 + get_global_id(0)] + globalA + 2;
                 });
             }
         )CLC"};
@@ -268,8 +273,7 @@
         // New simpler string interface style
         std::vector<std::string> programStrings {kernel1, kernel2};
 
-        cl::Program vectorAddProgram(
-            programStrings);
+        cl::Program vectorAddProgram(programStrings);
         try {
             vectorAddProgram.build("-cl-std=CL2.0");
         }
