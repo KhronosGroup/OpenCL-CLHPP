@@ -6565,7 +6565,7 @@ inline cl_int cl::Program::getInfo(cl_program_info name, vector<vector<unsigned 
 
         // Resize the parameter array and constituent arrays
         param->resize(numBinaries);
-        for (int i = 0; i < numBinaries; ++i) {
+        for (size_type i = 0; i < numBinaries; ++i) {
             (*param)[i].resize(sizes[i]);
         }
 
