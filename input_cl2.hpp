@@ -940,14 +940,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector<vector<unsigned char>>*
         size_type numBinaries = param->size();
         vector<unsigned char*> binariesPointers(numBinaries);
 
-        size_type totalSize = 0;
         for (size_type i = 0; i < numBinaries; ++i)
         {
             binariesPointers[i] = (*param)[i].data();
-            totalSize += (*param)[i].size();
         }
 
-        cl_int err = f(name, totalSize, binariesPointers.data(), NULL);
+        cl_int err = f(name, numBinaries * sizeof(unsigned char*), binariesPointers.data(), NULL);
 
         if (err != CL_SUCCESS) {
             return err;
