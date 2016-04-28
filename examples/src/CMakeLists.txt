@@ -5,27 +5,28 @@ set(TRIVIAL_HEADERS
     ${CLCPP_BINARY_DIR}/include/CL/cl.hpp)
 set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl.hpp PROPERTIES GENERATED 1)
 
-set(TRIVIALCL2_SOURCES
-    trivialCL2.cpp )
-
-set(TRIVIALCL2_HEADERS
-    ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
-set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
-
-set(TRIVIALCL2_SIZET_COMPAT_SOURCES
-    trivialCL2SizeTCompat.cpp )
-
-set(TRIVIALCL2_SIZET_COMPAT_HEADERS
-    ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
-set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
-
-set(HEADEREXAMPLECL2_SOURCES
-    headerexampleCL2.cpp )
-
-set(HEADEREXAMPLECL2_HEADERS
-    ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
-set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
-
+if (SUPPORTS_OPEN_CL_2_0_APIS OR SUPPORTS_OPEN_CL_2_1_APIS OR SUPPORTS_OPEN_CL_2_2_APIS)
+  set(TRIVIALCL2_SOURCES
+      trivialCL2.cpp )
+  
+  set(TRIVIALCL2_HEADERS
+      ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
+  set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
+  
+  set(TRIVIALCL2_SIZET_COMPAT_SOURCES
+      trivialCL2SizeTCompat.cpp )
+  
+  set(TRIVIALCL2_SIZET_COMPAT_HEADERS
+      ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
+  set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
+  
+  set(HEADEREXAMPLECL2_SOURCES
+      headerexampleCL2.cpp )
+  
+  set(HEADEREXAMPLECL2_HEADERS
+      ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp)
+  set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
+endif()
 
 
 
@@ -46,16 +47,24 @@ endif()
 
 add_executable(trivial ${TRIVIAL_SOURCES} ${TRIVIAL_HEADERS})
 add_dependencies(trivial generate_clhpp)
-target_link_libraries( trivial OpenCL )
 
-add_executable(trivialCL2 ${TRIVIALCL2_SOURCES} ${TRIVIALCL2_HEADERS})
-add_dependencies(trivialCL2 generate_cl2hpp)
-target_link_libraries( trivialCL2 OpenCL )
+if (APPLE)
+  find_library(opencl_library OpenCL)
+  target_link_libraries( trivial ${opencl_library} )  
+else ()
+  target_link_libraries( trivial OpenCL )
+endif()
 
-add_executable(trivialCL2SizeTCompat ${TRIVIALCL2_SIZET_COMPAT_SOURCES} ${TRIVIALCL2_SIZET_COMPAT_HEADERS})
-add_dependencies(trivialCL2SizeTCompat generate_cl2hpp)
-target_link_libraries( trivialCL2SizeTCompat OpenCL )
+if (SUPPORTS_OPEN_CL_2_0_APIS OR SUPPORTS_OPEN_CL_2_1_APIS OR SUPPORTS_OPEN_CL_2_2_APIS)
+  add_executable(trivialCL2 ${TRIVIALCL2_SOURCES} ${TRIVIALCL2_HEADERS})
+  add_dependencies(trivialCL2 generate_cl2hpp)
+  target_link_libraries( trivialCL2 OpenCL )
 
-add_executable(headerexampleCL2 ${HEADEREXAMPLECL2_SOURCES} ${HEADEREXAMPLECL2_HEADERS})
-add_dependencies(headerexampleCL2 generate_cl2hpp)
-target_link_libraries( headerexampleCL2 OpenCL )
+  add_executable(trivialCL2SizeTCompat ${TRIVIALCL2_SIZET_COMPAT_SOURCES} ${TRIVIALCL2_SIZET_COMPAT_HEADERS})
+  add_dependencies(trivialCL2SizeTCompat generate_cl2hpp)
+  target_link_libraries( trivialCL2SizeTCompat OpenCL )
+
+  add_executable(headerexampleCL2 ${HEADEREXAMPLECL2_SOURCES} ${HEADEREXAMPLECL2_HEADERS})
+  add_dependencies(headerexampleCL2 generate_cl2hpp)
+  target_link_libraries( headerexampleCL2 OpenCL )
+endif()

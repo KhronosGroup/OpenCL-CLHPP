@@ -10,6 +10,11 @@ add_custom_target(
   WORKING_DIRECTORY
   ${CMAKE_CURRENT_BINARY_DIR}
   VERBATIM)
-add_dependencies(docs generate_cl2hpp)
+  
+if (SUPPORTS_OPEN_CL_2_0_APIS OR SUPPORTS_OPEN_CL_2_1_APIS OR SUPPORTS_OPEN_CL_2_2_APIS)
+  add_dependencies(docs generate_cl2hpp)
+else ()
+  add_dependencies(docs generate_clhpp)
+endif()
 
 endif (DOXYGEN_FOUND)
