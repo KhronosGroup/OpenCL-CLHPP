@@ -32,9 +32,10 @@ Components:
 
 You need to tell cmake where to find external dependencies, using the variables OPENCL_DIST_DIR, UNITY_DIR and CMOCK_DIR. These can be set either as environment variables, or on the cmake command line using the syntax -D<VAR>=<VALUE>. For the lazy, I use the following commands to build and test (you'll need to adapt your paths):
 
-mkdir build
-cd build
-cmake -DUNITY_DIR=$HOME/src/unity -DCMOCK_DIR=$HOME/src/cmock -DOPENCL_DIST_DIR=/opt/AMD-APP-SDK-v2.7-RC-lnx64/ ..
+git clone https://github.com/ghulands/OpenCL-CLHPP
+git submodules init
+./build.sh
+cmake -DOPENCL_DIST_DIR=/opt/AMD-APP-SDK-v2.7-RC-lnx64/ ..
 make
 tests/test_clhpp
 tests/test_clhpp_cxx11
