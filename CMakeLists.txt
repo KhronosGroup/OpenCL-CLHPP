@@ -52,8 +52,8 @@ else()
   set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir")
 endif()
 
-set(UNITY_DIR $ENV{UNITY_DIR} CACHE PATH "Unity dir")
-set(CMOCK_DIR $ENV{CMOCK_DIR} CACHE PATH "CMock dir")
+set(UNITY_DIR ${PROJECT_BINARY_DIR}/../ext/unity CACHE PATH "Unity dir")
+set(CMOCK_DIR ${PROJECT_BINARY_DIR}/../ext/cmock CACHE PATH "CMock dir")
 
 add_subdirectory(docs)
 add_subdirectory(include)
