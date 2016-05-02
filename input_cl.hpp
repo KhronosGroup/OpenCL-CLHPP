@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2015 The Khronos Group Inc.
+ * Copyright (c) 2008-2016 The Khronos Group Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and/or associated documentation files (the
@@ -1242,6 +1242,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
     }
     if (param) {
         param->assign(value.begin(), value.end());
+    }
+    if (!param->empty() && param->back() == '\0') {
+      param->resize(param->size() - 1);
     }
 #endif
     return CL_SUCCESS;

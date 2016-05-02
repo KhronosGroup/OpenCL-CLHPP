@@ -557,6 +557,47 @@ void testBuiltInKernels()
 
 }
 
+/**
+ * Stub implementation of clGetDeviceInfo that just returns a device name
+ */
+static cl_int clGetDeviceInfo_name(
+    cl_device_id id,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    static const char device_name[] = "Turing's Machine";
+
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_NAME, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(device_name));
+
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = sizeof(device_name);
+    if (param_value != NULL)
+        memcpy(param_value, device_name, sizeof(device_name));
+
+    return CL_SUCCESS;
+}
+
+void testGetInfoStdString()
+{
+    // Any version will do here
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_name);
+    std::string name = d0.getInfo<CL_DEVICE_NAME>();
+    TEST_ASSERT(name.back() != '\0');
+    TEST_ASSERT(name == "Turing's Machine");
+}
+
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
 // We cannot remove the once_flag, so this is a hard fix

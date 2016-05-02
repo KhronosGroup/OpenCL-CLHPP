@@ -1720,6 +1720,47 @@ void testGetBuildInfo()
 }
 
 /**
+ * Stub implementation of clGetDeviceInfo that just returns a device name
+ */
+static cl_int clGetDeviceInfo_name(
+    cl_device_id id,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    static const char device_name[] = "Turing's Machine";
+
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_NAME, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(device_name));
+
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = sizeof(device_name);
+    if (param_value != NULL)
+        memcpy(param_value, device_name, sizeof(device_name));
+
+    return CL_SUCCESS;
+}
+
+void testGetInfoStdString()
+{
+    // Any version will do here
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_name);
+    std::string name = d0.getInfo<CL_DEVICE_NAME>();
+    TEST_ASSERT(name.back() != '\0');
+    TEST_ASSERT(name == "Turing's Machine");
+}
+
+/**
 * Stub implementation of clGetCommandQueueInfo that returns first one image then none
 */
 static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
