@@ -1241,10 +1241,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
         return err;
     }
     if (param) {
-        param->assign(value.begin(), value.end());
-    }
-    if (!param->empty() && param->back() == '\0') {
-      param->resize(param->size() - 1);
+        VECTOR_CLASS<char>::iterator bgn = value.begin();
+        VECTOR_CLASS<char>::iterator end = value.end();
+        if (bgn != end && *(end - 1) == '\0') {
+          end -= 1;
+        }
+        param->assign(bgn, end);
     }
 #endif
     return CL_SUCCESS;
