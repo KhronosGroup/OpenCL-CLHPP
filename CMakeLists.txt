@@ -31,7 +31,12 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
 endif()
 
-set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir")
+if (APPLE)
+  find_path(OPENCL_INCLUDE_DIR OpenCL/cl.h DOC "Include for OpenCL on OSX")
+else()
+  set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir")
+endif()
+
 set(UNITY_DIR $ENV{UNITY_DIR} CACHE PATH "Unity dir")
 set(CMOCK_DIR $ENV{CMOCK_DIR} CACHE PATH "CMock dir")
 

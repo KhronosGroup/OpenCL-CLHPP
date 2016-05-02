@@ -1,6 +1,6 @@
 :cmock:
   :includes:
-    - CL/cl_platform.h
+    - cl_platform.h
   :treat_externs: :include
   :enforce_strict_ordering: :true
   :c_calling_conventions: 

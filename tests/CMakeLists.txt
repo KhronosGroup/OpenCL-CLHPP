@@ -1,10 +1,17 @@
+
+if (APPLE)
+  set (CL_HEADER ${OPENCL_INCLUDE_DIR}/Headers/cl.h)
+else()
+  set (CL_HEADER ${OPENCL_INCLUDE_DIR}/CL/cl.h)
+endif()
+
 add_custom_command(
     OUTPUT stripped/cl.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.py ${OPENCL_INCLUDE_DIR}/CL/cl.h stripped/cl.h
+    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.py ${CL_HEADER} stripped/cl.h
     COMMENT "Stripping defines from cl.h"
-    DEPENDS ${OPENCL_INCLUDE_DIR}/CL/cl.h strip_defines.py)
+    DEPENDS ${CL_HEADER} strip_defines.py)
 	
 add_custom_command(
     OUTPUT mocks/Mockcl.c mocks/Mockcl.h
@@ -32,6 +39,7 @@ include_directories(
     ${OPENCL_DIST_DIR}/include
     ${OPENCL_INCLUDE_DIR}
     ${OPENCL_INCLUDE_DIR}/CL
+    ${OPENCL_INCLUDE_DIR}/Headers
     ${UNITY_DIR}/src
     ${CMOCK_DIR}/src)
 
