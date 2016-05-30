@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.6)
 project(CLCPP)
 enable_testing()
 
+option(BUILD_DOCS "Build Documentation" ON)
+option(BUILD_EXAMPLES "Build Examples" ON)
+option(BUILD_TESTS "Build Unit Tests" ON)
 
 if(DEFINED ENV{AMDAPPSDKROOT})
   set(OPENCL_DIST_DIR $ENV{AMDAPPSDKROOT} CACHE PATH "OpenCL source dir")
@@ -35,7 +38,16 @@ set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir"
 set(UNITY_DIR $ENV{UNITY_DIR} CACHE PATH "Unity dir")
 set(CMOCK_DIR $ENV{CMOCK_DIR} CACHE PATH "CMock dir")
 
+if(BUILD_DOCS)
 add_subdirectory(docs)
+endif(BUILD_DOCS)
+
 add_subdirectory(include)
+
+if(BUILD_EXAMPLES)
 add_subdirectory(examples)
+endif(BUILD_EXAMPLES)
+
+if(BUILD_TESTS)
 add_subdirectory(tests)
+endif(BUILD_TESTS)
