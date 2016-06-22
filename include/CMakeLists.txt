@@ -9,7 +9,7 @@ add_custom_target(generate_clhpp DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/CL/cl.hpp S
 add_custom_command(
     OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/CL/cl2.hpp
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/CL
-    COMMAND cp ${CLCPP_SOURCE_DIR}/input_cl2.hpp ${CMAKE_CURRENT_BINARY_DIR}/CL/cl2.hpp
+    COMMAND ${CMAKE_COMMAND} -E copy ${CLCPP_SOURCE_DIR}/input_cl2.hpp ${CMAKE_CURRENT_BINARY_DIR}/CL/cl2.hpp
     DEPENDS ${CLCPP_SOURCE_DIR}/input_cl2.hpp
     COMMENT "Rebuilding cl2.hpp ...")
 add_custom_target(generate_cl2hpp DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/CL/cl2.hpp SOURCES ${CLCPP_SOURCE_DIR}/input_cl2.hpp)
