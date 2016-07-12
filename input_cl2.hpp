@@ -3458,7 +3458,7 @@ public:
             context_(),
             SVMTrait::getSVMMemFlags(),
             size*sizeof(T),
-            sizeof(T));
+            0);
         pointer retValue = reinterpret_cast<pointer>(
             voidPointer);
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
