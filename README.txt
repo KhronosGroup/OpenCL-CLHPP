@@ -1,4 +1,4 @@
-Sources for the OpenCL C++ bindings (cl.hpp and cl2.hpp).
+Sources for the OpenCL Host API C++ bindings (cl.hpp and cl2.hpp).
 
 Doxgen documentation for the cl2.hpp header is available here:
 
