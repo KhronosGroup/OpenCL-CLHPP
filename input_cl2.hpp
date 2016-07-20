@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2015 The Khronos Group Inc.
+ * Copyright (c) 2008-2016 The Khronos Group Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and/or associated documentation files (the
@@ -39,10 +39,10 @@
  *       Matt Gruenke, April 2012.
  *       Bruce Merry, February 2013.
  *       Tom Deakin and Simon McIntosh-Smith, July 2013
- *       James Price, June-November 2015
+ *       James Price, 2015-
  *
- *   \version 2.0.9
- *   \date 2015-12-07
+ *   \version 2.0.10
+ *   \date 2016-07-20
  *
  *   Optional extension support
  *
