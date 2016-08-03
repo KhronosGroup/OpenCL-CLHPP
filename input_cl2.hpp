@@ -4589,7 +4589,7 @@ public:
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 || defined(CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR)
     /*! \brief Constructs a 2D Image from a buffer.
     * \note This will share storage with the underlying buffer.
     *
@@ -4630,7 +4630,7 @@ public:
             *err = error;
         }
     }
-#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200 || defined(CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR)
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief Constructs a 2D Image from an image.
