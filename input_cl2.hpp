@@ -52,6 +52,8 @@
  *         #define CL_HPP_USE_DX_INTEROP
  *         cl_khr_sub_groups
  *         #define CL_HPP_USE_CL_SUB_GROUPS_KHR
+ *         cl_khr_image2d_from_buffer
+ *         #define CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
  *
  *   Doxygen documentation for this header is available here:
  *
