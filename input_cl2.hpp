@@ -7775,7 +7775,7 @@ public:
      */
     cl_int enqueueMarkerWithWaitList(
         const vector<Event> *events = 0,
-        Event *event = 0)
+        Event *event = 0) const
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
@@ -7805,7 +7805,7 @@ public:
      */
     cl_int enqueueBarrierWithWaitList(
         const vector<Event> *events = 0,
-        Event *event = 0)
+        Event *event = 0) const
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
@@ -7831,7 +7831,7 @@ public:
         cl_mem_migration_flags flags,
         const vector<Event>* events = NULL,
         Event* event = NULL
-        )
+        ) const
     {
         cl_event tmp;
         
