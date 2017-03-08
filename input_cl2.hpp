@@ -6699,31 +6699,49 @@ public:
         }
         else {
             Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
+            bool useWithProperties;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+            // Run-time decision based on the actual platform
+            {
+                cl_uint version = detail::getContextPlatformVersion(context());
+                useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
+            }
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 200
+            useWithProperties = true;
+#else
+            useWithProperties = false;
+#endif
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-            cl_queue_properties queue_properties[] = {
-                CL_QUEUE_PROPERTIES, properties, 0 };
-            if ((properties & CL_QUEUE_ON_DEVICE) == 0) {
-                object_ = ::clCreateCommandQueueWithProperties(
-                    context(), device(), queue_properties, &error);
-            }
-            else {
-                error = CL_INVALID_QUEUE_PROPERTIES;
-            }
+            if (useWithProperties) {
+                cl_queue_properties queue_properties[] = {
+                    CL_QUEUE_PROPERTIES, properties, 0 };
+                if ((properties & CL_QUEUE_ON_DEVICE) == 0) {
+                    object_ = ::clCreateCommandQueueWithProperties(
+                        context(), device(), queue_properties, &error);
+                }
+                else {
+                    error = CL_INVALID_QUEUE_PROPERTIES;
+                }
 
-            detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
-            if (err != NULL) {
-                *err = error;
+                detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+                if (err != NULL) {
+                    *err = error;
+                }
             }
-#else
-            object_ = ::clCreateCommandQueue(
-                context(), device(), properties, &error);
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 200
+            if (!useWithProperties) {
+                object_ = ::clCreateCommandQueue(
+                    context(), device(), properties, &error);
 
-            detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-            if (err != NULL) {
-                *err = error;
+                detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+                if (err != NULL) {
+                    *err = error;
+                }
             }
-#endif
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
         }
     }
 
@@ -6747,28 +6765,46 @@ public:
        }
        else {
            Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
+           bool useWithProperties;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+           // Run-time decision based on the actual platform
+           {
+               cl_uint version = detail::getContextPlatformVersion(context());
+               useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
+           }
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 200
+           useWithProperties = true;
+#else
+           useWithProperties = false;
+#endif
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-           cl_queue_properties queue_properties[] = {
-               CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
+           if (useWithProperties) {
+               cl_queue_properties queue_properties[] = {
+                   CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
 
-           object_ = ::clCreateCommandQueueWithProperties(
-               context(), device(), queue_properties, &error);
+               object_ = ::clCreateCommandQueueWithProperties(
+                   context(), device(), queue_properties, &error);
 
-
-           detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
-           if (err != NULL) {
-               *err = error;
+               detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+               if (err != NULL) {
+                   *err = error;
+               }
            }
-#else
-           object_ = ::clCreateCommandQueue(
-               context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 200
+           if (!useWithProperties) {
+               object_ = ::clCreateCommandQueue(
+                   context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
 
-           detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-           if (err != NULL) {
-               *err = error;
+               detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+               if (err != NULL) {
+                   *err = error;
+               }
            }
-#endif
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
+
        }
    }
 
@@ -6782,6 +6818,7 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
+        bool useWithProperties;
         vector<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
@@ -6795,31 +6832,47 @@ public:
             return;
         }
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
-        cl_queue_properties queue_properties[] = {
-            CL_QUEUE_PROPERTIES, properties, 0 };
-        if ((properties & CL_QUEUE_ON_DEVICE) == 0) {
-            object_ = ::clCreateCommandQueueWithProperties(
-                context(), devices[0](), queue_properties, &error);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        // Run-time decision based on the actual platform
+        {
+            cl_uint version = detail::getContextPlatformVersion(context());
+            useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
         }
-        else {
-            error = CL_INVALID_QUEUE_PROPERTIES;
-        }
-
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
-        if (err != NULL) {
-            *err = error;
-        }
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 200
+        useWithProperties = true;
 #else
-        object_ = ::clCreateCommandQueue(
-            context(), devices[0](), properties, &error);
-
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-        if (err != NULL) {
-            *err = error;
-        }
+        useWithProperties = false;
 #endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        if (useWithProperties) {
+            cl_queue_properties queue_properties[] = {
+                CL_QUEUE_PROPERTIES, properties, 0 };
+            if ((properties & CL_QUEUE_ON_DEVICE) == 0) {
+                object_ = ::clCreateCommandQueueWithProperties(
+                    context(), devices[0](), queue_properties, &error);
+            }
+            else {
+                error = CL_INVALID_QUEUE_PROPERTIES;
+            }
+
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        if (!useWithProperties) {
+            object_ = ::clCreateCommandQueue(
+                context(), devices[0](), properties, &error);
+
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
     }
 
     /*!
@@ -6832,6 +6885,7 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
+        bool useWithProperties;
         vector<cl::Device> devices;
         error = context.getInfo(CL_CONTEXT_DEVICES, &devices);
 
@@ -6845,26 +6899,42 @@ public:
             return;
         }
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
-        cl_queue_properties queue_properties[] = {
-            CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
-        object_ = ::clCreateCommandQueueWithProperties(
-            context(), devices[0](), queue_properties, &error);
-       
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
-        if (err != NULL) {
-            *err = error;
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        // Run-time decision based on the actual platform
+        {
+            cl_uint version = detail::getContextPlatformVersion(context());
+            useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
         }
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 200
+        useWithProperties = true;
 #else
-        object_ = ::clCreateCommandQueue(
-            context(), devices[0](), static_cast<cl_command_queue_properties>(properties), &error);
-
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-        if (err != NULL) {
-            *err = error;
-        }
+        useWithProperties = false;
 #endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        if (useWithProperties) {
+            cl_queue_properties queue_properties[] = {
+                CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
+            object_ = ::clCreateCommandQueueWithProperties(
+                context(), devices[0](), queue_properties, &error);
+
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        if (!useWithProperties) {
+            object_ = ::clCreateCommandQueue(
+                context(), devices[0](), static_cast<cl_command_queue_properties>(properties), &error);
+
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
     }
 
     /*!
@@ -6878,26 +6948,44 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
+        bool useWithProperties;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        // Run-time decision based on the actual platform
+        {
+            cl_uint version = detail::getContextPlatformVersion(context());
+            useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
+        }
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 200
+        useWithProperties = true;
+#else
+        useWithProperties = false;
+#endif
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
-        cl_queue_properties queue_properties[] = {
-            CL_QUEUE_PROPERTIES, properties, 0 };
-        object_ = ::clCreateCommandQueueWithProperties(
-            context(), device(), queue_properties, &error);
-        
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
-        if (err != NULL) {
-            *err = error;
-        }
-#else
-        object_ = ::clCreateCommandQueue(
-            context(), device(), properties, &error);
+        if (useWithProperties) {
+            cl_queue_properties queue_properties[] = {
+                CL_QUEUE_PROPERTIES, properties, 0 };
+            object_ = ::clCreateCommandQueueWithProperties(
+                context(), device(), queue_properties, &error);
 
-        detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
-        if (err != NULL) {
-            *err = error;
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
         }
-#endif
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        if (!useWithProperties) {
+            object_ = ::clCreateCommandQueue(
+                context(), device(), properties, &error);
+
+            detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
+            if (err != NULL) {
+                *err = error;
+            }
+        }
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
     }
 
     /*!
@@ -6910,19 +6998,36 @@ public:
         QueueProperties properties,
         cl_int* err = NULL)
     {
-            cl_int error;
+        cl_int error;
+        bool useWithProperties;
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        // Run-time decision based on the actual platform
+        {
+            cl_uint version = detail::getContextPlatformVersion(context());
+            useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
+        }
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 200
+        useWithProperties = true;
+#else
+        useWithProperties = false;
+#endif
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+        if (useWithProperties) {
             cl_queue_properties queue_properties[] = {
                 CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
             object_ = ::clCreateCommandQueueWithProperties(
                 context(), device(), queue_properties, &error);
-      
+
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
             if (err != NULL) {
                 *err = error;
             }
-#else
+        }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 200
+        if (!useWithProperties) {
             object_ = ::clCreateCommandQueue(
                 context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
 
@@ -6930,8 +7035,9 @@ public:
             if (err != NULL) {
                 *err = error;
             }
-#endif
         }
+#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
+    }
 
     static CommandQueue getDefault(cl_int * err = NULL) 
     {
