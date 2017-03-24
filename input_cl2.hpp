@@ -3496,7 +3496,7 @@ public:
     {
         size_type maxSize = std::numeric_limits<size_type>::max() / sizeof(T);
 
-        for (Device &d : context_.getInfo<CL_CONTEXT_DEVICES>()) {
+        for (const Device &d : context_.getInfo<CL_CONTEXT_DEVICES>()) {
             maxSize = std::min(
                 maxSize, 
                 static_cast<size_type>(d.getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>()));
@@ -6418,7 +6418,7 @@ public:
             return devInfo;
         }
 
-        for (cl::Device d : devs) {
+        for (const cl::Device &d : devs) {
             typename detail::param_traits<
                 detail::cl_program_build_info, name>::param_type param;
             result = getBuildInfo(d, name, &param);
