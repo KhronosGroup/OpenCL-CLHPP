@@ -5925,26 +5925,27 @@ public:
             );
     }
     
-    template<int index, int ArrayLength, class D, typename T0, typename... Ts>
-    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, const pointer<T0, D> &t0, Ts... ts)
+    template<int index, int ArrayLength, class D, typename T0, typename T1, typename... Ts>
+    void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, const pointer<T0, D> &t0, const pointer<T1, D> &t1, Ts & ... ts)
     {
         pointerList[index] = static_cast<void*>(t0.get());
-        setSVMPointersHelper<index + 1, Ts...>(ts...);
+        setSVMPointersHelper<index + 1, ArrayLength>(pointerList, t1, ts...);
     }
 
-    template<int index, int ArrayLength, typename T0, typename... Ts>
+    template<int index, int ArrayLength, typename T0, typename T1, typename... Ts>
     typename std::enable_if<std::is_pointer<T0>::value, void>::type
-    setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0, Ts... ts)
+    setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, T0 t0, T1 t1, Ts... ts)
     {
         pointerList[index] = static_cast<void*>(t0);
-        setSVMPointersHelper<index + 1, Ts...>(ts...);
+        setSVMPointersHelper<index + 1, ArrayLength>(pointerList, t1, ts...);
     }
-    
+
     template<int index, int ArrayLength, typename T0, class D>
     void setSVMPointersHelper(std::array<void*, ArrayLength> &pointerList, const pointer<T0, D> &t0)
     {
         pointerList[index] = static_cast<void*>(t0.get());
     }
+
 
     template<int index, int ArrayLength, typename T0>
     typename std::enable_if<std::is_pointer<T0>::value, void>::type
@@ -5954,7 +5955,7 @@ public:
     }
 
     template<typename T0, typename... Ts>
-    cl_int setSVMPointers(const T0 &t0, Ts... ts)
+    cl_int setSVMPointers(const T0 &t0, Ts & ... ts)
     {
         std::array<void*, 1 + sizeof...(Ts)> pointerList;
 
@@ -9531,7 +9532,7 @@ public:
     }
 
     template<typename T0, typename... T1s>
-    cl_int setSVMPointers(const T0 &t0, T1s... ts)
+    cl_int setSVMPointers(const T0 &t0, T1s &... ts)
     {
         return kernel_.setSVMPointers(t0, ts...);
     }
