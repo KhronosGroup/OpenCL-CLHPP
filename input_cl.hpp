@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2008-2015 The Khronos Group Inc.
+ * Copyright (c) 2008-2016 The Khronos Group Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and/or associated documentation files (the
@@ -1241,7 +1241,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
         return err;
     }
     if (param) {
-        param->assign(value.begin(), value.end());
+        VECTOR_CLASS<char>::iterator bgn = value.begin();
+        VECTOR_CLASS<char>::iterator end = value.end();
+        if (bgn != end && *(end - 1) == '\0') {
+          end -= 1;
+        }
+        param->assign(bgn, end);
     }
 #endif
     return CL_SUCCESS;

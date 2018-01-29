@@ -1038,7 +1038,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string* param, long)
             return err;
         }
         if (param) {
-            param->assign(begin(value), prev(end(value)));
+          auto bgnit = begin(value);
+          auto endit = end(end);
+          if (bgnit != endit && *(endit - 1) == '\0') {
+            endit = prev(endit);
+          }
+          param->assign(bgnit, endit);
         }
     }
     else if (param) {
