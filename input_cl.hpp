@@ -1233,15 +1233,20 @@ inline cl_int getInfoHelper(Func f, cl_uint name, STRING_CLASS* param, long)
         return err;
     }
 
-    // std::string has a constant data member
-    // a char vector does not
-    VECTOR_CLASS<char> value(required);
-    err = f(name, required, value.data(), NULL);
-    if (err != CL_SUCCESS) {
-        return err;
+    if (required > 0) {
+        // std::string has a constant data member
+        // a char vector does not
+        VECTOR_CLASS<char> value(required);
+        err = f(name, required, value.data(), NULL);
+        if (err != CL_SUCCESS) {
+            return err;
+        }
+        if (param) {
+            param->assign(value.begin(), value.end() - 1u);
+        }
     }
-    if (param) {
-        param->assign(value.begin(), value.end());
+    else if (param) {
+        param->assign("");
     }
 #endif
     return CL_SUCCESS;
