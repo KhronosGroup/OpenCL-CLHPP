@@ -1337,6 +1337,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_MEM_BASE_ADDR_ALIGN, cl_uint) \
     F(cl_device_info, CL_DEVICE_MIN_DATA_TYPE_ALIGN_SIZE, cl_uint) \
     F(cl_device_info, CL_DEVICE_SINGLE_FP_CONFIG, cl_device_fp_config) \
+    F(cl_device_info, CL_DEVICE_DOUBLE_FP_CONFIG, cl_device_fp_config) \
+    F(cl_device_info, CL_DEVICE_HALF_FP_CONFIG, cl_device_fp_config) \
     F(cl_device_info, CL_DEVICE_GLOBAL_MEM_CACHE_TYPE, cl_device_mem_cache_type) \
     F(cl_device_info, CL_DEVICE_GLOBAL_MEM_CACHELINE_SIZE, cl_uint)\
     F(cl_device_info, CL_DEVICE_GLOBAL_MEM_CACHE_SIZE, cl_ulong) \
@@ -1434,8 +1436,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_FLOAT, cl_uint) \
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_DOUBLE, cl_uint) \
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_HALF, cl_uint) \
-    F(cl_device_info, CL_DEVICE_DOUBLE_FP_CONFIG, cl_device_fp_config) \
-    F(cl_device_info, CL_DEVICE_HALF_FP_CONFIG, cl_device_fp_config) \
     F(cl_device_info, CL_DEVICE_HOST_UNIFIED_MEMORY, cl_bool) \
     F(cl_device_info, CL_DEVICE_OPENCL_C_VERSION, STRING_CLASS) \
     \
@@ -5765,6 +5765,7 @@ public:
 
         return err;
     }
+#if defined(CL_VERSION_1_1)
 
     cl_int enqueueReadBufferRect(
         const Buffer& buffer,
@@ -5880,6 +5881,7 @@ public:
 
         return err;
     }
+#endif //if defined(CL_VERSION_1_1)
 
 #if defined(CL_VERSION_1_2)
     /**
