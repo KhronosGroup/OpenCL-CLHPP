@@ -15,7 +15,7 @@ add_custom_command(
 add_custom_target(generate_cl2hpp ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/CL/cl2.hpp SOURCES ${CLCPP_SOURCE_DIR}/input_cl2.hpp)
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/CL
-        DESTINATION .
+        DESTINATION include
         FILES_MATCHING
         PATTERN "*.hpp"
         )
