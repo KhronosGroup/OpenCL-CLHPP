@@ -232,6 +232,25 @@
 
 #include <cstring>
 
+// Compiler specific weak linking
+#ifndef CL_WEAK_ATTRIB_PREFIX
+// C++17: use inline variables/functions
+#if __cplusplus >= 201703L
+#define CL_USE_INLINE
+#endif
+
+#ifdef CL_USE_INLINE
+#define CL_WEAK_ATTRIB_PREFIX inline
+#define CL_WEAK_ATTRIB_SUFFIX
+#elif _WIN32
+#define CL_WEAK_ATTRIB_PREFIX __declspec(selectany)
+#define CL_WEAK_ATTRIB_SUFFIX
+#else // GCC, CLANG, etc.
+#define CL_WEAK_ATTRIB_PREFIX
+#define CL_WEAK_ATTRIB_SUFFIX __attribute__((weak))
+#endif // CL_USE_INLINE
+
+#endif // CL_WEAK_ATTRIB_PREFIX
 
 /*! \namespace cl
  *
@@ -2817,24 +2836,14 @@ inline Device Device::getDefault(cl_int * err)
     return device;
 }
 
+#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
+CL_WEAK_ATTRIB_PREFIX std::atomic<int> CL_WEAK_ATTRIB_SUFFIX Context::default_initialized_;
+#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
+CL_WEAK_ATTRIB_PREFIX volatile int CL_WEAK_ATTRIB_SUFFIX Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
+#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
 
-#ifdef _WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) std::atomic<int> Context::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) volatile int Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) Context Context::default_;
-__declspec(selectany) volatile cl_int Context::default_error_ = CL_SUCCESS;
-#else // !_WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) std::atomic<int> Context::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) volatile int Context::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) Context Context::default_;
-__attribute__((weak)) volatile cl_int Context::default_error_ = CL_SUCCESS;
-#endif // !_WIN32
+CL_WEAK_ATTRIB_PREFIX Context CL_WEAK_ATTRIB_SUFFIX Context::default_;
+CL_WEAK_ATTRIB_PREFIX volatile cl_int CL_WEAK_ATTRIB_SUFFIX Context::default_error_ = CL_SUCCESS;
 
 /*! \brief Class interface for cl_event.
  *
@@ -6592,23 +6601,14 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     }
 };
 
-#ifdef _WIN32
 #ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) std::atomic<int> CommandQueue::default_initialized_;
+CL_WEAK_ATTRIB_PREFIX std::atomic<int> CL_WEAK_ATTRIB_SUFFIX CommandQueue::default_initialized_;
 #else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
+CL_WEAK_ATTRIB_PREFIX volatile int CL_WEAK_ATTRIB_SUFFIX CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
 #endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__declspec(selectany) CommandQueue CommandQueue::default_;
-__declspec(selectany) volatile cl_int CommandQueue::default_error_ = CL_SUCCESS;
-#else // !_WIN32
-#ifdef CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) std::atomic<int> CommandQueue::default_initialized_;
-#else // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) volatile int CommandQueue::default_initialized_ = __DEFAULT_NOT_INITIALIZED;
-#endif // !CL_HPP_CPP11_ATOMICS_SUPPORTED
-__attribute__((weak)) CommandQueue CommandQueue::default_;
-__attribute__((weak)) volatile cl_int CommandQueue::default_error_ = CL_SUCCESS;
-#endif // !_WIN32
+
+CL_WEAK_ATTRIB_PREFIX CommandQueue CL_WEAK_ATTRIB_SUFFIX CommandQueue::default_;
+CL_WEAK_ATTRIB_PREFIX volatile cl_int CL_WEAK_ATTRIB_SUFFIX CommandQueue::default_error_ = CL_SUCCESS;
 
 template< typename IteratorType >
 Buffer::Buffer(
