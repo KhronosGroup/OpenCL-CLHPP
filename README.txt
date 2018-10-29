@@ -34,7 +34,7 @@ You need to tell cmake where to find external dependencies, using the variables 
 
 mkdir build
 cd build
-cmake -DUNITY_DIR=$HOME/src/unity -DCMOCK_DIR=$HOME/src/cmock -DOPENCL_DIST_DIR=/opt/AMD-APP-SDK-v2.7-RC-lnx64/ ..
+cmake -DUNITY_DIR=$HOME/src/unity -DCMOCK_DIR=$HOME/src/cmock -DOPENCL_DIST_DIR=/path/to/OpenCL/SDK ..
 make
 tests/test_clhpp
 tests/test_clhpp_cxx11
