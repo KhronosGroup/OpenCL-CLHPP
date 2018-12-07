@@ -8322,7 +8322,7 @@ public:
         cl_event tmp;
         cl::vector<void*> svmRawPointers;
         svmRawPointers.reserve(svmContainers.size());
-        for (auto p : svmPointers) {
+        for (auto p : svmContainers) {
             svmRawPointers.push_back(static_cast<void*>(p.data()));
         }
 
@@ -8340,7 +8340,7 @@ public:
         const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
-        return enqueueMigrateSVM(svmContainers, cl::vector<size_type>(svmRawPointers.size()), flags, events, event);
+        return enqueueMigrateSVM(svmContainers, cl::vector<size_type>(svmContainers.size()), flags, events, event);
     }
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
