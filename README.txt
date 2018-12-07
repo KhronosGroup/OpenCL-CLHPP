@@ -25,22 +25,27 @@ Components:
     A simple example application using the very basic features of the header and generating cl.hpp dynamically through the build system.
 
   tests:
-    A (very small, incomplete) set of regression tests. Building the tests requires Python, Ruby, Unity and CMock. For the last two I've used Unity 2.1.0 [1] and CMock top-of-tree from Github [2] (the version 2.0.204 on Sourceforge does not work). At the moment there is no way to skip building the tests.
+    A (very small, incomplete) set of regression tests. Building the tests requires Python, Ruby, Unity and CMock. For the last two we use Unity 2.1.0 [1] and CMock top-of-tree from Github [2] (the version 2.0.204 on Sourceforge does not work). At the moment there is no way to skip building the tests.
 
   CMake scripts:
     A build system that both generates the example and drives generation of cl.hpp.
 
-You need to tell cmake where to find external dependencies, using the variables OPENCL_DIST_DIR, UNITY_DIR and CMOCK_DIR. These can be set either as environment variables, or on the cmake command line using the syntax -D<VAR>=<VALUE>. For the lazy, I use the following commands to build and test (you'll need to adapt your paths):
+To get external dependencies needed for testing, use `--recursive` when cloning the repository, or run `git submodule update --init`.
 
-mkdir build
-cd build
-cmake -DUNITY_DIR=$HOME/src/unity -DCMOCK_DIR=$HOME/src/cmock -DOPENCL_DIST_DIR=/path/to/OpenCL/SDK ..
-make
-tests/test_clhpp
-tests/test_clhpp_cxx11
-tests/test_clhpp_deprecated_1_1
+You may need to tell CMake where to find the OpenCL headers and libraries, using the variable `OPENCL_DIST_DIR`, or `OPENCL_INCLUDE_DIR` and `OPENCL_LIB_DIR`.
+These can be set either as environment variables, or on the cmake command line using the syntax `-D<VAR>=<VALUE>`.
 
-After building, the headers appear in build/include/CL/. If Doxygen is available, you can generate HTML documentation by typing `make docs`.
+The following is an example set of commands to checkout and build the C++ bindings (adapt paths as required):
+
+    git clone --recursive https://github.com/KhronosGroup/OpenCL-CLHPP
+    cd OpenCL-CLHPP
+    mkdir build
+    cd build
+    cmake -DOPENCL_INCLUDE_DIR=/path/to/OpenCL/headers -DOPENCL_LIB_DIR=/path/to/OpenCL/library
+    make
+    make test
+
+After building, the headers appear in `build/include/CL/`. If Doxygen is available, you can generate HTML documentation by typing `make docs`.
 
 [1] https://github.com/ThrowTheSwitch/Unity/releases/tag/v2.1.0
 [2] https://github.com/ThrowTheSwitch/CMock

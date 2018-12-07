@@ -35,8 +35,8 @@ if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
 endif()
 
 set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir")
-set(UNITY_DIR $ENV{UNITY_DIR} CACHE PATH "Unity dir")
-set(CMOCK_DIR $ENV{CMOCK_DIR} CACHE PATH "CMock dir")
+set(UNITY_DIR ${PROJECT_SOURCE_DIR}/external/Unity CACHE PATH "Unity dir")
+set(CMOCK_DIR ${PROJECT_SOURCE_DIR}/external/CMock CACHE PATH "CMock dir")
 
 if(BUILD_DOCS)
 add_subdirectory(docs)
