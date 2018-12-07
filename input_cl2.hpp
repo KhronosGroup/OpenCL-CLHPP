@@ -1352,7 +1352,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_kernel_info, CL_KERNEL_MAX_NUM_SUB_GROUPS, size_type) \
     F(cl_kernel_info, CL_KERNEL_COMPILE_NUM_SUB_GROUPS, size_type) \
     F(cl_device_info, CL_DEVICE_MAX_NUM_SUB_GROUPS, cl_uint) \
-    F(cl_device_info, CL_DEVICE_SUBGROUP_INDEPENDENT_FORWARD_PROGRESS, cl_bool) \
     F(cl_device_info, CL_DEVICE_IL_VERSION, string) \
     F(cl_command_queue_info, CL_QUEUE_DEVICE_DEFAULT, cl::DeviceCommandQueue) \
     F(cl_kernel_sub_group_info, CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE, size_type) \
