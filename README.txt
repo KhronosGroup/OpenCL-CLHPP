@@ -6,9 +6,10 @@ Doxgen documentation for the cl2.hpp header is available here:
 
 
 Components:
-  input_cl.hpp:
+  input_cl.hpp (DEPRECATED):
     Acts as the master source for the 1.x version of the header.
     The reason for doing it this way is to generate an appropriate set of functors with varying argument counts without assuming variadic template support in the header.
+    This version of the C++ bindings is deprecated and is no longer maintained; it is strongly recommended to switch to cl2.hpp if possible.
 
   input_cl2.hpp:
     Acts as the master source for the 2.x version of the header.

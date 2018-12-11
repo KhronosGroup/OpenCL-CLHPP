@@ -150,6 +150,10 @@
 #ifndef CL_HPP_
 #define CL_HPP_
 
+// The latest version of the OpenCL C++ bindings can be found on GitHub:
+// -> https://github.com/KhronosGroup/OpenCL-CLHPP
+#pragma message("This version of the OpenCL Host API C++ bindings is deprecated, please use cl2.hpp instead.")
+
 #ifdef _WIN32
 
 #include <malloc.h>
