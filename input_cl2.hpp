@@ -447,8 +447,17 @@
 # undef CL_HPP_TARGET_OPENCL_VERSION
 # define CL_HPP_TARGET_OPENCL_VERSION 200
 #endif
-/* Forward target OpenCL version to C headers */
-#define CL_TARGET_OPENCL_VERSION CL_HPP_TARGET_OPENCL_VERSION
+
+/* Forward target OpenCL version to C headers if necessary */
+#if defined(CL_TARGET_OPENCL_VERSION)
+/* Warn if prior definition of CL_TARGET_OPENCL_VERSION is lower than
+ * requested C++ bindings version */
+#if CL_TARGET_OPENCL_VERSION < CL_HPP_TARGET_OPENCL_VERSION
+# pragma message("CL_TARGET_OPENCL_VERSION is already defined as is lower than CL_HPP_TARGET_OPENCL_VERSION")
+#endif
+#else
+# define CL_TARGET_OPENCL_VERSION CL_HPP_TARGET_OPENCL_VERSION
+#endif
 
 #if !defined(CL_HPP_MINIMUM_OPENCL_VERSION)
 # define CL_HPP_MINIMUM_OPENCL_VERSION 200
