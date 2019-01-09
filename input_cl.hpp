@@ -1421,7 +1421,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 #if defined(CL_VERSION_1_1)
 #define __PARAM_NAME_INFO_1_1(F) \
     F(cl_context_info, CL_CONTEXT_NUM_DEVICES, cl_uint)\
-    \
     F(cl_device_info, CL_DEVICE_PREFERRED_VECTOR_WIDTH_HALF, cl_uint) \
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_CHAR, cl_uint) \
     F(cl_device_info, CL_DEVICE_NATIVE_VECTOR_WIDTH_SHORT, cl_uint) \
@@ -1468,7 +1467,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_IMAGE_MAX_BUFFER_SIZE, ::size_t) \
     F(cl_device_info, CL_DEVICE_IMAGE_MAX_ARRAY_SIZE, ::size_t) \
     F(cl_device_info, CL_DEVICE_LINKER_AVAILABLE, cl_bool) \
-    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, STRING_CLASS)\
+    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, STRING_CLASS) \
     F(cl_device_info, CL_DEVICE_PRINTF_BUFFER_SIZE, ::size_t) \
     F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, cl_bool) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl_device_id) \
@@ -1476,7 +1475,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, VECTOR_CLASS<cl_device_partition_property>) \
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPE, VECTOR_CLASS<cl_device_partition_property>)  \
-    F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
+    F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint)
 #endif // #if defined(CL_VERSION_1_2)
 
 #if defined(USE_CL_DEVICE_FISSION)
