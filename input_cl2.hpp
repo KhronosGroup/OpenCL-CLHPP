@@ -2188,6 +2188,7 @@ public:
         if (error) {
             *error = err;
         }
+        return retVal;
     }
 
     /**
@@ -2211,6 +2212,7 @@ public:
         if (error) {
             *error = err;
         }
+        return retVal;
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
