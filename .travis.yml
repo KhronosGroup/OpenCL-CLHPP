@@ -6,6 +6,7 @@ os:
 
 script:
   - export TOP=$(pwd)
+  - ./tests/check-cl-hpp-generation.sh
   - git clone https://github.com/KhronosGroup/OpenCL-Headers.git
   - cd OpenCL-Headers
   - ln -s CL OpenCL # For OSX builds
