@@ -592,16 +592,18 @@ static cl_context clCreateContextFromType_testContextFromType(
     cl_int  *errcode_ret,
     int num_calls)
 {
-    TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
+#if !defined(__APPLE__) && !defined(__MACOS)
+    TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_EQUAL(CL_CONTEXT_PLATFORM, properties[0]);
     TEST_ASSERT_EQUAL(make_platform_id(1), properties[1]);
+#endif
     return make_context(0);
-
 }
 
 void testContextFromType()
 {
+#if !defined(__APPLE__) && !defined(__MACOS)
     clGetPlatformIDs_StubWithCallback(clGetPlatformIDs_testContextFromType);
     clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_testContextFromType);
 #if defined(TEST_CL2)
@@ -617,6 +619,7 @@ void testContextFromType()
     // End of scope of vector of devices within constructor
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+#endif
 
     clCreateContextFromType_StubWithCallback(clCreateContextFromType_testContextFromType);
 
@@ -624,7 +627,6 @@ void testContextFromType()
     TEST_ASSERT_EQUAL_PTR(make_context(0), context());
 
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
-
 }
 
 /****************************************************************************
@@ -1058,7 +1060,11 @@ void testBufferConstructorContextIterator()
     clCreateBuffer_StubWithCallback(clCreateBuffer_testBufferConstructorContextIterator);
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
