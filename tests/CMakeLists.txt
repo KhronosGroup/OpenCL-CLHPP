@@ -27,7 +27,7 @@ add_custom_command(
     DEPENDS test_cl2hpp.cpp cmock.yml)
 	
 include_directories(
-    ${CLCPP_BINARY_DIR}/include
+    ${CLCPP_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/mocks
     ${OPENCL_DIST_DIR}/include
     ${OPENCL_INCLUDE_DIR}
@@ -46,14 +46,12 @@ if( CMAKE_SIZEOF_LONG EQUAL 8 )
 endif()
 
 set(TEST_CLHPP_HEADERS
-    ${CLCPP_BINARY_DIR}/include/CL/cl.hpp
+    ${CLCPP_SOURCE_DIR}/include/CL/cl.hpp
     mocks/Mockcl.h)
-set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl.hpp PROPERTIES GENERATED 1)
 
 set(TEST_CL2HPP_HEADERS
-    ${CLCPP_BINARY_DIR}/include/CL/cl2.hpp
+    ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp
     mocks/Mockcl.h)
-set_source_files_properties(${CLCPP_BINARY_DIR}/include/CL/cl2.hpp PROPERTIES GENERATED 1)
 
 set(TEST_CLHPP_SOURCES_COMMON
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
@@ -79,9 +77,7 @@ set_target_properties(test_clhpp_deprecated_1_1 PROPERTIES COMPILE_DEFINITIONS "
 add_executable(test_clhpp_deprecated_1_2 ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
 set_target_properties(test_clhpp_deprecated_1_2 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_1_APIS")
 set_target_properties(test_clhpp_deprecated_1_2 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_2_APIS")
-add_dependencies(test_clhpp generate_clhpp)
 add_executable(test_cl2hpp ${TEST_CL2HPP_SOURCES} ${TEST_CL2HPP_HEADERS})
-add_dependencies(test_cl2hpp generate_cl2hpp)
 add_test(run_test_clhpp test_clhpp)
 add_test(run_test_clhpp_deprecated_1_1 test_clhpp_deprecated_1_1)
 add_test(run_test_cl2hpp test_cl2hpp)
