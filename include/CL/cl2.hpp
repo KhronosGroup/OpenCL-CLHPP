@@ -6795,23 +6795,6 @@ public:
             __SET_PROGRAM_SPECIALIZATION_CONSTANT_ERR);
     }
 
-    /*! \brief Sets a boolean SPIR-V specialization constant.
-     *
-     *  Wraps clSetProgramSpecializationConstant().
-     */
-    template <>
-    cl_int setSpecializationConstant(cl_uint index, const bool &value)
-    {
-        cl_uchar ucValue = value ? CL_UCHAR_MAX : 0;
-        return detail::errHandler(
-            ::clSetProgramSpecializationConstant(
-                object_,
-                index,
-                sizeof(ucValue),
-                &ucValue),
-            __SET_PROGRAM_SPECIALIZATION_CONSTANT_ERR);
-    }
-
     /*! \brief Sets a SPIR-V specialization constant.
      *
      *  Wraps clSetProgramSpecializationConstant().
@@ -6947,6 +6930,22 @@ inline vector<vector<unsigned char>> cl::Program::getInfo<CL_PROGRAM_BINARIES>(c
     }
     return binariesVectors;
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
+// Template specialization for clSetProgramSpecializationConstant
+template <>
+inline cl_int cl::Program::setSpecializationConstant(cl_uint index, const bool &value)
+{
+    cl_uchar ucValue = value ? CL_UCHAR_MAX : 0;
+    return detail::errHandler(
+        ::clSetProgramSpecializationConstant(
+            object_,
+            index,
+            sizeof(ucValue),
+            &ucValue),
+        __SET_PROGRAM_SPECIALIZATION_CONSTANT_ERR);
+}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 220
 
 inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 {
