@@ -24,3 +24,4 @@ script:
           -DOPENCL_INCLUDE_DIR=${TOP}/OpenCL-Headers
           ..
   - make -j2
+  - ctest
