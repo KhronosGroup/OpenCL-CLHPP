@@ -1058,7 +1058,11 @@ void testBufferConstructorContextIterator()
     clCreateBuffer_StubWithCallback(clCreateBuffer_testBufferConstructorContextIterator);
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
