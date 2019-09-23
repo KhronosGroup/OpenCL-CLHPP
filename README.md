@@ -6,17 +6,18 @@ Doxgen documentation for the cl2.hpp header is available here:
 
 Components:
 
+  * `include/CL/cl2.hpp`:
+    The latest, maintained, version of the C++ bindings. It should work with all
+    versions of OpenCL (including 1.x). This is what most users will want.
+
   * `input_cl.hpp` (DEPRECATED):
-    Acts as the master source for the 1.x version of the header.
+    Acts as the master source for the 1.x version of the header
+    (`include/CL/cl.hpp`).
     The reason for doing it this way is to generate an appropriate set of
     functors with varying argument counts without assuming variadic template
     support in the header.
     This version of the C++ bindings is deprecated and is no longer maintained;
     it is strongly recommended to switch to `cl2.hpp` if possible.
-
-  * `input_cl2.hpp`:
-    Acts as the master source for the 2.x version of the header.
-    Directly copied as `cl2.hpp`
 
   * `gen_cl_hpp.py`:
     A generator script written in python to convert `input_cl.hpp` into `cl.hpp`,
