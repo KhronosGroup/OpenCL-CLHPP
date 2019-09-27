@@ -2,8 +2,8 @@
 #define CL_HPP_UNIT_TEST_ENABLE
 #define CL_HPP_USE_CL_SUB_GROUPS_KHR
 
-// Want to support 2.0 but also test that 1.1 is ok
-#define CL_HPP_TARGET_OPENCL_VERSION 210
+// Want to support 2.2 but also test that 1.x is ok
+#define CL_HPP_TARGET_OPENCL_VERSION 220
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
 
 extern "C" {
@@ -85,6 +85,10 @@ extern "C" {
     void testGetSupportedImageFormats();
     void testCreateSubDevice();
     void testGetContextInfoDevices();
+    void testSetProgramReleaseCallback();
+    void testSetProgramSpecializationConstantScalar();
+    void testSetProgramSpecializationConstantBool();
+    void testSetProgramSpecializationConstantPointer();
 } // extern "C"
 
 #include "test_clhpp.cpp"
@@ -600,5 +604,95 @@ void testCleanupHeaderState()
     cl::Platform::unitTestClearDefault();
 }
 
+// OpenCL 2.2 APIs:
+
+static void CL_CALLBACK test_program_release_callback(
+    cl_program,
+    void*)
+{
+}
+
+void testSetProgramReleaseCallback()
+{
+    cl_program program = make_program(0);
+    int user_data = 0;
+
+    clSetProgramReleaseCallback_ExpectAndReturn(program, test_program_release_callback, &user_data, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+
+    prog.setReleaseCallback(test_program_release_callback, &user_data);
+}
+
+void testSetProgramSpecializationConstantScalar()
+{
+    cl_program program = make_program(0);
+    int sc = 0;
+
+    clSetProgramSpecializationConstant_ExpectAndReturn(program, 0, sizeof(sc), &sc, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+
+    prog.setSpecializationConstant(0, sc);
+}
+
+/// Stub for testing boolean specialization constants
+static cl_int clSetProgramSpecializationConstant_testBool(
+    cl_program program,
+    cl_uint spec_id,
+    size_t spec_size,
+    const void* spec_value,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL_PTR(make_program(0), program);
+    TEST_ASSERT(spec_id == 0 || spec_id == 1);
+    TEST_ASSERT_EQUAL(spec_size, 1);
+    if (spec_id == 0)
+    {
+        const cl_uchar *uc_value = (const cl_uchar*)spec_value;
+        TEST_ASSERT_EQUAL_HEX(uc_value[0], 0);
+    }
+    if (spec_id == 1)
+    {
+        const cl_uchar *uc_value = (const cl_uchar*)spec_value;
+        TEST_ASSERT_EQUAL_HEX(uc_value[0], CL_UCHAR_MAX);
+    }
+    return CL_SUCCESS;
+}
+
+void testSetProgramSpecializationConstantBool()
+{
+    // Spec constant "false" should turn into a call with size one and no bits set.
+    // Spec constant "true" should turn into a call with size one and all bits set.
+    cl_program program = make_program(0);
+    bool scFalse = false;
+    bool scTrue = true;
+
+    clSetProgramSpecializationConstant_StubWithCallback(clSetProgramSpecializationConstant_testBool);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+
+    prog.setSpecializationConstant(0, scFalse);
+    prog.setSpecializationConstant(1, scTrue);
+}
+
+void testSetProgramSpecializationConstantPointer()
+{
+    cl_program program = make_program(0);
+    int scArray[5];
+
+    clSetProgramSpecializationConstant_ExpectAndReturn(program, 0, sizeof(scArray), &scArray, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+
+    prog.setSpecializationConstant(0, sizeof(scArray), scArray);
+}
 
 } // extern "C"
