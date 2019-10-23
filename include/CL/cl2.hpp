@@ -1803,7 +1803,7 @@ public:
 
     cl_type& operator ()() { return object_; }
 
-    const cl_type get() const { return object_; }
+    cl_type get() const { return object_; }
 
     cl_type get() { return object_; }
 
@@ -8383,7 +8383,6 @@ public:
         const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
-        cl_event tmp;
         cl::vector<void*> svmRawPointers;
         svmRawPointers.reserve(svmPointers.size());
         for (auto p : svmPointers) {
@@ -8421,7 +8420,6 @@ public:
         const vector<Event>* events = NULL,
         Event* event = NULL) const
     {
-        cl_event tmp;
         cl::vector<void*> svmRawPointers;
         svmRawPointers.reserve(svmContainers.size());
         for (auto p : svmContainers) {
