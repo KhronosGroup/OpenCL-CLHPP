@@ -1805,9 +1805,6 @@ public:
 
     cl_type get() const { return object_; }
 
-    cl_type get() { return object_; }
-
-
 protected:
     template<typename Func, typename U>
     friend inline cl_int getInfoHelper(Func, cl_uint, U*, int, typename U::cl_type);
