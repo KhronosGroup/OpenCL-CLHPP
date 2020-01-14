@@ -59,7 +59,7 @@ bindings (adapt paths as required):
     cd OpenCL-CLHPP
     mkdir build
     cd build
-    cmake -DOPENCL_INCLUDE_DIR=/path/to/OpenCL/headers -DOPENCL_LIB_DIR=/path/to/OpenCL/library
+    cmake .. -DOPENCL_INCLUDE_DIR=/path/to/OpenCL/headers -DOPENCL_LIB_DIR=/path/to/OpenCL/library
     make
     make test
 ```
