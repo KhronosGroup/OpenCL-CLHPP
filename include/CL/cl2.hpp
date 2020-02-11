@@ -1380,6 +1380,16 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
     F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector<cl_device_partition_property_ext>)
 
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_(F) \
+    F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION_KHR, cl_version_khr) \
+    F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>) \
+    \
+    F(cl_device_info, CL_DEVICE_NUMERIC_VERSION_KHR, cl_version_khr) \
+    F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr) \
+    F(cl_device_info, CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>) \
+    F(cl_device_info, CL_DEVICE_ILS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>) \
+    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>)
+
 template <typename enum_type, cl_int Name>
 struct param_traits {};
 
@@ -1443,6 +1453,10 @@ CL_HPP_PARAM_NAME_INFO_1_2_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #if defined(CL_HPP_USE_CL_DEVICE_FISSION)
 CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
 #endif // CL_HPP_USE_CL_DEVICE_FISSION
+
+#if defined(CL_NAME_VERSION_MAX_NAME_SIZE_KHR)  // cl_khr_extended_versioning
+CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_(CL_HPP_DECLARE_PARAM_TRAITS_);
+#endif // CL_NAME_VERSION_MAX_NAME_SIZE_KHR
 
 #ifdef CL_PLATFORM_ICD_SUFFIX_KHR
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_platform_info, CL_PLATFORM_ICD_SUFFIX_KHR, string)
@@ -2455,7 +2469,8 @@ public:
     }
 
     //! \brief Wrapper for clGetPlatformInfo().
-    cl_int getInfo(cl_platform_info name, string* param) const
+    template <typename T>
+    cl_int getInfo(cl_platform_info name, T* param) const
     {
         return detail::errHandler(
             detail::getInfo(&::clGetPlatformInfo, object_, name, param),
