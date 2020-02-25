@@ -547,7 +547,9 @@
 #define CL_HPP_NOEXCEPT_
 #endif
 
-#if defined(_MSC_VER)
+#if __cplusplus >= 201703L
+# define CL_HPP_DEFINE_STATIC_MEMBER_ inline
+#elif defined(_MSC_VER)
 # define CL_HPP_DEFINE_STATIC_MEMBER_ __declspec(selectany)
 #elif defined(__MINGW32__)
 # define CL_HPP_DEFINE_STATIC_MEMBER_ __attribute__((selectany))
