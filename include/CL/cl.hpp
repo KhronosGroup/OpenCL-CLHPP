@@ -2267,17 +2267,21 @@ public:
             return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
         }
         cl_int err = ::clGetDeviceIDs(object_, type, 0, NULL, &n);
-        if (err != CL_SUCCESS) {
+        if (err != CL_SUCCESS && err != CL_DEVICE_NOT_FOUND) {
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
-        cl_device_id* ids = (cl_device_id*) alloca(n * sizeof(cl_device_id));
-        err = ::clGetDeviceIDs(object_, type, n, ids, NULL);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
-        }
-
-        devices->assign(&ids[0], &ids[n]);
+        if (n > 0) {
+                cl_device_id* ids = (cl_device_id*) alloca(n * sizeof(cl_device_id));
+                err = ::clGetDeviceIDs(object_, type, n, ids, NULL);
+                if (err != CL_SUCCESS) {
+                    return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
+                }
+        
+                devices->assign(&ids[0], &ids[n]);
+        } else {
+		devices->clear();
+	}
         return CL_SUCCESS;
     }
 
