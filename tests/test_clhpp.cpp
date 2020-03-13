@@ -987,6 +987,40 @@ void testDestroyDevice1_2()
     cl::Device d(make_device_id(0));
 }
 
+static cl_int clGetDeviceIDs_PlatformWithZeroDevices(
+    cl_platform_id  platform,
+    cl_device_type  device_type,
+    cl_uint  num_entries,
+    cl_device_id  *devices,
+    cl_uint  *num_devices,
+    int num_calls)
+{
+    if (num_calls == 0)
+    {
+        TEST_ASSERT_EQUAL_PTR(make_platform_id(0), platform);
+        TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_ALL, device_type);
+        TEST_ASSERT_NOT_NULL(num_devices);
+        return CL_DEVICE_NOT_FOUND;
+    }
+    else
+    {
+        TEST_FAIL_MESSAGE("clGetDeviceIDs called too many times");
+        return CL_INVALID_VALUE;
+    }
+}
+
+void testPlatformWithZeroDevices()
+{
+    clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_PlatformWithZeroDevices);
+
+    cl::Platform p(make_platform_id(0));
+    std::vector<cl::Device> devices;
+
+    cl_int errCode = p.getDevices(CL_DEVICE_TYPE_ALL, &devices);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, errCode);
+    TEST_ASSERT_EQUAL(0, devices.size());
+}
+
 /****************************************************************************
  * Tests for cl::Buffer
  ****************************************************************************/

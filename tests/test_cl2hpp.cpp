@@ -50,6 +50,7 @@ extern "C" {
     void testMoveConstructDeviceNull();
     void testDestroyDevice1_1();
     void testDestroyDevice1_2();
+    void testPlatformWithZeroDevices();
     void testMoveAssignBufferNonNull();
     void testMoveAssignBufferNull();
     void testMoveConstructBufferNonNull();
