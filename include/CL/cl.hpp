@@ -2280,8 +2280,8 @@ public:
         
                 devices->assign(&ids[0], &ids[n]);
         } else {
-		devices->clear();
-	}
+            devices->clear();
+        }
         return CL_SUCCESS;
     }
 
