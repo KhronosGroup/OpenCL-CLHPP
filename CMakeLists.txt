@@ -26,7 +26,7 @@ else()
 endif()
 
 if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Werror=return-type")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
 endif()
 
