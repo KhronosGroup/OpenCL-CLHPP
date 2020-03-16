@@ -443,6 +443,7 @@ static cl_int clGetPipeInfo_testCreatePipe(
     }
     else {
         TEST_FAIL();
+        return CL_INVALID_VALUE;
     }
 }
 
@@ -492,12 +493,14 @@ static cl_int CL_API_CALL clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel
         if (param_value_size_ret) {
             *param_value_size_ret = sizeof(size_t);
         }
+        return CL_SUCCESS;
     }
     else if (param_name == CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR) {
         *static_cast<size_t*>(param_value) = 2;
         if (param_value_size_ret) {
             *param_value_size_ret = sizeof(size_t);
         }
+        return CL_SUCCESS;
     }
     else {
         TEST_ABORT();
