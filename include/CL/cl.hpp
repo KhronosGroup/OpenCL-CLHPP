@@ -246,9 +246,12 @@
 #ifdef CL_USE_INLINE
 #define CL_WEAK_ATTRIB_PREFIX inline
 #define CL_WEAK_ATTRIB_SUFFIX
-#elif _WIN32
+#elif defined(_MSC_VER)
 #define CL_WEAK_ATTRIB_PREFIX __declspec(selectany)
 #define CL_WEAK_ATTRIB_SUFFIX
+#elif defined(__MINGW32__)
+#define CL_WEAK_ATTRIB_PREFIX
+#define CL_WEAK_ATTRIB_SUFFIX __attribute__((selectany))
 #else // GCC, CLANG, etc.
 #define CL_WEAK_ATTRIB_PREFIX
 #define CL_WEAK_ATTRIB_SUFFIX __attribute__((weak))
