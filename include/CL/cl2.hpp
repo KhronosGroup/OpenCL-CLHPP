@@ -529,7 +529,7 @@
 #include <CL/opencl.h>
 #endif // !__APPLE__
 
-#if (__cplusplus >= 201103L)
+#if (__cplusplus >= 201103L || _MSVC_LANG >= 201103L )
 #define CL_HPP_NOEXCEPT_ noexcept
 #else
 #define CL_HPP_NOEXCEPT_
