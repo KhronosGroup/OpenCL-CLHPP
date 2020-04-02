@@ -2116,7 +2116,7 @@ public:
     }
 
     //! \brief Wrapper for clGetDeviceInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_device_info name> typename
     detail::param_traits<detail::cl_device_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -2232,7 +2232,7 @@ public:
     }
 
     //! \brief Wrapper for clGetPlatformInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_platform_info name> typename
     detail::param_traits<detail::cl_platform_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -2758,7 +2758,7 @@ public:
     }
 
     //! \brief Wrapper for clGetContextInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_context_info name> typename
     detail::param_traits<detail::cl_context_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -2894,7 +2894,7 @@ public:
     }
 
     //! \brief Wrapper for clGetEventInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_event_info name> typename
     detail::param_traits<detail::cl_event_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -2917,7 +2917,7 @@ public:
     }
 
     //! \brief Wrapper for clGetEventProfilingInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_profiling_info name> typename
     detail::param_traits<detail::cl_profiling_info, name>::param_type
     getProfilingInfo(cl_int* err = NULL) const
     {
@@ -3103,7 +3103,7 @@ public:
     }
 
     //! \brief Wrapper for clGetMemObjectInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_mem_info name> typename
     detail::param_traits<detail::cl_mem_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -3635,7 +3635,7 @@ public:
     }
     
     //! \brief Wrapper for clGetImageInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_image_info name> typename
     detail::param_traits<detail::cl_image_info, name>::param_type
     getImageInfo(cl_int* err = NULL) const
     {
@@ -4739,7 +4739,7 @@ public:
     }
 
     //! \brief Wrapper for clGetSamplerInfo() that returns by value.
-    template <cl_int name> typename
+    template <cl_sampler_info name> typename
     detail::param_traits<detail::cl_sampler_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -4931,7 +4931,7 @@ public:
             __GET_KERNEL_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_kernel_info name> typename
     detail::param_traits<detail::cl_kernel_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -4953,7 +4953,7 @@ public:
             __GET_KERNEL_ARG_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_kernel_arg_info name> typename
     detail::param_traits<detail::cl_kernel_arg_info, name>::param_type
     getArgInfo(cl_uint argIndex, cl_int* err = NULL) const
     {
@@ -4977,7 +4977,7 @@ public:
                 __GET_KERNEL_WORK_GROUP_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_kernel_work_group_info name> typename
     detail::param_traits<detail::cl_kernel_work_group_info, name>::param_type
         getWorkGroupInfo(const Device& device, cl_int* err = NULL) const
     {
@@ -5327,7 +5327,7 @@ public:
             __GET_PROGRAM_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_program_info name> typename
     detail::param_traits<detail::cl_program_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
@@ -5350,7 +5350,7 @@ public:
                 __GET_PROGRAM_BUILD_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_program_build_info name> typename
     detail::param_traits<detail::cl_program_build_info, name>::param_type
     getBuildInfo(const Device& device, cl_int* err = NULL) const
     {
@@ -5695,7 +5695,7 @@ public:
                 __GET_COMMAND_QUEUE_INFO_ERR);
     }
 
-    template <cl_int name> typename
+    template <cl_command_queue_info name> typename
     detail::param_traits<detail::cl_command_queue_info, name>::param_type
     getInfo(cl_int* err = NULL) const
     {
