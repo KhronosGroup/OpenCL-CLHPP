@@ -470,13 +470,7 @@ void testCreatePipe()
     TEST_ASSERT_EQUAL(packets, 32);
 }
 
-#if defined(_WIN32)
-#define CL_API_CALL     __stdcall
-#else
-#define CL_API_CALL
-#endif
-
-static cl_int CL_API_CALL clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
+static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
     size_t input_value_size,
@@ -617,12 +611,26 @@ static void CL_CALLBACK test_program_release_callback(
 {
 }
 
+static cl_int clSetProgramReleaseCallback_set(
+    cl_program program,
+    void (CL_CALLBACK * pfn_notify)(cl_program program, void * user_data),
+    void *user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL_PTR(make_program(0), program);
+    TEST_ASSERT_EQUAL_PTR(pfn_notify, test_program_release_callback);
+
+    return CL_SUCCESS;
+}
+
 void testSetProgramReleaseCallback()
 {
     cl_program program = make_program(0);
     int user_data = 0;
 
-    clSetProgramReleaseCallback_ExpectAndReturn(program, test_program_release_callback, &user_data, CL_SUCCESS);
+    clSetProgramReleaseCallback_StubWithCallback(clSetProgramReleaseCallback_set);
     clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
 
     cl::Program prog(program);
