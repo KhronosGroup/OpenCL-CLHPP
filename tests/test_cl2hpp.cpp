@@ -470,13 +470,7 @@ void testCreatePipe()
     TEST_ASSERT_EQUAL(packets, 32);
 }
 
-#if defined(_WIN32)
-#define CL_API_CALL     __stdcall
-#else
-#define CL_API_CALL
-#endif
-
-static cl_int CL_API_CALL clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
+static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
     size_t input_value_size,
@@ -505,6 +499,7 @@ static cl_int CL_API_CALL clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel
     }
     else {
         TEST_ABORT();
+        return CL_INVALID_OPERATION;
     }
 }
 
@@ -616,12 +611,26 @@ static void CL_CALLBACK test_program_release_callback(
 {
 }
 
+static cl_int clSetProgramReleaseCallback_set(
+    cl_program program,
+    void (CL_CALLBACK * pfn_notify)(cl_program program, void * user_data),
+    void *user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL_PTR(make_program(0), program);
+    TEST_ASSERT_EQUAL_PTR(pfn_notify, test_program_release_callback);
+
+    return CL_SUCCESS;
+}
+
 void testSetProgramReleaseCallback()
 {
     cl_program program = make_program(0);
     int user_data = 0;
 
-    clSetProgramReleaseCallback_ExpectAndReturn(program, test_program_release_callback, &user_data, CL_SUCCESS);
+    clSetProgramReleaseCallback_StubWithCallback(clSetProgramReleaseCallback_set);
     clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
 
     cl::Program prog(program);
@@ -697,6 +706,165 @@ void testSetProgramSpecializationConstantPointer()
     cl::Program prog(program);
 
     prog.setSpecializationConstant(0, sizeof(scArray), scArray);
+}
+
+// cl_khr_extended_versioning
+
+static cl_int clGetPlatformInfo_extended_versioning(
+    cl_platform_id id,
+    cl_platform_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    switch (param_name) {
+    case CL_PLATFORM_NUMERIC_VERSION_KHR:
+    {
+        if (param_value_size == sizeof(cl_version_khr) && param_value) {
+            *static_cast<cl_version_khr*>(param_value) = CL_MAKE_VERSION_KHR(1, 2, 3);
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(cl_version_khr);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR:
+    {
+        static cl_name_version_khr extension = {
+            CL_MAKE_VERSION_KHR(10, 11, 12),
+            "cl_dummy_extension",
+        };
+        if (param_value_size == sizeof(cl_name_version_khr) && param_value) {
+            *static_cast<cl_name_version_khr*>(param_value) = extension;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(extension);
+        }
+        return CL_SUCCESS;
+    }
+    default: break;
+    }
+    TEST_FAIL();
+    return CL_INVALID_OPERATION;
+}
+
+void testPlatformExtendedVersioning()
+{
+    cl::Platform p(make_platform_id(1));
+
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_extended_versioning);
+
+    cl_version_khr platformVersion = p.getInfo<CL_PLATFORM_NUMERIC_VERSION_KHR>();
+    TEST_ASSERT_EQUAL_HEX(platformVersion, CL_MAKE_VERSION_KHR(1, 2, 3));
+
+    std::vector<cl_name_version_khr> extensions = p.getInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR>();
+    TEST_ASSERT_EQUAL(extensions.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(extensions[0].version, CL_MAKE_VERSION_KHR(10, 11, 12));
+    TEST_ASSERT_EQUAL_STRING(extensions[0].name, "cl_dummy_extension");
+}
+
+static cl_int clGetDeviceInfo_extended_versioning(
+    cl_device_id id,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    switch (param_name) {
+    case CL_DEVICE_NUMERIC_VERSION_KHR:
+    {
+        if (param_value_size == sizeof(cl_version_khr) && param_value) {
+            *static_cast<cl_version_khr*>(param_value) = CL_MAKE_VERSION_KHR(1, 2, 3);
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(cl_version_khr);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR:
+    {
+        if (param_value_size == sizeof(cl_version_khr) && param_value) {
+            *static_cast<cl_version_khr*>(param_value) = CL_MAKE_VERSION_KHR(4, 5, 6);
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(cl_version_khr);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR:
+    {
+        static cl_name_version_khr extension = {
+            CL_MAKE_VERSION_KHR(10, 11, 12),
+            "cl_dummy_extension",
+        };
+        if (param_value_size == sizeof(cl_name_version_khr) && param_value) {
+            *static_cast<cl_name_version_khr*>(param_value) = extension;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(extension);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_ILS_WITH_VERSION_KHR:
+    {
+        static cl_name_version_khr il = {
+            CL_MAKE_VERSION_KHR(20, 21, 22),
+            "DUMMY_IR",
+        };
+        if (param_value_size == sizeof(cl_name_version_khr) && param_value) {
+            *static_cast<cl_name_version_khr*>(param_value) = il;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(il);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR:
+    {
+        // Test no built-in kernels:
+        if (param_value_size_ret) {
+            *param_value_size_ret = 0;
+        }
+        return CL_SUCCESS;
+    }
+    default: break;
+    }
+    TEST_FAIL();
+    return CL_INVALID_OPERATION;
+}
+
+void testDeviceExtendedVersioning()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_extended_versioning);
+
+    cl_version_khr deviceVersion = d0.getInfo<CL_DEVICE_NUMERIC_VERSION_KHR>();
+    TEST_ASSERT_EQUAL_HEX(deviceVersion, CL_MAKE_VERSION_KHR(1, 2, 3));
+
+    cl_version_khr cVersion = d0.getInfo<CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR>();
+    TEST_ASSERT_EQUAL_HEX(cVersion, CL_MAKE_VERSION_KHR(4, 5, 6));
+
+    std::vector<cl_name_version_khr> extensions = d0.getInfo<CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR>();
+    TEST_ASSERT_EQUAL(extensions.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(extensions[0].version, CL_MAKE_VERSION_KHR(10, 11, 12));
+    TEST_ASSERT_EQUAL_STRING(extensions[0].name, "cl_dummy_extension");
+
+    std::vector<cl_name_version_khr> ils = d0.getInfo<CL_DEVICE_ILS_WITH_VERSION_KHR>();
+    TEST_ASSERT_EQUAL(ils.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(ils[0].version, CL_MAKE_VERSION_KHR(20, 21, 22));
+    TEST_ASSERT_EQUAL_STRING(ils[0].name, "DUMMY_IR");
+
+    std::vector<cl_name_version_khr> builtInKernels = d0.getInfo<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR>();
+    TEST_ASSERT_EQUAL(builtInKernels.size(), 0);
 }
 
 } // extern "C"

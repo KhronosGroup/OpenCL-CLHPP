@@ -35,6 +35,9 @@ include_directories(
     ${UNITY_DIR}/src
     ${CMOCK_DIR}/src)
 
+add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
+add_definitions(-DCL_EXPERIMENTAL)
+
 add_definitions(-DUNITY_SUPPORT_64)
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
     add_definitions(-DUNITY_POINTER_WIDTH=64)
