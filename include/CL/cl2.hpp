@@ -6543,7 +6543,7 @@ public:
     Program() { }
     
 
-    /*! \brief Constructor from cl_mem - takes ownership.
+    /*! \brief Constructor from cl_program - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
      *                     Defaults to false to maintain compatibility with
@@ -7439,7 +7439,7 @@ public:
     CommandQueue() { }
 
 
-    /*! \brief Constructor from cl_mem - takes ownership.
+    /*! \brief Constructor from cl_command_queue - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
      *                     Defaults to false to maintain compatibility with
