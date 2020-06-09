@@ -2835,6 +2835,10 @@ public:
         }
     }
 
+    /*! \brief Constructs a context including a specific device.
+     *
+     *  Wraps clCreateContext().
+     */
     Context(
         const Device& device,
         cl_context_properties* properties = NULL,
@@ -6606,6 +6610,25 @@ public:
             (cl_uint)
             devices.size(),
             deviceIDs.data(),
+            options,
+            notifyFptr,
+            data);
+
+        return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int build(
+        const Device& device,
+        const char* options = NULL,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
+        void* data = NULL) const
+    {
+        cl_device_id deviceID = device();
+
+        cl_int buildError = ::clBuildProgram(
+            object_,
+            1,
+            &deviceID,
             options,
             notifyFptr,
             data);
