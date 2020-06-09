@@ -1,10 +1,5 @@
-#define TEST_CL2
 #define CL_HPP_UNIT_TEST_ENABLE
 #define CL_HPP_USE_CL_SUB_GROUPS_KHR
-
-// Want to support 2.2 but also test that 1.x is ok
-#define CL_HPP_TARGET_OPENCL_VERSION 220
-#define CL_HPP_MINIMUM_OPENCL_VERSION 100
 
 extern "C" {
     // Headers required to make unity use mocks correctly
@@ -18,8 +13,6 @@ extern "C" {
     // Saves duplication of tests and the runner generator
     // does not process through the include below
 
-    void testCompareExchange();
-    void testFence();
     void testCopyContextNonNull();
     void testMoveAssignContextNonNull();
     void testMoveAssignContextNull();
@@ -120,6 +113,7 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
 
 void testCreateImage2DFromBuffer_2_0()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -141,6 +135,7 @@ void testCreateImage2DFromBuffer_2_0()
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
 
     buffer() = NULL;
+#endif
 }
 
 static cl_mem clCreateImage_testCreateImage2D_2_0(
@@ -211,6 +206,7 @@ static cl_int clGetImageInfo_testCreateImage2DFromImage_2_0(
 
 void testCreateImage2DFromImage_2_0()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -249,6 +245,7 @@ void testCreateImage2DFromImage_2_0()
     //imageFromImage() = NULL;
     //image() = NULL;
     //context() = NULL;
+#endif
 }
 
 // Note that default tests maintain state when run from the same
@@ -371,9 +368,9 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
     }
 }
 
-
 void testCreateDeviceCommandQueue()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -397,6 +394,7 @@ void testCreateDeviceCommandQueue()
     cl::DeviceCommandQueue dqd2 = cl::DeviceCommandQueue::makeDefault(c, d);
 
     TEST_ASSERT_EQUAL(dqd(), dqd2());
+#endif
 }
 
 static cl_mem clCreatePipe_testCreatePipe(
@@ -450,6 +448,7 @@ static cl_int clGetPipeInfo_testCreatePipe(
 
 void testCreatePipe()
 {    
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clCreatePipe_StubWithCallback(clCreatePipe_testCreatePipe);
     clGetPipeInfo_StubWithCallback(clGetPipeInfo_testCreatePipe);
     clRetainContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
@@ -468,6 +467,7 @@ void testCreatePipe()
 
     TEST_ASSERT_EQUAL(size, 16);
     TEST_ASSERT_EQUAL(packets, 32);
+#endif
 }
 
 static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
@@ -505,6 +505,8 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
 
 void testSubGroups()
 {
+// TODO support testing the cl_khr_subgroups on 2.0
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
     clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
@@ -523,6 +525,7 @@ void testSubGroups()
 
     TEST_ASSERT_EQUAL(res1, 32);
     TEST_ASSERT_EQUAL(res2, 2);
+#endif
 }
 
 /**
@@ -549,6 +552,7 @@ static cl_int clGetDeviceInfo_builtin(
 
 void testBuiltInKernels()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
@@ -557,7 +561,7 @@ void testBuiltInKernels()
 
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_builtin);
     cl::string s = d0.getInfo<CL_DEVICE_BUILT_IN_KERNELS>();
-
+#endif
 }
 
 /**
@@ -576,10 +580,12 @@ static cl_kernel clCloneKernel_simplecopy(
 
 void testCloneKernel()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
     clCloneKernel_StubWithCallback(clCloneKernel_simplecopy);
     clReleaseKernel_ExpectAndReturn(make_kernel(POOL_MAX), CL_SUCCESS);
     cl::Kernel clone = kernelPool[0].clone();
     TEST_ASSERT_EQUAL(clone(), make_kernel(POOL_MAX));
+#endif
 }
 
 
@@ -627,6 +633,7 @@ static cl_int clSetProgramReleaseCallback_set(
 
 void testSetProgramReleaseCallback()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
     cl_program program = make_program(0);
     int user_data = 0;
 
@@ -636,10 +643,12 @@ void testSetProgramReleaseCallback()
     cl::Program prog(program);
 
     prog.setReleaseCallback(test_program_release_callback, &user_data);
+#endif
 }
 
 void testSetProgramSpecializationConstantScalar()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
     cl_program program = make_program(0);
     int sc = 0;
 
@@ -649,6 +658,7 @@ void testSetProgramSpecializationConstantScalar()
     cl::Program prog(program);
 
     prog.setSpecializationConstant(0, sc);
+#endif
 }
 
 /// Stub for testing boolean specialization constants
@@ -679,6 +689,7 @@ static cl_int clSetProgramSpecializationConstant_testBool(
 
 void testSetProgramSpecializationConstantBool()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
     // Spec constant "false" should turn into a call with size one and no bits set.
     // Spec constant "true" should turn into a call with size one and all bits set.
     cl_program program = make_program(0);
@@ -693,10 +704,12 @@ void testSetProgramSpecializationConstantBool()
 
     prog.setSpecializationConstant(0, scFalse);
     prog.setSpecializationConstant(1, scTrue);
+#endif
 }
 
 void testSetProgramSpecializationConstantPointer()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
     cl_program program = make_program(0);
     int scArray[5];
 
@@ -706,6 +719,7 @@ void testSetProgramSpecializationConstantPointer()
     cl::Program prog(program);
 
     prog.setSpecializationConstant(0, sizeof(scArray), scArray);
+#endif
 }
 
 // cl_khr_extended_versioning

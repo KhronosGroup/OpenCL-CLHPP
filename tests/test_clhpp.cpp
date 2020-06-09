@@ -1,18 +1,10 @@
-#ifdef TEST_CL2
+
+// We want to support all versions
+#define CL_HPP_MINIMUM_OPENCL_VERSION 100
 # include <CL/cl2.hpp>
 # define TEST_RVALUE_REFERENCES
 # define VECTOR_CLASS cl::vector
 # define STRING_CLASS cl::string
-
-#else
-# include <CL/cl.hpp>
-// cl.hpp will switch to C++11 atomics in certain cases, for testing internal use we need to include support here too
-# if (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
-#  define TEST_RVALUE_REFERENCES
-#  define TEST_CPP11_ATOMICS
-# endif // (_MSC_VER >= 1700) || (__cplusplus >= 201103L)
-
-#endif // !CL_HPP_TEST_CL2
 
 #undef _UP
 
@@ -390,45 +382,6 @@ void tearDown()
 }
 
 /****************************************************************************
- * Tests for atomic wrappers
- ****************************************************************************/
-
-void testCompareExchange()
-{
-#ifndef TEST_CL2
-    /* This just tests that a compare-and-swap happens - there is no reliable
-     * way to ensure that it is atomic and performs a memory barrier.
-     */
-
-    // Test success case
-#ifdef TEST_CPP11_ATOMICS
-    std::atomic<int> dest(123);
-#else // #if defined(TEST_CPP11_ATOMICS)
-    volatile int dest = 123;
-#endif // #if defined(TEST_CPP11_ATOMICS)
-    int old = cl::detail::compare_exchange(&dest, 456, 123);
-    TEST_ASSERT_EQUAL(456, dest);
-    TEST_ASSERT_EQUAL(123, old);
-
-    // Test failure case
-    dest = 234;
-    old = cl::detail::compare_exchange(&dest, 345, 456);
-    TEST_ASSERT_EQUAL(234, dest);
-    TEST_ASSERT_EQUAL(234, old);
-#endif // !TEST_CL2
-}
-
-void testFence()
-{
-#ifndef TEST_CL2
-    /* No reliable way to test that it actually does what it says on the tin.
-     * Just test that it can be called without exploding.
-     */
-    cl::detail::fence();
-#endif // !TEST_CL2
-}
-
-/****************************************************************************
  * Tests for cl::Context
  ****************************************************************************/
 
@@ -606,12 +559,11 @@ void testContextFromType()
 #if !defined(__APPLE__) && !defined(__MACOS)
     clGetPlatformIDs_StubWithCallback(clGetPlatformIDs_testContextFromType);
     clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_testContextFromType);
-#if defined(TEST_CL2)
+
     // The cl2.hpp header will perform an extra retain here to be consistent
     // with other APIs retaining runtime-owned objects before releasing them
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
-#endif
 
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
@@ -1182,6 +1134,7 @@ cl_int clGetImageInfo_testGetImageInfoBuffer(
 
 void testGetImageInfoBuffer()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl_mem expected = make_mem(1);
     int refcount = 1;
 
@@ -1196,6 +1149,7 @@ void testGetImageInfoBuffer()
 
     // prevent destructor from interfering with the test
     image() = NULL;
+#endif
 }
 
 /**
@@ -1223,6 +1177,7 @@ cl_int clGetImageInfo_testGetImageInfoBufferNull(
 
 void testGetImageInfoBufferNull()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetImageInfo_StubWithCallback(clGetImageInfo_testGetImageInfoBufferNull);
 
     cl::Image2D image(make_mem(0));
@@ -1231,6 +1186,7 @@ void testGetImageInfoBufferNull()
 
     // prevent destructor from interfering with the test
     image() = NULL;
+#endif
 }
 
 void testGetImageInfoBufferOverwrite()
@@ -1273,6 +1229,7 @@ cl_mem clCreateImage_image1dbuffer(
 
 void testConstructImageFromBuffer()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     const size_t width = 64;
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
@@ -1293,6 +1250,7 @@ void testConstructImageFromBuffer()
     TEST_ASSERT_EQUAL_PTR(buffer(), image());
 
     buffer() = NULL;
+#endif
 }
 
 /****************************************************************************
