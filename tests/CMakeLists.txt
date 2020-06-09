@@ -35,7 +35,7 @@ include_directories(
     ${UNITY_DIR}/src
     ${CMOCK_DIR}/src)
 
-add_definitions(-DCL_TARGET_OPENCL_VERSION=220)
+add_definitions(-DCL_TARGET_OPENCL_VERSION=300)
 add_definitions(-DCL_EXPERIMENTAL)
 
 add_definitions(-DUNITY_SUPPORT_64)
