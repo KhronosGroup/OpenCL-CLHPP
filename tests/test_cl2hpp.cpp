@@ -505,7 +505,7 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
 
 void testSubGroups()
 {
-// TODO support testing the cl_khr_subgroups on 2.0
+// TODO support testing cl_khr_subgroups on 2.0
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
