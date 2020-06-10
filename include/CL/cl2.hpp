@@ -443,8 +443,9 @@
     CL_HPP_TARGET_OPENCL_VERSION != 120 && \
     CL_HPP_TARGET_OPENCL_VERSION != 200 && \
     CL_HPP_TARGET_OPENCL_VERSION != 210 && \
-    CL_HPP_TARGET_OPENCL_VERSION != 220
-# pragma message("cl2.hpp: CL_HPP_TARGET_OPENCL_VERSION is not a valid value (100, 110, 120, 200, 210 or 220). It will be set to 220")
+    CL_HPP_TARGET_OPENCL_VERSION != 220 && \
+    CL_HPP_TARGET_OPENCL_VERSION != 300
+# pragma message("cl2.hpp: CL_HPP_TARGET_OPENCL_VERSION is not a valid value (100, 110, 120, 200, 210, 220 or 300). It will be set to 220")
 # undef CL_HPP_TARGET_OPENCL_VERSION
 # define CL_HPP_TARGET_OPENCL_VERSION 220
 #endif
@@ -468,8 +469,9 @@
     CL_HPP_MINIMUM_OPENCL_VERSION != 120 && \
     CL_HPP_MINIMUM_OPENCL_VERSION != 200 && \
     CL_HPP_MINIMUM_OPENCL_VERSION != 210 && \
-    CL_HPP_MINIMUM_OPENCL_VERSION != 220
-# pragma message("cl2.hpp: CL_HPP_MINIMUM_OPENCL_VERSION is not a valid value (100, 110, 120, 200, 210 or 220). It will be set to 100")
+    CL_HPP_MINIMUM_OPENCL_VERSION != 220 && \
+    CL_HPP_MINIMUM_OPENCL_VERSION != 300
+# pragma message("cl2.hpp: CL_HPP_MINIMUM_OPENCL_VERSION is not a valid value (100, 110, 120, 200, 210, 220 or 300). It will be set to 100")
 # undef CL_HPP_MINIMUM_OPENCL_VERSION
 # define CL_HPP_MINIMUM_OPENCL_VERSION 100
 #endif
