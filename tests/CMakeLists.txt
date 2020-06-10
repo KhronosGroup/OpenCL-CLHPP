@@ -49,15 +49,12 @@ set(TEST_CL2HPP_HEADERS
     ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp
     mocks/Mockcl.h)
 
-set(TEST_CLHPP_SOURCES_COMMON
+set(TEST_CL2HPP_SOURCES
+    ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
+    test_cl2hpp.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
     ${CMOCK_DIR}/src/cmock.c
     ${UNITY_DIR}/src/unity.c)
-
-set(TEST_CL2HPP_SOURCES
-    ${TEST_CLHPP_SOURCES_COMMON}
-    ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
-    test_cl2hpp.cpp)
 
 # TODO enable testing for OpenCL 1.0 and 1.1
 foreach(VERSION 120 200 210 220 300)
