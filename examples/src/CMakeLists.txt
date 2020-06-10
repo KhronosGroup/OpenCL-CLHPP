@@ -1,9 +1,3 @@
-set(TRIVIAL_SOURCES
-    trivial.cpp )
-
-set(TRIVIAL_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/cl.hpp)
-
 set(TRIVIALCL2_SOURCES
     trivialCL2.cpp )
 
@@ -32,13 +26,10 @@ link_directories( ${OPENCL_LIB_DIR} )
 if( MSVC )
   set(CMAKE_CXX_FLAGS " -W3 /EHsc" )
 elseif( CMAKE_COMPILER_IS_GNUCXX )
-  set(CMAKE_CXX_FLAGS "-Wall -std=c++0x" )
+  set(CMAKE_CXX_FLAGS "-Wall" )
 elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-  set(CMAKE_CXX_FLAGS "-Wall -std=c++11" )
+  set(CMAKE_CXX_FLAGS "-Wall" )
 endif()
-
-add_executable(trivial ${TRIVIAL_SOURCES} ${TRIVIAL_HEADERS})
-target_link_libraries( trivial OpenCL )
 
 add_executable(trivialCL2 ${TRIVIALCL2_SOURCES} ${TRIVIALCL2_HEADERS})
 target_link_libraries( trivialCL2 OpenCL )

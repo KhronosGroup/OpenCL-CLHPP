@@ -13,13 +13,6 @@ add_custom_command(
     DEPENDS stripped/cl.h cmock.yml)
 	
 add_custom_command(
-    OUTPUT test_clhpp_Runner.c
-    COMMAND ruby ${UNITY_DIR}/auto/generate_test_runner.rb test_clhpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating test runner"
-    DEPENDS test_clhpp.cpp cmock.yml)
-	
-add_custom_command(
     OUTPUT test_cl2hpp_Runner.c
     COMMAND ruby ${UNITY_DIR}/auto/generate_test_runner.rb test_cl2hpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
@@ -35,6 +28,10 @@ include_directories(
     ${UNITY_DIR}/src
     ${CMOCK_DIR}/src)
 
+if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "(Apple)?Clang")
+    add_compile_options(-Wno-deprecated-declarations)
+endif()
+
 add_definitions(-DCL_TARGET_OPENCL_VERSION=300)
 add_definitions(-DCL_EXPERIMENTAL)
 
@@ -48,10 +45,6 @@ if( CMAKE_SIZEOF_LONG EQUAL 8 )
     add_definitions(-DUNITY_LONG_WIDTH=64)
 endif()
 
-set(TEST_CLHPP_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/cl.hpp
-    mocks/Mockcl.h)
-
 set(TEST_CL2HPP_HEADERS
     ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp
     mocks/Mockcl.h)
@@ -61,37 +54,18 @@ set(TEST_CLHPP_SOURCES_COMMON
     ${CMOCK_DIR}/src/cmock.c
     ${UNITY_DIR}/src/unity.c)
 
-set(TEST_CLHPP_SOURCES
-    ${TEST_CLHPP_SOURCES_COMMON}
-    ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
-    test_clhpp.cpp)
-
 set(TEST_CL2HPP_SOURCES
     ${TEST_CLHPP_SOURCES_COMMON}
     ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
     test_cl2hpp.cpp)
 
-  
-#set_source_files_properties(test_cl2hpp_Runner.c PROPERTIES LANGUAGE "CXX")
-#set_source_files_properties(test_clhpp_Runner.c PROPERTIES LANGUAGE "CXX")
-add_executable(test_clhpp ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
-add_executable(test_clhpp_deprecated_1_1 ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
-set_target_properties(test_clhpp_deprecated_1_1 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_1_APIS")
-add_executable(test_clhpp_deprecated_1_2 ${TEST_CLHPP_SOURCES} ${TEST_CLHPP_HEADERS})
-set_target_properties(test_clhpp_deprecated_1_2 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_1_APIS")
-set_target_properties(test_clhpp_deprecated_1_2 PROPERTIES COMPILE_DEFINITIONS "CL_USE_DEPRECATED_OPENCL_1_2_APIS")
-add_executable(test_cl2hpp ${TEST_CL2HPP_SOURCES} ${TEST_CL2HPP_HEADERS})
-add_test(run_test_clhpp test_clhpp)
-add_test(run_test_clhpp_deprecated_1_1 test_clhpp_deprecated_1_1)
-add_test(run_test_cl2hpp test_cl2hpp)
+# TODO enable testing for OpenCL 1.0 and 1.1
+foreach(VERSION 120 200 210 220 300)
+  set(TEST_EXE test_cl2hpp_${VERSION})
+  add_executable(${TEST_EXE} ${TEST_CL2HPP_SOURCES})
+  target_compile_definitions(${TEST_EXE}
+	  PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION}
+  )
+  add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
+endforeach(VERSION)
 
-if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-    set(TEST_CLHPP_CXX11_SOURCES
-        ${TEST_CLHPP_SOURCES_COMMON}
-        ${CMAKE_CURRENT_BINARY_DIR}/test_clhpp_Runner.c
-        test_clhpp_cxx11.cpp)
-    set_source_files_properties(test_clhpp_cxx11.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
-    set_source_files_properties(test_cl2hpp.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
-    add_executable(test_clhpp_cxx11 ${TEST_CLHPP_CXX11_SOURCES} ${TEST_CLHPP_HEADERS})
-    add_test(run_test_clhpp_cxx11 test_clhpp_cxx11)
-endif()
