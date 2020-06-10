@@ -6633,7 +6633,9 @@ public:
             notifyFptr,
             data);
 
-        return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+        BuildLogType buildLog(1);
+        buildLog.push_back(std::make_pair(device, getBuildInfo<CL_PROGRAM_BUILD_LOG>(device)));
+        return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, buildLog);
     }
 
     cl_int build(
@@ -6648,7 +6650,6 @@ public:
             options,
             notifyFptr,
             data);
-
 
         return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
     }
