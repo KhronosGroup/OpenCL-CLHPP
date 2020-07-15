@@ -217,6 +217,24 @@ static cl_int clGetPlatformInfo_version_2_0(
         param_value_size_ret, "OpenCL 2.0 Mock");
 }
 
+/**
+ * A stub for clGetPlatformInfo that will only support querying
+ * CL_PLATFORM_VERSION, and will return version 3.0.
+ */
+static cl_int clGetPlatformInfo_version_3_0(
+    cl_platform_id id,
+    cl_platform_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    return clGetPlatformInfo_version(
+        id, param_name, param_value_size, param_value,
+        param_value_size_ret, "OpenCL 3.0 Mock");
+}
+
 /* Simulated reference counts. The table points to memory held by the caller.
  * This makes things simpler in the common case of only one object to be
  * reference counted.
@@ -2507,7 +2525,10 @@ void testSetProgramSpecializationConstantPointer()
 #endif
 }
 
-// cl_khr_extended_versioning
+// OpenCL 3.0 and cl_khr_extended_versioning Queries
+
+// Note: This assumes the core enums, structures, and macros exactly match
+// the extension enums, structures, and macros.
 
 static cl_int clGetPlatformInfo_extended_versioning(
     cl_platform_id id,
@@ -2519,24 +2540,24 @@ static cl_int clGetPlatformInfo_extended_versioning(
 {
     (void)num_calls;
     switch (param_name) {
-    case CL_PLATFORM_NUMERIC_VERSION_KHR:
+    case CL_PLATFORM_NUMERIC_VERSION:
     {
-        if (param_value_size == sizeof(cl_version_khr) && param_value) {
-            *static_cast<cl_version_khr*>(param_value) = CL_MAKE_VERSION_KHR(1, 2, 3);
+        if (param_value_size == sizeof(cl_version) && param_value) {
+            *static_cast<cl_version*>(param_value) = CL_MAKE_VERSION(1, 2, 3);
         }
         if (param_value_size_ret) {
-            *param_value_size_ret = sizeof(cl_version_khr);
+            *param_value_size_ret = sizeof(cl_version);
         }
         return CL_SUCCESS;
     }
-    case CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR:
+    case CL_PLATFORM_EXTENSIONS_WITH_VERSION:
     {
-        static cl_name_version_khr extension = {
-            CL_MAKE_VERSION_KHR(10, 11, 12),
+        static cl_name_version extension = {
+            CL_MAKE_VERSION(10, 11, 12),
             "cl_dummy_extension",
         };
-        if (param_value_size == sizeof(cl_name_version_khr) && param_value) {
-            *static_cast<cl_name_version_khr*>(param_value) = extension;
+        if (param_value_size == sizeof(cl_name_version) && param_value) {
+            *static_cast<cl_name_version*>(param_value) = extension;
         }
         if (param_value_size_ret) {
             *param_value_size_ret = sizeof(extension);
@@ -2549,8 +2570,26 @@ static cl_int clGetPlatformInfo_extended_versioning(
     return CL_INVALID_OPERATION;
 }
 
-void testPlatformExtendedVersioning()
+void testPlatformExtendedVersioning_3_0()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    cl::Platform p(make_platform_id(1));
+
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_extended_versioning);
+
+    cl_version platformVersion = p.getInfo<CL_PLATFORM_NUMERIC_VERSION>();
+    TEST_ASSERT_EQUAL_HEX(platformVersion, CL_MAKE_VERSION(1, 2, 3));
+
+    std::vector<cl_name_version> extensions = p.getInfo<CL_PLATFORM_EXTENSIONS_WITH_VERSION>();
+    TEST_ASSERT_EQUAL(extensions.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(extensions[0].version, CL_MAKE_VERSION(10, 11, 12));
+    TEST_ASSERT_EQUAL_STRING(extensions[0].name, "cl_dummy_extension");
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
+void testPlatformExtendedVersioning_KHR()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION < 300
     cl::Platform p(make_platform_id(1));
 
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_extended_versioning);
@@ -2562,7 +2601,12 @@ void testPlatformExtendedVersioning()
     TEST_ASSERT_EQUAL(extensions.size(), 1);
     TEST_ASSERT_EQUAL_HEX(extensions[0].version, CL_MAKE_VERSION_KHR(10, 11, 12));
     TEST_ASSERT_EQUAL_STRING(extensions[0].name, "cl_dummy_extension");
+#endif // CL_HPP_TARGET_OPENCL_VERSION < 300
 }
+
+
+// Note: This assumes the core enums, structures, and macros exactly match
+// the extension enums, structures, and macros.
 
 static cl_int clGetDeviceInfo_extended_versioning(
     cl_device_id id,
@@ -2574,13 +2618,13 @@ static cl_int clGetDeviceInfo_extended_versioning(
 {
     (void)num_calls;
     switch (param_name) {
-    case CL_DEVICE_NUMERIC_VERSION_KHR:
+    case CL_DEVICE_NUMERIC_VERSION:
     {
-        if (param_value_size == sizeof(cl_version_khr) && param_value) {
-            *static_cast<cl_version_khr*>(param_value) = CL_MAKE_VERSION_KHR(1, 2, 3);
+        if (param_value_size == sizeof(cl_version) && param_value) {
+            *static_cast<cl_version*>(param_value) = CL_MAKE_VERSION(1, 2, 3);
         }
         if (param_value_size_ret) {
-            *param_value_size_ret = sizeof(cl_version_khr);
+            *param_value_size_ret = sizeof(cl_version);
         }
         return CL_SUCCESS;
     }
@@ -2594,39 +2638,78 @@ static cl_int clGetDeviceInfo_extended_versioning(
         }
         return CL_SUCCESS;
     }
-    case CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR:
+    case CL_DEVICE_EXTENSIONS_WITH_VERSION:
     {
-        static cl_name_version_khr extension = {
-            CL_MAKE_VERSION_KHR(10, 11, 12),
+        static cl_name_version extension = {
+            CL_MAKE_VERSION(10, 11, 12),
             "cl_dummy_extension",
         };
-        if (param_value_size == sizeof(cl_name_version_khr) && param_value) {
-            *static_cast<cl_name_version_khr*>(param_value) = extension;
+        if (param_value_size == sizeof(cl_name_version) && param_value) {
+            *static_cast<cl_name_version*>(param_value) = extension;
         }
         if (param_value_size_ret) {
             *param_value_size_ret = sizeof(extension);
         }
         return CL_SUCCESS;
     }
-    case CL_DEVICE_ILS_WITH_VERSION_KHR:
+    case CL_DEVICE_ILS_WITH_VERSION:
     {
-        static cl_name_version_khr il = {
-            CL_MAKE_VERSION_KHR(20, 21, 22),
+        static cl_name_version il = {
+            CL_MAKE_VERSION(20, 21, 22),
             "DUMMY_IR",
         };
-        if (param_value_size == sizeof(cl_name_version_khr) && param_value) {
-            *static_cast<cl_name_version_khr*>(param_value) = il;
+        if (param_value_size == sizeof(cl_name_version) && param_value) {
+            *static_cast<cl_name_version*>(param_value) = il;
         }
         if (param_value_size_ret) {
             *param_value_size_ret = sizeof(il);
         }
         return CL_SUCCESS;
     }
-    case CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR:
+    case CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION:
     {
         // Test no built-in kernels:
         if (param_value_size_ret) {
             *param_value_size_ret = 0;
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_OPENCL_C_ALL_VERSIONS:
+    {
+        static cl_name_version opencl_c = {
+            CL_MAKE_VERSION(30, 31, 32),
+            "OpenCL C",
+        };
+        if (param_value_size == sizeof(cl_name_version) && param_value) {
+            *static_cast<cl_name_version*>(param_value) = opencl_c;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(opencl_c);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_OPENCL_C_FEATURES:
+    {
+        static cl_name_version opencl_c_features[] = {
+            {
+                CL_MAKE_VERSION(40, 41, 42),
+                "__opencl_c_feature",
+            },
+            {
+                CL_MAKE_VERSION(40, 43, 44),
+                "__opencl_c_fancy_feature",
+            },
+        };
+        if (param_value_size == sizeof(opencl_c_features) && param_value) {
+            cl_name_version* feature = static_cast<cl_name_version*>(param_value);
+            const int numFeatures = sizeof(opencl_c_features) / sizeof(opencl_c_features[0]);
+            for (int i = 0; i < numFeatures; i++) {
+                *feature = opencl_c_features[i];
+                ++feature;
+            }
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(opencl_c_features);
         }
         return CL_SUCCESS;
     }
@@ -2636,8 +2719,50 @@ static cl_int clGetDeviceInfo_extended_versioning(
     return CL_INVALID_OPERATION;
 }
 
-void testDeviceExtendedVersioning()
+void testDeviceExtendedVersioning_3_0()
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_extended_versioning);
+
+    cl_version deviceVersion = d0.getInfo<CL_DEVICE_NUMERIC_VERSION>();
+    TEST_ASSERT_EQUAL_HEX(deviceVersion, CL_MAKE_VERSION(1, 2, 3));
+
+    std::vector<cl_name_version> extensions = d0.getInfo<CL_DEVICE_EXTENSIONS_WITH_VERSION>();
+    TEST_ASSERT_EQUAL(extensions.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(extensions[0].version, CL_MAKE_VERSION(10, 11, 12));
+    TEST_ASSERT_EQUAL_STRING(extensions[0].name, "cl_dummy_extension");
+
+    std::vector<cl_name_version> ils = d0.getInfo<CL_DEVICE_ILS_WITH_VERSION>();
+    TEST_ASSERT_EQUAL(ils.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(ils[0].version, CL_MAKE_VERSION(20, 21, 22));
+    TEST_ASSERT_EQUAL_STRING(ils[0].name, "DUMMY_IR");
+
+    std::vector<cl_name_version> opencl_c = d0.getInfo<CL_DEVICE_OPENCL_C_ALL_VERSIONS>();
+    TEST_ASSERT_EQUAL(opencl_c.size(), 1);
+    TEST_ASSERT_EQUAL_HEX(opencl_c[0].version, CL_MAKE_VERSION(30, 31, 32));
+    TEST_ASSERT_EQUAL_STRING(opencl_c[0].name, "OpenCL C");
+
+    std::vector<cl_name_version> opencl_c_features = d0.getInfo<CL_DEVICE_OPENCL_C_FEATURES>();
+    TEST_ASSERT_EQUAL(opencl_c_features.size(), 2);
+    TEST_ASSERT_EQUAL_HEX(opencl_c_features[0].version, CL_MAKE_VERSION(40, 41, 42));
+    TEST_ASSERT_EQUAL_STRING(opencl_c_features[0].name, "__opencl_c_feature");
+    TEST_ASSERT_EQUAL_HEX(opencl_c_features[1].version, CL_MAKE_VERSION(40, 43, 44));
+    TEST_ASSERT_EQUAL_STRING(opencl_c_features[1].name, "__opencl_c_fancy_feature");
+
+    std::vector<cl_name_version> builtInKernels = d0.getInfo<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION>();
+    TEST_ASSERT_EQUAL(builtInKernels.size(), 0);
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
+void testDeviceExtendedVersioning_KHR()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION < 300
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
@@ -2664,6 +2789,8 @@ void testDeviceExtendedVersioning()
 
     std::vector<cl_name_version_khr> builtInKernels = d0.getInfo<CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR>();
     TEST_ASSERT_EQUAL(builtInKernels.size(), 0);
+#endif // CL_HPP_TARGET_OPENCL_VERSION < 300
 }
+
 
 } // extern "C"
