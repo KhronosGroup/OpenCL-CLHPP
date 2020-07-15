@@ -18,7 +18,7 @@
  *
  *   \brief C++ bindings for OpenCL 1.0 (rev 48), OpenCL 1.1 (rev 33),
  *       OpenCL 1.2 (rev 15), OpenCL 2.0 (rev 29), OpenCL 2.1 (rev 17),
- *       and OpenCL 2.2 (V2.2-11).
+ *       OpenCL 2.2 (V2.2-11), and OpenCL 3.0 (V3.0.1-Provisional).
  *   \author Lee Howes and Bruce Merry
  *
  *   Derived from the OpenCL 1.x C++ bindings written by
@@ -1383,15 +1383,41 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
     F(cl_device_info, CL_DEVICE_PARTITION_STYLE_EXT, cl::vector<cl_device_partition_property_ext>)
 
-#define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_(F) \
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_SHARED_(F) \
     F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION_KHR, cl_version_khr) \
     F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>) \
     \
     F(cl_device_info, CL_DEVICE_NUMERIC_VERSION_KHR, cl_version_khr) \
-    F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr) \
     F(cl_device_info, CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>) \
     F(cl_device_info, CL_DEVICE_ILS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>) \
     F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR, cl::vector<cl_name_version_khr>)
+
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_UNIQUE_(F) \
+    F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr)
+
+#define CL_HPP_PARAM_NAME_INFO_3_0_(F) \
+    F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION, cl_version) \
+    F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
+    \
+    F(cl_device_info, CL_DEVICE_NUMERIC_VERSION, cl_version) \
+    F(cl_device_info, CL_DEVICE_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
+    F(cl_device_info, CL_DEVICE_ILS_WITH_VERSION, cl::vector<cl_name_version>) \
+    F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION, cl::vector<cl_name_version>) \
+    F(cl_device_info, CL_DEVICE_ATOMIC_MEMORY_CAPABILITIES, cl_device_atomic_capabilities) \
+    F(cl_device_info, CL_DEVICE_ATOMIC_FENCE_CAPABILITIES, cl_device_atomic_capabilities) \
+    F(cl_device_info, CL_DEVICE_NON_UNIFORM_WORK_GROUP_SUPPORT, cl_bool) \
+    F(cl_device_info, CL_DEVICE_OPENCL_C_ALL_VERSIONS, cl::vector<cl_name_version>) \
+    F(cl_device_info, CL_DEVICE_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, size_type) \
+    F(cl_device_info, CL_DEVICE_WORK_GROUP_COLLECTIVE_FUNCTIONS_SUPPORT, cl_bool) \
+    F(cl_device_info, CL_DEVICE_GENERIC_ADDRESS_SPACE_SUPPORT, cl_bool) \
+    F(cl_device_info, CL_DEVICE_OPENCL_C_FEATURES, cl::vector<cl_name_version>) \
+    F(cl_device_info, CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES, cl_device_device_enqueue_capabilities) \
+    F(cl_device_info, CL_DEVICE_PIPE_SUPPORT, cl_bool) \
+    \
+    F(cl_command_queue_info, CL_QUEUE_PROPERTIES_ARRAY, cl::vector<cl_queue_properties>) \
+    F(cl_mem_info, CL_MEM_PROPERTIES, cl::vector<cl_mem_properties>) \
+    F(cl_pipe_info, CL_PIPE_PROPERTIES, cl::vector<cl_pipe_properties>) \
+    F(cl_sampler_info, CL_SAMPLER_PROPERTIES, cl::vector<cl_sampler_properties>)
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -1421,6 +1447,9 @@ CL_HPP_PARAM_NAME_INFO_2_1_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 220
 CL_HPP_PARAM_NAME_INFO_2_2_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 220
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+CL_HPP_PARAM_NAME_INFO_3_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 
 #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
@@ -1458,7 +1487,10 @@ CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
 #endif // CL_HPP_USE_CL_DEVICE_FISSION
 
 #if defined(cl_khr_extended_versioning)
-CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_(CL_HPP_DECLARE_PARAM_TRAITS_);
+#if CL_HPP_TARGET_OPENCL_VERSION < 300
+CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_SHARED_(CL_HPP_DECLARE_PARAM_TRAITS_);
+#endif // CL_HPP_TARGET_OPENCL_VERSION < 300
+CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_UNIQUE_(CL_HPP_DECLARE_PARAM_TRAITS_);
 #endif // cl_khr_extended_versioning
 
 #ifdef CL_PLATFORM_ICD_SUFFIX_KHR
@@ -3238,7 +3270,7 @@ public:
      */
     cl_int setCallback(
         cl_int type,
-        void (CL_CALLBACK * pfn_notify)(cl_event, cl_int, void *),		
+        void (CL_CALLBACK * pfn_notify)(cl_event, cl_int, void *),
         void * user_data = NULL)
     {
         return detail::errHandler(
@@ -3427,7 +3459,7 @@ public:
      *  value - not the Memory class instance.
      */
     cl_int setDestructorCallback(
-        void (CL_CALLBACK * pfn_notify)(cl_mem, void *),		
+        void (CL_CALLBACK * pfn_notify)(cl_mem, void *),
         void * user_data = NULL)
     {
         return detail::errHandler(
@@ -4018,7 +4050,7 @@ public:
         }
 
         return result;
-    }		
+    }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 };
 
