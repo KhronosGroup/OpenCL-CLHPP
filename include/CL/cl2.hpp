@@ -6434,7 +6434,7 @@ public:
      * Construct a program object from a list of devices and a per-device list of binaries.
      * \param context A valid OpenCL context in which to construct the program.
      * \param devices A vector of OpenCL device objects for which the program will be created.
-     * \param binaries A vector of pairs of a pointer to a binary object and its length.
+     * \param binaries A vector of vectors containing the binary objects.
      * \param binaryStatus An optional vector that on completion will be resized to
      *   match the size of binaries and filled with values to specify if each binary
      *   was successfully loaded.
