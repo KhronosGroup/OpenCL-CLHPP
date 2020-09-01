@@ -1,20 +1,14 @@
-set(TRIVIALCL2_SOURCES
-    trivialCL2.cpp )
+set(TRIVIAL_SOURCES
+    trivial.cpp )
 
-set(TRIVIALCL2_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp)
+set(OPENCLHPP_HEADERS
+    ${CLCPP_SOURCE_DIR}/include/CL/opencl.hpp)
 
-set(TRIVIALCL2_SIZET_COMPAT_SOURCES
-    trivialCL2SizeTCompat.cpp )
+set(TRIVIAL_SIZET_COMPAT_SOURCES
+    trivialSizeTCompat.cpp )
 
-set(TRIVIALCL2_SIZET_COMPAT_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp)
-
-set(HEADEREXAMPLECL2_SOURCES
-    headerexampleCL2.cpp )
-
-set(HEADEREXAMPLECL2_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp)
+set(HEADEREXAMPLE_SOURCES
+    headerexample.cpp )
 
 include_directories(
     ${CLCPP_SOURCE_DIR}/include
@@ -31,11 +25,11 @@ elseif( CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
   set(CMAKE_CXX_FLAGS "-Wall" )
 endif()
 
-add_executable(trivialCL2 ${TRIVIALCL2_SOURCES} ${TRIVIALCL2_HEADERS})
-target_link_libraries( trivialCL2 OpenCL )
+add_executable(trivial ${TRIVIAL_SOURCES} ${OPENCLHPP_HEADERS})
+target_link_libraries( trivial OpenCL )
 
-add_executable(trivialCL2SizeTCompat ${TRIVIALCL2_SIZET_COMPAT_SOURCES} ${TRIVIALCL2_SIZET_COMPAT_HEADERS})
-target_link_libraries( trivialCL2SizeTCompat OpenCL )
+add_executable(trivialSizeTCompat ${TRIVIAL_SIZET_COMPAT_SOURCES} ${OPENCLHPP_HEADERS})
+target_link_libraries( trivialSizeTCompat OpenCL )
 
-add_executable(headerexampleCL2 ${HEADEREXAMPLECL2_SOURCES} ${HEADEREXAMPLECL2_HEADERS})
-target_link_libraries( headerexampleCL2 OpenCL )
+add_executable(headerexample ${HEADEREXAMPLE_SOURCES} ${OPENCLHPP_HEADERS})
+target_link_libraries( headerexample OpenCL )

@@ -3,7 +3,7 @@
 
 //#define CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY
 //#define CL_HPP_CL_1_2_DEFAULT_BUILD
-#include <CL/cl2.hpp>
+#include <CL/opencl.hpp>
 #include <iostream>
 #include <vector>
 #include <memory>
@@ -235,9 +235,6 @@ int main(void)
     std::cout << "\tCL_DEVICE_SVM_FINE_GRAIN_BUFFER = " << CL_DEVICE_SVM_FINE_GRAIN_BUFFER << "\n";
     std::cout << "\tCL_DEVICE_SVM_FINE_GRAIN_SYSTEM = " << CL_DEVICE_SVM_FINE_GRAIN_SYSTEM << "\n";
     std::cout << "\tCL_DEVICE_SVM_ATOMICS = " << CL_DEVICE_SVM_ATOMICS << "\n";
-
-    cl_device_id clD = d();
-    cl_device_id clD2 = d.get();
 
     auto v = vectorAddProgram.getInfo<CL_PROGRAM_BINARIES>();    
     auto v2 = vectorAddProgram.getInfo<CL_PROGRAM_BINARY_SIZES>();
