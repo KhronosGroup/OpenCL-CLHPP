@@ -2835,6 +2835,10 @@ public:
         }
     }
 
+    /*! \brief Constructs a context including a specific device.
+     *
+     *  Wraps clCreateContext().
+     */
     Context(
         const Device& device,
         cl_context_properties* properties = NULL,
@@ -6614,6 +6618,27 @@ public:
     }
 
     cl_int build(
+        const Device& device,
+        const char* options = NULL,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
+        void* data = NULL) const
+    {
+        cl_device_id deviceID = device();
+
+        cl_int buildError = ::clBuildProgram(
+            object_,
+            1,
+            &deviceID,
+            options,
+            notifyFptr,
+            data);
+
+        BuildLogType buildLog(1);
+        buildLog.push_back(std::make_pair(device, getBuildInfo<CL_PROGRAM_BUILD_LOG>(device)));
+        return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, buildLog);
+    }
+
+    cl_int build(
         const char* options = NULL,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
@@ -6625,7 +6650,6 @@ public:
             options,
             notifyFptr,
             data);
-
 
         return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
     }

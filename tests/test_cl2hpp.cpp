@@ -1645,9 +1645,8 @@ void testCopyHostToBuffer()
 
 }
 
-
 /****************************************************************************
-* Tests for getBuildInfo
+* Tests for building Programs
 ****************************************************************************/
 
 static cl_int clGetDeviceInfo_testGetBuildInfo(
@@ -1715,6 +1714,58 @@ void testGetBuildInfo()
 
     prog() = NULL;
     dev() = NULL;
+}
+
+static cl_int clBuildProgram_testBuildProgram(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program, void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_NOT_EQUAL(num_devices, 0);
+    TEST_ASSERT_NOT_EQUAL(device_list, NULL);
+    TEST_ASSERT_EQUAL(options, NULL);
+    TEST_ASSERT_EQUAL(pfn_notify, NULL);
+    TEST_ASSERT_EQUAL(user_data, NULL);
+
+    for (cl_uint i = 0; i < num_devices; i++) {
+        TEST_ASSERT_EQUAL(device_list[i], make_device_id(i));
+    }
+
+    return CL_SUCCESS;
+}
+
+void testBuildProgramSingleDevice()
+{
+    cl_program program = make_program(0);
+    cl_device_id device_id = make_device_id(0);
+    int sc = 0;
+
+    // Creating a device queries the platform version:
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    clBuildProgram_StubWithCallback(clBuildProgram_testBuildProgram);
+
+    // Building the program queries the program build log:
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::Device dev(device_id);
+
+    cl_int errcode = prog.build(dev);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
 }
 
 /**
