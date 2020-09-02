@@ -3,7 +3,7 @@
 
 // We want to support all versions
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
-# include <CL/cl2.hpp>
+# include <CL/opencl.hpp>
 # define TEST_RVALUE_REFERENCES
 # define VECTOR_CLASS cl::vector
 # define STRING_CLASS cl::string
@@ -560,7 +560,7 @@ void testContextFromType()
     clGetPlatformIDs_StubWithCallback(clGetPlatformIDs_testContextFromType);
     clGetDeviceIDs_StubWithCallback(clGetDeviceIDs_testContextFromType);
 
-    // The cl2.hpp header will perform an extra retain here to be consistent
+    // The opencl.hpp header will perform an extra retain here to be consistent
     // with other APIs retaining runtime-owned objects before releasing them
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clRetainDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);

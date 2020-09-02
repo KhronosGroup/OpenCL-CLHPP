@@ -1,7 +1,7 @@
 #define CL_HPP_ENABLE_EXCEPTIONS
 #define CL_HPP_TARGET_OPENCL_VERSION 200
 
-#include <CL/cl2.hpp>
+#include <CL/opencl.hpp>
 #include <iostream>
 #include <vector>
 #include <memory>

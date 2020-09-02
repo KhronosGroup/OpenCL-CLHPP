@@ -13,11 +13,11 @@ add_custom_command(
     DEPENDS stripped/cl.h cmock.yml)
 	
 add_custom_command(
-    OUTPUT test_cl2hpp_Runner.c
-    COMMAND ruby ${UNITY_DIR}/auto/generate_test_runner.rb test_cl2hpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
+    OUTPUT test_openclhpp_Runner.c
+    COMMAND ruby ${UNITY_DIR}/auto/generate_test_runner.rb test_openclhpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_openclhpp_Runner.c
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Generating test runner for 2.0"
-    DEPENDS test_cl2hpp.cpp cmock.yml)
+    COMMENT "Generating test runner"
+    DEPENDS test_openclhpp.cpp cmock.yml)
 	
 include_directories(
     ${CLCPP_SOURCE_DIR}/include
@@ -45,21 +45,21 @@ if( CMAKE_SIZEOF_LONG EQUAL 8 )
     add_definitions(-DUNITY_LONG_WIDTH=64)
 endif()
 
-set(TEST_CL2HPP_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/cl2.hpp
+set(TEST_HEADERS
+    ${CLCPP_SOURCE_DIR}/include/CL/opencl.hpp
     mocks/Mockcl.h)
 
-set(TEST_CL2HPP_SOURCES
-    ${CMAKE_CURRENT_BINARY_DIR}/test_cl2hpp_Runner.c
-    test_cl2hpp.cpp
+set(TEST_SOURCES
+    ${CMAKE_CURRENT_BINARY_DIR}/test_openclhpp_Runner.c
+    test_openclhpp.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
     ${CMOCK_DIR}/src/cmock.c
     ${UNITY_DIR}/src/unity.c)
 
 # TODO enable testing for OpenCL 1.0 and 1.1
 foreach(VERSION 120 200 210 220 300)
-  set(TEST_EXE test_cl2hpp_${VERSION})
-  add_executable(${TEST_EXE} ${TEST_CL2HPP_SOURCES})
+  set(TEST_EXE test_openclhpp_${VERSION})
+  add_executable(${TEST_EXE} ${TEST_SOURCES} ${TEST_HEADERS})
   target_compile_definitions(${TEST_EXE}
 	  PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION}
   )

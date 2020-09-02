@@ -1,17 +1,20 @@
 # OpenCL<sup>TM</sup> API C++ bindings
 
-Doxgen documentation for the cl2.hpp header is available here:
+Doxgen documentation for the bindings is available here:
 
   http://khronosgroup.github.io/OpenCL-CLHPP/
 
 Components:
 
-  * `include/CL/cl2.hpp`:
+  * `include/CL/opencl.hpp`:
     The latest, maintained, version of the C++ bindings. It should work with all
     versions of OpenCL (including 1.x). This is what most users will want.
 
+  * `include/CL/cl2.hpp`:
+    Includes `opencl.hpp` and emits a warning, for backwards compability.
+
   * `docs`:
-    Doxygen file used to generate HTML documentation for `cl2.hpp`.
+    Doxygen file used to generate HTML documentation for `opencl.hpp`.
 
   * `examples`:
     A simple example application using the very basic features of the bindings.
