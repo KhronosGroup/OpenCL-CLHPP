@@ -8150,7 +8150,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(::clEnqueueSVMMap(
-            object_, blocking, flags, static_cast<void*>(container.data()), container.size(),
+            object_, blocking, flags, static_cast<void*>(container.data()), container.size()*sizeof(T),
             (events != NULL) ? (cl_uint)events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*)&events->front() : NULL,
             (event != NULL) ? &tmp : NULL),
