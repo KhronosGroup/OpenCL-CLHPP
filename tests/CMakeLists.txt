@@ -1,4 +1,4 @@
-get_target_property(OPENCL_INCLUDE_DIR OpenCL::OpenCLHeaders INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(OPENCL_INCLUDE_DIR OpenCL::Headers INTERFACE_INCLUDE_DIRECTORIES)
 
 message(STATUS "Python_EXECUTABLE: ${Python_EXECUTABLE}")
 message(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
@@ -80,7 +80,7 @@ foreach(VERSION 120 200 210 220 300)
     )
     target_link_libraries(${TEST_EXE}
       PUBLIC
-        OpenCL::OpenCLHeaders
+        OpenCL::Headers
         OpenCL::OpenCL
     )
     add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
