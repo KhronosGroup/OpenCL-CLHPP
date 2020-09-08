@@ -1,7 +1,5 @@
-#!/usr/bin/env python
 from __future__ import print_function
-import sys
-import re
+import sys, re
 
 """
 Removes macros that might otherwise cause confusion for CMock.
