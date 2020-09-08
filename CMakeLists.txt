@@ -14,6 +14,16 @@ option(BUILD_DOCS "Build Documentation" ON)
 option(BUILD_EXAMPLES "Build Examples" ON)
 option(BUILD_TESTS "Build Unit Tests" ON)
 
+find_package(OpenCLHeaders REQUIRED)
+find_package(OpenCLICDLoader REQUIRED)
+find_package(Threads REQUIRED)
+find_package(Ruby REQUIRED)
+find_package(Python QUIET)
+if(NOT ${Python_FOUND})
+find_package(PythonInterp REQUIRED)
+endif()
+
+
 add_library(HeadersCpp INTERFACE)
 target_include_directories(HeadersCpp
   INTERFACE
@@ -66,16 +76,6 @@ install(
   DESTINATION ${config_package_location}
 )
 
-find_package(OpenCL
-  COMPONENTS
-    Headers
-    ICDLoader
-)
-find_package(Threads
-  REQUIRED
-)
-
-set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir")
 set(UNITY_DIR ${PROJECT_SOURCE_DIR}/external/Unity CACHE PATH "Unity dir")
 set(CMOCK_DIR ${PROJECT_SOURCE_DIR}/external/CMock CACHE PATH "CMock dir")
 

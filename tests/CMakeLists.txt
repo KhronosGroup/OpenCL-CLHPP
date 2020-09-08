@@ -1,14 +1,19 @@
+get_target_property(OPENCL_INCLUDE_DIR OpenCL::OpenCLHeaders INTERFACE_INCLUDE_DIRECTORIES)
+
+message(STATUS "Python_EXECUTABLE: ${Python_EXECUTABLE}")
+message(STATUS "PYTHON_EXECUTABLE: ${PYTHON_EXECUTABLE}")
+
 add_custom_command(
     OUTPUT stripped/cl.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
-    COMMAND python ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.py ${OPENCL_INCLUDE_DIR}/CL/cl.h stripped/cl.h
+    COMMAND ${Python_EXECUTABLE} ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.py ${OPENCL_INCLUDE_DIR}/CL/cl.h stripped/cl.h
     COMMENT "Stripping defines from cl.h"
     DEPENDS ${OPENCL_INCLUDE_DIR}/CL/cl.h strip_defines.py)
 	
 add_custom_command(
     OUTPUT mocks/Mockcl.c mocks/Mockcl.h
-    COMMAND ruby ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/cmock.yml stripped/cl.h
+    COMMAND ${RUBY_EXECUTABLE} ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/cmock.yml stripped/cl.h
     COMMENT "Generating mocks"
     DEPENDS stripped/cl.h cmock.yml)
 	
@@ -20,7 +25,7 @@ add_custom_command(
     DEPENDS test_openclhpp.cpp cmock.yml)
 	
 include_directories(
-    ${CLCPP_SOURCE_DIR}/include
+    ${PROJECT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_BINARY_DIR}/mocks
     ${OPENCL_DIST_DIR}/include
     ${OPENCL_INCLUDE_DIR}
@@ -72,6 +77,11 @@ foreach(VERSION 120 200 210 220 300)
     add_executable(${TEST_EXE} ${TEST_SOURCES} ${TEST_HEADERS})
     target_compile_definitions(${TEST_EXE}
         PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
+    )
+    target_link_libraries(${TEST_EXE}
+      PUBLIC
+        OpenCL::OpenCLHeaders
+        OpenCL::OpenCL
     )
     add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
   endforeach(OPTION)
