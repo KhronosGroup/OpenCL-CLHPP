@@ -35,7 +35,7 @@ script:
   - cmake -D CMAKE_INSTALL_PREFIX=../install
           -D CMAKE_PREFIX_PATH=${TOP}/OpenCL-Headers/install ..
           -D CMAKE_PREFIX_PATH=${TOP}/OpenCL-ICD-Loader/install ..
-          -D BUILD_TESTS=OFF # half-baked CMake support
+          -D BUILD_TESTS=ON
           ..
   - cmake --build .
           --target install
