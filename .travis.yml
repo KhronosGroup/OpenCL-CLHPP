@@ -33,8 +33,7 @@ script:
   - mkdir install
   - cd build
   - cmake -D CMAKE_INSTALL_PREFIX=../install
-          -D CMAKE_PREFIX_PATH=${TOP}/OpenCL-Headers/install ..
-          -D CMAKE_PREFIX_PATH=${TOP}/OpenCL-ICD-Loader/install ..
+          -D "CMAKE_PREFIX_PATH=${TOP}/OpenCL-Headers/install;${TOP}/OpenCL-ICD-Loader/install"
           -D BUILD_TESTS=ON
           ..
   - cmake --build .
