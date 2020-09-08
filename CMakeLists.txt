@@ -66,29 +66,14 @@ install(
   DESTINATION ${config_package_location}
 )
 
-if(DEFINED ENV{AMDAPPSDKROOT})
-  set(OPENCL_DIST_DIR $ENV{AMDAPPSDKROOT} CACHE PATH "OpenCL source dir")
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set(OPENCL_LIB_DIR ${OPENCL_DIST_DIR}/lib/x86_64 )
-  else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set(OPENCL_LIB_DIR ${OPENCL_DIST_DIR}/lib/x86 )
-  endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-elseif(DEFINED ENV{INTELOCLSDKROOT})
-  set(OPENCL_DIST_DIR $ENV{INTELOCLSDKROOT} CACHE PATH "OpenCL source dir")
-  if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set(OPENCL_LIB_DIR ${OPENCL_DIST_DIR}/lib/x64 )
-  else( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-    set(OPENCL_LIB_DIR ${OPENCL_DIST_DIR}/lib/x86 )
-  endif( CMAKE_SIZEOF_VOID_P EQUAL 8 )
-else()
-  set(OPENCL_DIST_DIR "" CACHE PATH "OpenCL source dir")
-  set(OPENCL_LIB_DIR "${OPENCL_DIST_DIR}/lib" CACHE PATH "OpenCL library dir" )
-endif()
-
-if( CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID STREQUAL "Clang" )
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -Werror=return-type")
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
-endif()
+find_package(OpenCL
+  COMPONENTS
+    Headers
+    ICDLoader
+)
+find_package(Threads
+  REQUIRED
+)
 
 set(OPENCL_INCLUDE_DIR ${OPENCL_DIST_DIR}/include CACHE PATH "OpenCL source dir")
 set(UNITY_DIR ${PROJECT_SOURCE_DIR}/external/Unity CACHE PATH "Unity dir")
