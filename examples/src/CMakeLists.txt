@@ -21,7 +21,7 @@ foreach(TEST IN ITEMS
   )
   target_link_libraries(${TEST}
     PRIVATE
-      OpenCL::OpenCLHeaders
+      OpenCL::Headers
       OpenCL::OpenCL
   )
 endforeach()
