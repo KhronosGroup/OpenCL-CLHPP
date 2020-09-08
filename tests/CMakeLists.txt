@@ -19,7 +19,7 @@ add_custom_command(
 	
 add_custom_command(
     OUTPUT test_openclhpp_Runner.c
-    COMMAND ruby ${UNITY_DIR}/auto/generate_test_runner.rb test_openclhpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_openclhpp_Runner.c
+    COMMAND ${RUBY_EXECUTABLE} ${UNITY_DIR}/auto/generate_test_runner.rb test_openclhpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_openclhpp_Runner.c
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Generating test runner"
     DEPENDS test_openclhpp.cpp cmock.yml)
@@ -51,7 +51,7 @@ if( CMAKE_SIZEOF_LONG EQUAL 8 )
 endif()
 
 set(TEST_HEADERS
-    ${CLCPP_SOURCE_DIR}/include/CL/opencl.hpp
+    ${PROJECT_SOURCE_DIR}/include/CL/opencl.hpp
     mocks/Mockcl.h)
 
 set(TEST_SOURCES
@@ -74,7 +74,7 @@ foreach(VERSION 120 200 210 220 300)
     endif()
 
     set(TEST_EXE test_openclhpp_${VERSION}${UNDERSCORE_OPTION})
-    add_executable(${TEST_EXE} ${TEST_SOURCES} ${TEST_HEADERS})
+    add_executable(${TEST_EXE} ${TEST_SOURCES}) #${TEST_HEADERS})
     target_compile_definitions(${TEST_EXE}
         PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
     )
