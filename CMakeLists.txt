@@ -14,18 +14,15 @@ option(BUILD_DOCS "Build Documentation" ON)
 option(BUILD_EXAMPLES "Build Examples" ON)
 option(BUILD_TESTS "Build Unit Tests" ON)
 
-add_library(OpenCLHeadersCpp INTERFACE)
-add_library(OpenCL::OpenCLHeadersCpp
-  ALIAS OpenCLHeadersCpp
-)
-target_include_directories(OpenCLHeadersCpp
+add_library(HeadersCpp INTERFACE)
+target_include_directories(HeadersCpp
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
 
 install(
-  TARGETS OpenCLHeadersCpp
+  TARGETS HeadersCpp
   EXPORT OpenCLHeadersCppTargets
 )
 
