@@ -13,7 +13,7 @@ foreach(TEST IN ITEMS
 )
   add_executable(${TEST}
     ${TEST}.cpp
-    ${PROJECT_SOURCE_DIR}/include/CL/cl2.hpp
+    ${PROJECT_SOURCE_DIR}/include/CL/opencl.hpp
   )
   target_include_directories(${TEST}
     PRIVATE
