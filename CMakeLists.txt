@@ -17,12 +17,13 @@ option(BUILD_TESTS "Build Unit Tests" ON)
 find_package(OpenCLHeaders REQUIRED)
 find_package(OpenCLICDLoader REQUIRED)
 find_package(Threads REQUIRED)
-find_package(Ruby REQUIRED)
-find_package(Python QUIET)
-if(NOT ${Python_FOUND})
-find_package(PythonInterp REQUIRED)
+if(BUILD_TESTS)
+  find_package(Ruby REQUIRED)
+  find_package(Python QUIET)
+  if(NOT ${Python_FOUND})
+  find_package(PythonInterp REQUIRED)
+  endif()
 endif()
-
 
 add_library(HeadersCpp INTERFACE)
 target_include_directories(HeadersCpp
