@@ -36,7 +36,7 @@ include_directories(
     ${UNITY_DIR}/src
     ${CMOCK_DIR}/src)
 
-if(CMAKE_COMPILER_IS_GNUCC OR "${CMAKE_CXX_COMPILER_ID}" MATCHES "(Apple)?Clang")
+if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID MATCHES "(Apple)?Clang")
     add_compile_options(-Wno-deprecated-declarations)
 endif()
 
