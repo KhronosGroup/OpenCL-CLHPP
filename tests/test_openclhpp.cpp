@@ -1535,6 +1535,20 @@ void testKernelSetArgLocal()
     kernelPool[0].setArg(2, cl::Local(123));
 }
 
+void testKernelSetExecInfo()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    cl_bool val = CL_TRUE;
+    // Using CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM in the tests since it's
+    // defined by the core spec but this function is particularly useful for
+    // vendor extensions.
+    clSetKernelExecInfo_ExpectAndReturn(make_kernel(0),
+                                        CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,
+                                        sizeof(cl_bool), &val, CL_SUCCESS);
+    kernelPool[0].setExecInfo(CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM, val);
+#endif
+}
+
 /****************************************************************************
  * Tests for cl::copy
  ****************************************************************************/

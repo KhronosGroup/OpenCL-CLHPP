@@ -1507,6 +1507,9 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMPUTE_UNITS_BITFIELD_AR
 #ifdef CL_DEVICE_JOB_SLOTS_ARM
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_JOB_SLOTS_ARM, cl_uint)
 #endif
+#ifdef CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM, cl_bitfield)
+#endif
 
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV, cl_uint)
@@ -6146,6 +6149,17 @@ public:
             CL_KERNEL_EXEC_INFO_SVM_PTRS,
             sizeof(void*)*(1 + sizeof...(Ts)),
             pointerList.data()));
+    }
+
+    template<typename T>
+    cl_int setExecInfo(cl_kernel_exec_info param_name, const T& val)
+    {
+        return detail::errHandler(
+            ::clSetKernelExecInfo(
+            object_,
+            param_name,
+            sizeof(T),
+            &val));
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
