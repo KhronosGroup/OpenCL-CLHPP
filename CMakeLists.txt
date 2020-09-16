@@ -13,6 +13,9 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(BUILD_DOCS "Build Documentation" ON)
 option(BUILD_EXAMPLES "Build Examples" ON)
 option(BUILD_TESTS "Build Unit Tests" ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL
+  "find_package(Threads) preference. Recommendation is to keep default value."
+)
 
 find_package(OpenCLHeaders REQUIRED)
 find_package(OpenCLICDLoader REQUIRED)
