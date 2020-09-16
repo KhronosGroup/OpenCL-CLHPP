@@ -20,7 +20,6 @@ foreach(TEST IN ITEMS
       ${PROJECT_SOURCE_DIR}/include
   )
   target_link_libraries(${TEST}
-    BEFORE
     PRIVATE
       OpenCL::Headers
       OpenCL::OpenCL
