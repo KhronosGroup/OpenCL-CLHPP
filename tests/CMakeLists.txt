@@ -85,6 +85,7 @@ foreach(VERSION 120 200 210 220 300)
       PUBLIC
         OpenCL::Headers
         OpenCL::OpenCL
+        Threads::Threads
     )
     add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
   endforeach(OPTION)
