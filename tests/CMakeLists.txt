@@ -67,7 +67,7 @@ set(TEST_SOURCES
 # TODO enable testing for OpenCL 1.0 and 1.1
 foreach(VERSION 120 200 210 220 300)
   set(TEST_EXE test_openclhpp_${VERSION})
-  add_executable(${TEST_EXE} ${TEST_SOURCES}) #${TEST_HEADERS})
+  add_executable(${TEST_EXE} ${TEST_SOURCES} ${TEST_HEADERS})
   target_compile_definitions(${TEST_EXE}
     PUBLIC
       -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION}
@@ -76,6 +76,7 @@ foreach(VERSION 120 200 210 220 300)
     PUBLIC
       OpenCL::Headers
       OpenCL::OpenCL
+      Threads::Threads
   )
   add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
 endforeach(VERSION)
