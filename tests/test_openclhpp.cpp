@@ -15,6 +15,8 @@ extern "C"
 #include "Mockcl.h"
 #include <string.h>
 
+#define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
+
 /// Creates fake IDs that are easy to identify
 
 static inline cl_platform_id make_platform_id(int index)
@@ -2527,8 +2529,28 @@ void testSetProgramSpecializationConstantPointer()
 
 // OpenCL 3.0 and cl_khr_extended_versioning Queries
 
-// Note: This assumes the core enums, structures, and macros exactly match
-// the extension enums, structures, and macros.
+// Assumes the core enums, structures, and macros exactly match
+// the extension enums, structures, and macros:
+
+static_assert(CL_PLATFORM_NUMERIC_VERSION == CL_PLATFORM_NUMERIC_VERSION_KHR,
+    "CL_PLATFORM_NUMERIC_VERSION mismatch");
+static_assert(CL_PLATFORM_EXTENSIONS_WITH_VERSION == CL_PLATFORM_EXTENSIONS_WITH_VERSION_KHR,
+    "CL_PLATFORM_EXTENSIONS_WITH_VERSION mismatch");
+
+static_assert(CL_DEVICE_NUMERIC_VERSION == CL_DEVICE_NUMERIC_VERSION_KHR,
+    "CL_DEVICE_NUMERIC_VERSION mismatch");
+static_assert(CL_DEVICE_EXTENSIONS_WITH_VERSION == CL_DEVICE_EXTENSIONS_WITH_VERSION_KHR,
+    "CL_DEVICE_EXTENSIONS_WITH_VERSION mismatch");
+static_assert(CL_DEVICE_ILS_WITH_VERSION == CL_DEVICE_ILS_WITH_VERSION_KHR,
+    "CL_DEVICE_ILS_WITH_VERSION mismatch");
+static_assert(CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION == CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION_KHR,
+    "CL_DEVICE_BUILT_IN_KERNELS_WITH_VERSION mismatch");
+
+static_assert(sizeof(cl_name_version) == sizeof(cl_name_version_khr),
+    "cl_name_version mismatch");
+
+static_assert(CL_MAKE_VERSION(1, 2, 3) == CL_MAKE_VERSION_KHR(1, 2, 3),
+    "CL_MAKE_VERSION mismatch");
 
 static cl_int clGetPlatformInfo_extended_versioning(
     cl_platform_id id,
@@ -2702,10 +2724,9 @@ static cl_int clGetDeviceInfo_extended_versioning(
         };
         if (param_value_size == sizeof(opencl_c_features) && param_value) {
             cl_name_version* feature = static_cast<cl_name_version*>(param_value);
-            const int numFeatures = sizeof(opencl_c_features) / sizeof(opencl_c_features[0]);
+            const int numFeatures = ARRAY_SIZE(opencl_c_features);
             for (int i = 0; i < numFeatures; i++) {
-                *feature = opencl_c_features[i];
-                ++feature;
+                feature[i] = opencl_c_features[i];
             }
         }
         if (param_value_size_ret) {
