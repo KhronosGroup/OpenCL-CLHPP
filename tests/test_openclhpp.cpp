@@ -2346,6 +2346,14 @@ void testCloneKernel()
 #endif
 }
 
+void testEnqueueMapSVM()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    std::vector<int> vec(7);
+    clEnqueueSVMMap_ExpectAndReturn(commandQueuePool[0].get(), CL_TRUE, CL_MAP_READ|CL_MAP_WRITE, static_cast<void*>(vec.data()), vec.size()*sizeof(int), 0, NULL, NULL, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(commandQueuePool[0].enqueueMapSVM(vec, CL_TRUE, CL_MAP_READ|CL_MAP_WRITE), CL_SUCCESS);
+#endif
+}
 
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
