@@ -1346,6 +1346,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_profiling_info, CL_PROFILING_COMMAND_COMPLETE, cl_ulong) \
+    F(cl_kernel_exec_info, CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM, cl_bool) \
+    F(cl_kernel_exec_info, CL_KERNEL_EXEC_INFO_SVM_PTRS, void**) \
     F(cl_command_queue_info, CL_QUEUE_SIZE, cl_uint) \
     F(cl_mem_info, CL_MEM_USES_SVM_POINTER, cl_bool) \
     F(cl_program_build_info, CL_PROGRAM_BUILD_GLOBAL_VARIABLE_TOTAL_SIZE, size_type) \
@@ -1509,6 +1511,12 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_JOB_SLOTS_ARM, cl_uint)
 #endif
 #ifdef CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SCHEDULING_CONTROLS_CAPABILITIES_ARM, cl_bitfield)
+#endif
+#ifdef CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_kernel_exec_info, CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_ARM, cl_uint)
+#endif
+#ifdef CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_kernel_exec_info, CL_KERNEL_EXEC_INFO_WORKGROUP_BATCH_SIZE_MODIFIER_ARM, cl_int)
 #endif
 
 #ifdef CL_DEVICE_COMPUTE_CAPABILITY_MAJOR_NV
@@ -6160,6 +6168,12 @@ public:
             param_name,
             sizeof(T),
             &val));
+    }
+
+    template<cl_kernel_exec_info name>
+    cl_int setExecInfo(typename detail::param_traits<detail::cl_kernel_exec_info, name>::param_type& val)
+    {
+        return setExecInfo(name, val);
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 

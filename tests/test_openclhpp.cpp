@@ -1546,6 +1546,11 @@ void testKernelSetExecInfo()
                                         CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,
                                         sizeof(cl_bool), &val, CL_SUCCESS);
     kernelPool[0].setExecInfo(CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM, val);
+    // Also test the typesafe version
+    clSetKernelExecInfo_ExpectAndReturn(make_kernel(0),
+                                        CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,
+                                        sizeof(cl_bool), &val, CL_SUCCESS);
+    kernelPool[0].setExecInfo<CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM>(val);
 #endif
 }
 
