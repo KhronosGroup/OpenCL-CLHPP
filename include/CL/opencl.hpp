@@ -6795,6 +6795,7 @@ public:
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 220
+#if defined(CL_USE_DEPRECATED_OPENCL_2_2_APIS)
     /*! \brief Registers a callback function to be called when destructors for
      *         program scope global variables are complete and before the
      *         program is released.
@@ -6805,9 +6806,9 @@ public:
      *  on a callback stack associated with program. The registered user callback
      *  functions are called in the reverse order in which they were registered.
      */
-    cl_int setReleaseCallback(
+    CL_EXT_PREFIX__VERSION_2_2_DEPRECATED cl_int setReleaseCallback(
         void (CL_CALLBACK * pfn_notify)(cl_program program, void * user_data),
-        void * user_data = NULL)
+        void * user_data = NULL) CL_EXT_SUFFIX__VERSION_2_2_DEPRECATED
     {
         return detail::errHandler(
             ::clSetProgramReleaseCallback(
@@ -6816,6 +6817,7 @@ public:
                 user_data),
             __SET_PROGRAM_RELEASE_CALLBACK_ERR);
     }
+#endif // #if defined(CL_USE_DEPRECATED_OPENCL_2_2_APIS)
 
     /*! \brief Sets a SPIR-V specialization constant.
      *
