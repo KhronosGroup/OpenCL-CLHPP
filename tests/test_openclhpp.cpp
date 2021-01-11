@@ -601,6 +601,35 @@ void testContextFromType()
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 }
 
+static cl_context clCreateContext_testContextNonNullProperties(
+    const cl_context_properties* properties,
+    cl_uint num_devices,
+    const cl_device_id* devices,
+    void  (CL_CALLBACK *pfn_notify) (const char *errinfo, const void  *private_info, size_t  cb, void  *user_data),
+    void  *user_data,
+    cl_int  *errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_NOT_NULL(properties);
+    TEST_ASSERT_EQUAL(1, num_devices);
+    TEST_ASSERT_EQUAL(make_device_id(0), devices[0]);
+    return make_context(0);
+}
+
+void testContextNonNullProperties()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clCreateContext_StubWithCallback(clCreateContext_testContextNonNullProperties);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    const cl_context_properties props[] = { 0 };
+    cl_device_id device = make_device_id(0);
+
+    cl::Context context(cl::Device(device), props);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context());
+}
+
 /****************************************************************************
  * Tests for cl::CommandQueue
  ****************************************************************************/

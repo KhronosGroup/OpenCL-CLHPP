@@ -2851,7 +2851,7 @@ public:
      */
     Context(
         const vector<Device>& devices,
-        cl_context_properties* properties = NULL,
+        const cl_context_properties* properties = NULL,
         void (CL_CALLBACK * notifyFptr)(
             const char *,
             const void *,
@@ -2886,7 +2886,7 @@ public:
      */
     Context(
         const Device& device,
-        cl_context_properties* properties = NULL,
+        const cl_context_properties* properties = NULL,
         void (CL_CALLBACK * notifyFptr)(
             const char *,
             const void *,
@@ -2916,7 +2916,7 @@ public:
      */
     Context(
         cl_device_type type,
-        cl_context_properties* properties = NULL,
+        const cl_context_properties* properties = NULL,
         void (CL_CALLBACK * notifyFptr)(
             const char *,
             const void *,
