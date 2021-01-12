@@ -623,8 +623,10 @@ static cl_context clCreateContext_testContextNonNullProperties(
     int num_calls)
 {
     TEST_ASSERT_NOT_NULL(properties);
-    TEST_ASSERT_EQUAL(1, num_devices);
-    TEST_ASSERT_EQUAL(make_device_id(0), devices[0]);
+    TEST_ASSERT_GREATER_THAN(0, num_devices);
+    for (int i = 0; i < num_devices; i++) {
+        TEST_ASSERT_EQUAL(make_device_id(i), devices[i]);
+    }
     return make_context(0);
 }
 
@@ -637,9 +639,25 @@ void testContextWithDeviceNonNullProperties()
 
     const cl_context_properties props[] = {
         CL_CONTEXT_PLATFORM, (cl_context_properties)make_platform_id(0), 0 };
-    cl_device_id device = make_device_id(0);
+    cl::Device device = cl::Device(make_device_id(0));
 
-    cl::Context context(cl::Device(device), props);
+    cl::Context context(device, props);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context());
+}
+
+void testContextWithDevicesNonNullProperties()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clCreateContext_StubWithCallback(clCreateContext_testContextNonNullProperties);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    const cl_context_properties props[] = {
+        CL_CONTEXT_PLATFORM, (cl_context_properties)make_platform_id(0), 0 };
+    cl::Device device0 = cl::Device(make_device_id(0));
+    cl::Device device1 = cl::Device(make_device_id(1));
+
+    cl::Context context({device0, device1}, props);
     TEST_ASSERT_EQUAL_PTR(make_context(0), context());
 }
 
