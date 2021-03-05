@@ -2097,6 +2097,9 @@ struct ImageFormat : public cl_image_format
         image_channel_data_type = type;
     }
 
+    //! \brief Copy constructor.
+    ImageFormat(const ImageFormat &other) { *this = other; }
+
     //! \brief Assignment operator.
     ImageFormat& operator = (const ImageFormat& rhs)
     {
