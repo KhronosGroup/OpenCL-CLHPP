@@ -4478,12 +4478,11 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc =
-        {
-            CL_MEM_OBJECT_IMAGE1D,
-            width,
-            0, 0, 0, 0, 0, 0, 0, 0
-        };
+
+        cl_image_desc desc = {0};
+        desc.image_type = CL_MEM_OBJECT_IMAGE1D;
+        desc.image_width = width;
+
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -4566,13 +4565,12 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc =
-        {
-            CL_MEM_OBJECT_IMAGE1D_BUFFER,
-            width,
-            0, 0, 0, 0, 0, 0, 0,
-            buffer()
-        };
+
+        cl_image_desc desc = {0};
+        desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+        desc.image_width = width;
+        desc.buffer = buffer();
+
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -4652,15 +4650,13 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc =
-        {
-            CL_MEM_OBJECT_IMAGE1D_ARRAY,
-            width,
-            0, 0,  // height, depth (unused)
-            arraySize,
-            rowPitch,
-            0, 0, 0, 0
-        };
+
+        cl_image_desc desc = {0};
+        desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
+        desc.image_width = width;
+        desc.image_array_size = arraySize;
+        desc.image_row_pitch = rowPitch;
+
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -4767,15 +4763,12 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         if (useCreateImage)
         {
-            cl_image_desc desc =
-            {
-                CL_MEM_OBJECT_IMAGE2D,
-                width,
-                height,
-                0, 0, // depth, array size (unused)
-                row_pitch,
-                0, 0, 0, 0
-            };
+            cl_image_desc desc = {0};
+            desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+            desc.image_width = width;
+            desc.image_height = height;
+            desc.image_row_pitch = row_pitch;
+
             object_ = ::clCreateImage(
                 context(),
                 flags,
@@ -4821,17 +4814,13 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc =
-        {
-            CL_MEM_OBJECT_IMAGE2D,
-            width,
-            height,
-            0, 0, // depth, array size (unused)
-            row_pitch,
-            0, 0, 0,
-            // Use buffer as input to image
-            sourceBuffer()
-        };
+        cl_image_desc desc = {0};
+        desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+        desc.image_width = width;
+        desc.image_height = height;
+        desc.image_row_pitch = row_pitch;
+        desc.buffer = sourceBuffer();
+
         object_ = ::clCreateImage(
             context(),
             0, // flags inherited from buffer
@@ -4885,19 +4874,16 @@ public:
         // Update only the channel order. 
         // Channel format inherited from source.
         sourceFormat.image_channel_order = order;
-        cl_image_desc desc =
-        {
-            CL_MEM_OBJECT_IMAGE2D,
-            sourceWidth,
-            sourceHeight,
-            0, 0, // depth (unused), array size (unused)
-            sourceRowPitch,
-            0, // slice pitch (unused)
-            sourceNumMIPLevels,
-            sourceNumSamples,
-            // Use buffer as input to image
-            sourceImage()
-        };
+
+        cl_image_desc desc = {0};
+        desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+        desc.image_width = sourceWidth;
+        desc.image_height = sourceHeight;
+        desc.image_row_pitch = sourceRowPitch;
+        desc.num_mip_levels = sourceNumMIPLevels;
+        desc.num_samples = sourceNumSamples;
+        desc.buffer = sourceImage();
+
         object_ = ::clCreateImage(
             context(),
             0, // flags should be inherited from mem_object
@@ -5083,17 +5069,15 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        cl_image_desc desc =
-        {
-            CL_MEM_OBJECT_IMAGE2D_ARRAY,
-            width,
-            height,
-            0,       // depth (unused)
-            arraySize,
-            rowPitch,
-            slicePitch,
-            0, 0, 0
-        };
+
+        cl_image_desc desc = {0};
+        desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
+        desc.image_width = width;
+        desc.image_height = height;
+        desc.image_array_size = arraySize;
+        desc.image_row_pitch = rowPitch;
+        desc.image_slice_pitch = slicePitch;
+
         object_ = ::clCreateImage(
             context(), 
             flags, 
@@ -5198,17 +5182,14 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         if (useCreateImage)
         {
-            cl_image_desc desc =
-            {
-                CL_MEM_OBJECT_IMAGE3D,
-                width,
-                height,
-                depth,
-                0,      // array size (unused)
-                row_pitch,
-                slice_pitch,
-                0, 0, 0
-            };
+            cl_image_desc desc = {0};
+            desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+            desc.image_width = width;
+            desc.image_height = height;
+            desc.image_depth = depth;
+            desc.image_row_pitch = row_pitch;
+            desc.image_slice_pitch = slice_pitch;
+
             object_ = ::clCreateImage(
                 context(), 
                 flags, 
