@@ -1317,14 +1317,20 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_kernel_arg_info, CL_KERNEL_ARG_NAME, string) \
     F(cl_kernel_arg_info, CL_KERNEL_ARG_TYPE_QUALIFIER, cl_kernel_arg_type_qualifier) \
     \
+    F(cl_kernel_work_group_info, CL_KERNEL_GLOBAL_WORK_SIZE, cl::detail::size_t_array) \
+    \
+    F(cl_device_info, CL_DEVICE_LINKER_AVAILABLE, cl_bool) \
+    F(cl_device_info, CL_DEVICE_IMAGE_MAX_BUFFER_SIZE, size_type) \
+    F(cl_device_info, CL_DEVICE_IMAGE_MAX_ARRAY_SIZE, size_type) \
     F(cl_device_info, CL_DEVICE_PARENT_DEVICE, cl::Device) \
     F(cl_device_info, CL_DEVICE_PARTITION_MAX_SUB_DEVICES, cl_uint) \
     F(cl_device_info, CL_DEVICE_PARTITION_PROPERTIES, cl::vector<cl_device_partition_property>) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPE, cl::vector<cl_device_partition_property>)  \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT, cl_uint) \
-    F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, size_type) \
+    F(cl_device_info, CL_DEVICE_PREFERRED_INTEROP_USER_SYNC, cl_bool) \
     F(cl_device_info, CL_DEVICE_PARTITION_AFFINITY_DOMAIN, cl_device_affinity_domain) \
     F(cl_device_info, CL_DEVICE_BUILT_IN_KERNELS, string) \
+    F(cl_device_info, CL_DEVICE_PRINTF_BUFFER_SIZE, size_type) \
     \
     F(cl_image_info, CL_IMAGE_ARRAY_SIZE, size_type) \
     F(cl_image_info, CL_IMAGE_NUM_MIP_LEVELS, cl_uint) \
@@ -1344,6 +1350,11 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT, cl_uint) \
+    F(cl_device_info, CL_DEVICE_IMAGE_PITCH_ALIGNMENT, cl_uint) \
+    F(cl_device_info, CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT, cl_uint) \
+    F(cl_device_info, CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS, cl_uint ) \
+    F(cl_device_info, CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE, size_type ) \
+    F(cl_device_info, CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE, size_type ) \
     F(cl_profiling_info, CL_PROFILING_COMMAND_COMPLETE, cl_ulong) \
     F(cl_kernel_exec_info, CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM, cl_bool) \
     F(cl_kernel_exec_info, CL_KERNEL_EXEC_INFO_SVM_PTRS, void**) \
@@ -1364,15 +1375,15 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 #define CL_HPP_PARAM_NAME_INFO_2_1_(F) \
     F(cl_platform_info, CL_PLATFORM_HOST_TIMER_RESOLUTION, size_type) \
     F(cl_program_info, CL_PROGRAM_IL, cl::vector<unsigned char>) \
-    F(cl_kernel_info, CL_KERNEL_MAX_NUM_SUB_GROUPS, size_type) \
-    F(cl_kernel_info, CL_KERNEL_COMPILE_NUM_SUB_GROUPS, size_type) \
     F(cl_device_info, CL_DEVICE_MAX_NUM_SUB_GROUPS, cl_uint) \
     F(cl_device_info, CL_DEVICE_IL_VERSION, string) \
     F(cl_device_info, CL_DEVICE_SUB_GROUP_INDEPENDENT_FORWARD_PROGRESS, cl_bool) \
     F(cl_command_queue_info, CL_QUEUE_DEVICE_DEFAULT, cl::DeviceCommandQueue) \
     F(cl_kernel_sub_group_info, CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE, size_type) \
     F(cl_kernel_sub_group_info, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE, size_type) \
-    F(cl_kernel_sub_group_info, CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT, cl::detail::size_t_array)
+    F(cl_kernel_sub_group_info, CL_KERNEL_LOCAL_SIZE_FOR_SUB_GROUP_COUNT, cl::detail::size_t_array) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_MAX_NUM_SUB_GROUPS, size_type) \
+    F(cl_kernel_sub_group_info, CL_KERNEL_COMPILE_NUM_SUB_GROUPS, size_type)
 
 #define CL_HPP_PARAM_NAME_INFO_2_2_(F) \
     F(cl_program_info, CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT, cl_bool) \
