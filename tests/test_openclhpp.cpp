@@ -2873,5 +2873,142 @@ void testDeviceExtendedVersioning_KHR()
 #endif // CL_HPP_TARGET_OPENCL_VERSION < 300
 }
 
+static cl_int clGetDeviceInfo_uuid_pci_bus_info(
+    cl_device_id id,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    switch (param_name) {
+#if defined(cl_khr_device_uuid)
+    case CL_DEVICE_UUID_KHR:
+    case CL_DRIVER_UUID_KHR:
+    {
+        if (param_value_size == CL_UUID_SIZE_KHR && param_value) {
+            cl_uchar* pUUID = static_cast<cl_uchar*>(param_value);
+            cl_uchar start =
+                (param_name == CL_DEVICE_UUID_KHR) ? 1 :
+                (param_name == CL_DRIVER_UUID_KHR) ? 2 :
+                0;
+            for (int i = 0; i < CL_UUID_SIZE_KHR; i++) {
+                pUUID[i] = i + start;
+            }
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = CL_UUID_SIZE_KHR;
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_LUID_VALID_KHR:
+    {
+        if (param_value_size == sizeof(cl_bool) && param_value) {
+            *static_cast<cl_bool*>(param_value) = CL_TRUE;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(cl_bool);
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_LUID_KHR:
+    {
+        if (param_value_size == CL_LUID_SIZE_KHR && param_value) {
+            cl_uchar* pLUID = static_cast<cl_uchar*>(param_value);
+            cl_uchar start = 3;
+            for (int i = 0; i < CL_LUID_SIZE_KHR; i++) {
+                pLUID[i] = i + start;
+            }
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = CL_LUID_SIZE_KHR;
+        }
+        return CL_SUCCESS;
+    }
+    case CL_DEVICE_NODE_MASK_KHR:
+    {
+        if (param_value_size == sizeof(cl_uint) && param_value) {
+            *static_cast<cl_uint*>(param_value) = 0xA5A5;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(cl_uint);
+        }
+        return CL_SUCCESS;
+    }
+#endif
+#if defined(cl_khr_pci_bus_info)
+    case CL_DEVICE_PCI_BUS_INFO_KHR:
+    {
+        if (param_value_size == sizeof(cl_device_pci_bus_info_khr) && param_value) {
+            cl_device_pci_bus_info_khr* pInfo = static_cast<cl_device_pci_bus_info_khr*>(param_value);
+            pInfo->pci_domain = 0x11;
+            pInfo->pci_bus = 0x22;
+            pInfo->pci_device = 0x33;
+            pInfo->pci_function = 0x44;
+        }
+        if (param_value_size_ret) {
+            *param_value_size_ret = sizeof(cl_device_pci_bus_info_khr);
+        }
+        return CL_SUCCESS;
+    }
+#endif
+    default: break;
+    }
+    TEST_FAIL();
+    return CL_INVALID_OPERATION;
+}
+
+void testDeviceUUID_KHR()
+{
+#if defined(cl_khr_device_uuid)
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_uuid_pci_bus_info);
+
+    std::array<cl_uchar, CL_UUID_SIZE_KHR> dev_uuid = d0.getInfo<CL_DEVICE_UUID_KHR>();
+    for (int i = 0; i < CL_UUID_SIZE_KHR; i++) {
+        TEST_ASSERT_EQUAL_UINT8(i + 1, dev_uuid[i]);
+    }
+    std::array<cl_uchar, CL_UUID_SIZE_KHR> drv_uuid = d0.getInfo<CL_DRIVER_UUID_KHR>();
+    for (int i = 0; i < CL_UUID_SIZE_KHR; i++) {
+        TEST_ASSERT_EQUAL_UINT8(i + 2, drv_uuid[i]);
+    }
+
+    cl_bool valid = d0.getInfo<CL_DEVICE_LUID_VALID_KHR>();
+    TEST_ASSERT_EQUAL(CL_TRUE, valid);
+    std::array<cl_uchar, CL_LUID_SIZE_KHR> luid = d0.getInfo<CL_DEVICE_LUID_KHR>();
+    for (int i = 0; i < CL_LUID_SIZE_KHR; i++) {
+        TEST_ASSERT_EQUAL_UINT8(i + 3, luid[i]);
+    }
+
+    cl_uint nodeMask = d0.getInfo<CL_DEVICE_NODE_MASK_KHR>();
+    TEST_ASSERT_EQUAL(0xA5A5, nodeMask);
+#endif
+}
+
+void testDevicePCIBusInfo_KHR()
+{
+#if defined(cl_khr_pci_bus_info)
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device d0(make_device_id(0));
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_uuid_pci_bus_info);
+
+    cl_device_pci_bus_info_khr info = d0.getInfo<CL_DEVICE_PCI_BUS_INFO_KHR>();
+    TEST_ASSERT_EQUAL_HEX(0x11, info.pci_domain);
+    TEST_ASSERT_EQUAL_HEX(0x22, info.pci_bus);
+    TEST_ASSERT_EQUAL_HEX(0x33, info.pci_device);
+    TEST_ASSERT_EQUAL_HEX(0x44, info.pci_function);
+#endif
+}
+
 
 } // extern "C"
