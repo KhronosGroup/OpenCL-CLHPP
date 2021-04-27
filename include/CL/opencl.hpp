@@ -1373,7 +1373,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_IL_KHR, cl::vector<unsigned char>)
 
 #define CL_HPP_PARAM_NAME_INFO_2_1_(F) \
-    F(cl_platform_info, CL_PLATFORM_HOST_TIMER_RESOLUTION, size_type) \
+    F(cl_platform_info, CL_PLATFORM_HOST_TIMER_RESOLUTION, cl_ulong) \
     F(cl_program_info, CL_PROGRAM_IL, cl::vector<unsigned char>) \
     F(cl_device_info, CL_DEVICE_MAX_NUM_SUB_GROUPS, cl_uint) \
     F(cl_device_info, CL_DEVICE_IL_VERSION, string) \
