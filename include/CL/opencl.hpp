@@ -6426,7 +6426,7 @@ public:
 
         return detail::errHandler(
             pfn_clCreateProgramWithILKHR(
-                context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+                context(), static_cast<const void*>(IL.data()), IL.size(), &error));
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
@@ -6480,7 +6480,7 @@ public:
 
         return detail::errHandler(
             pfn_clCreateProgramWithILKHR(
-            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+            context(), static_cast<const void*>(IL.data()), IL.size(), &error));
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
