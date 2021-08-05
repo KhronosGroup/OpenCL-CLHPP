@@ -1,5 +1,4 @@
 #define CL_HPP_UNIT_TEST_ENABLE
-#define CL_HPP_USE_CL_SUB_GROUPS_KHR
 
 // We want to support all versions
 #define CL_HPP_MINIMUM_OPENCL_VERSION 100
@@ -571,6 +570,8 @@ static cl_context clCreateContextFromType_testContextFromType(
     TEST_ASSERT_EQUAL(CL_CONTEXT_PLATFORM, properties[0]);
     TEST_ASSERT_EQUAL(make_platform_id(1), properties[1]);
 #endif
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
     return make_context(0);
 }
 
@@ -627,6 +628,8 @@ static cl_context clCreateContext_testContextNonNullProperties(
     for (int i = 0; i < num_devices; i++) {
         TEST_ASSERT_EQUAL(make_device_id(i), devices[i]);
     }
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
     return make_context(0);
 }
 
@@ -769,6 +772,8 @@ static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContex
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT(properties == 0);
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
 
@@ -786,6 +791,8 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromS
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT(properties[0] == CL_QUEUE_PROPERTIES);
     TEST_ASSERT(properties[1] == 0);
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -1080,7 +1087,7 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
     TEST_ASSERT_NULL(host_ptr);
     if (errcode_ret)
-        errcode_ret = CL_SUCCESS;
+        *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
 
@@ -1302,6 +1309,9 @@ cl_mem clCreateImage_image1dbuffer(
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE1D_BUFFER, image_desc->image_type);
+
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
 
     // Return the passed buffer as the cl_mem
     return image_desc->buffer;
@@ -2204,6 +2214,9 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
     TEST_ASSERT_EQUAL(properties[0], CL_QUEUE_PROPERTIES);
     static cl_command_queue default_ = 0;
 
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
+
     if ((properties[1] & CL_QUEUE_ON_DEVICE_DEFAULT) == 0) {
         TEST_ASSERT_EQUAL(properties[1], (CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_ON_DEVICE));
         if (properties[2] == CL_QUEUE_SIZE) {
@@ -2426,13 +2439,14 @@ void testBuiltInKernels()
  */
 static cl_kernel clCloneKernel_simplecopy(
     cl_kernel k,
-    cl_int *err,
+    cl_int *errcode_ret,
     int num_calls)
 {
     // Test to verify case where empty string is returned - so size is 0
     (void)num_calls;
+    if (errcode_ret != NULL)
+        *errcode_ret = CL_SUCCESS;
     return make_kernel(POOL_MAX);
-    return CL_SUCCESS;
 }
 
 void testCloneKernel()
