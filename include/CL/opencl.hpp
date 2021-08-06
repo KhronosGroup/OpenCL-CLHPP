@@ -6424,9 +6424,8 @@ public:
         static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
 
-        return detail::errHandler(
-            pfn_clCreateProgramWithILKHR(
-                context(), static_cast<const void*>(IL.data()), IL.size(), &error));
+        object_ = pfn_clCreateProgramWithILKHR(
+                context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
@@ -6478,9 +6477,8 @@ public:
         static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
 
-        return detail::errHandler(
-            pfn_clCreateProgramWithILKHR(
-            context(), static_cast<const void*>(IL.data()), IL.size(), &error));
+        object_ = pfn_clCreateProgramWithILKHR(
+            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
