@@ -9320,7 +9320,7 @@ inline cl_int enqueueMapSVM(
  */
 template<typename T, class D>
 inline cl_int enqueueMapSVM(
-    cl::pointer<T, D> ptr,
+    cl::pointer<T, D> &ptr,
     cl_bool blocking,
     cl_map_flags flags,
     size_type size,
@@ -9344,7 +9344,7 @@ inline cl_int enqueueMapSVM(
  */
 template<typename T, class Alloc>
 inline cl_int enqueueMapSVM(
-    cl::vector<T, Alloc> container,
+    cl::vector<T, Alloc> &container,
     cl_bool blocking,
     cl_map_flags flags,
     const vector<Event>* events = NULL,

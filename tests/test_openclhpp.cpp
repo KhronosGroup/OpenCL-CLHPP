@@ -2454,6 +2454,17 @@ void testEnqueueMapSVM()
 #endif
 }
 
+void testMapSVM()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    std::vector<int> vec(1);
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clEnqueueSVMMap_ExpectAndReturn(make_command_queue(1), CL_TRUE, CL_MAP_READ|CL_MAP_WRITE, static_cast<void*>(vec.data()), vec.size()*sizeof(int), 0, NULL, NULL, CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    TEST_ASSERT_EQUAL(cl::mapSVM(vec), CL_SUCCESS);
+#endif
+}
+
 // Run after other tests to clear the default state in the header
 // using special unit test bypasses.
 // We cannot remove the once_flag, so this is a hard fix
