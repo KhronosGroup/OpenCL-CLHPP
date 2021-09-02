@@ -58,11 +58,22 @@ set(TEST_SOURCES
 
 # TODO enable testing for OpenCL 1.0 and 1.1
 foreach(VERSION 120 200 210 220 300)
-  set(TEST_EXE test_openclhpp_${VERSION})
-  add_executable(${TEST_EXE} ${TEST_SOURCES} ${TEST_HEADERS})
-  target_compile_definitions(${TEST_EXE}
-	  PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION}
-  )
-  add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
+  foreach(OPTION "" CL_HPP_ENABLE_DEVICE_FISSION CL_HPP_ENABLE_EXCEPTIONS CL_HPP_ENABLE_SIZE_T_COMPATIBILITY CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY CL_HPP_CL_1_2_DEFAULT_BUILD CL_HPP_USE_CL_SUB_GROUPS_KHR CL_HPP_USE_IL_KHR)
+    if(OPTION STREQUAL "")
+      # The empty string means we're not setting any special option.
+      set(UNDERSCORE_OPTION "${OPTION}")
+      set(DEFINE_OPTION "")
+    else()
+      set(UNDERSCORE_OPTION "_${OPTION}")
+      set(DEFINE_OPTION "-D${OPTION}")
+    endif()
+
+    set(TEST_EXE test_openclhpp_${VERSION}${UNDERSCORE_OPTION})
+    add_executable(${TEST_EXE} ${TEST_SOURCES} ${TEST_HEADERS})
+    target_compile_definitions(${TEST_EXE}
+        PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
+    )
+    add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
+  endforeach(OPTION)
 endforeach(VERSION)
 

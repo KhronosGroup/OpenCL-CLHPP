@@ -31,7 +31,7 @@ Components:
     installation.
 
 To get external dependencies needed for testing, use `--recursive` when cloning
-the repository, or run `git submodule update --init`.
+the repository, or run `git submodule update --init --recursive`.
 
 You may need to tell CMake where to find the OpenCL headers and libraries,
 using the variables `OPENCL_INCLUDE_DIR` and `OPENCL_LIB_DIR`.
