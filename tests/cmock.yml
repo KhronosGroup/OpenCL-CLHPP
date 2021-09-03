@@ -7,3 +7,5 @@
     - CL_API_CALL
   :plugins:
     - :callback
+  :treat_as:
+    'void*': 'PTR'
