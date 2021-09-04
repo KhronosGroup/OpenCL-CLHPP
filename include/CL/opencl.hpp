@@ -33,8 +33,6 @@
  *
  *   Optional extension support
  *
- *         cl_ext_device_fission
- *         #define CL_HPP_USE_CL_DEVICE_FISSION
  *         cl_khr_d3d10_sharing
  *         #define CL_HPP_USE_DX_INTEROP
  *         cl_khr_sub_groups
@@ -404,10 +402,6 @@
 # pragma message("opencl.hpp: USE_DX_INTEROP is deprecated. Define CL_HPP_USE_DX_INTEROP instead")
 # define CL_HPP_USE_DX_INTEROP
 #endif
-#if !defined(CL_HPP_USE_CL_DEVICE_FISSION) && defined(USE_CL_DEVICE_FISSION)
-# pragma message("opencl.hpp: USE_CL_DEVICE_FISSION is deprecated. Define CL_HPP_USE_CL_DEVICE_FISSION instead")
-# define CL_HPP_USE_CL_DEVICE_FISSION
-#endif
 #if !defined(CL_HPP_ENABLE_EXCEPTIONS) && defined(__CL_ENABLE_EXCEPTIONS)
 # pragma message("opencl.hpp: __CL_ENABLE_EXCEPTIONS is deprecated. Define CL_HPP_ENABLE_EXCEPTIONS instead")
 # define CL_HPP_ENABLE_EXCEPTIONS
@@ -525,11 +519,6 @@
 // updated in visual studio
 #if (!defined(_MSC_VER) && __cplusplus < 201103L) || (defined(_MSC_VER) && _MSC_VER < 1700)
 #error Visual studio 2013 or another C++11-supporting compiler required
-#endif
-
-// 
-#if defined(CL_HPP_USE_CL_DEVICE_FISSION) || defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)
-#include <CL/cl_ext.h>
 #endif
 
 #if defined(__APPLE__) || defined(__MACOSX)
@@ -1397,8 +1386,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT, cl_bool) \
     F(cl_program_info, CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT, cl_bool)
 
-#define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
-    F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
+#define CL_HPP_PARAM_NAME_DEVICE_FISSION_EXT_(F) \
+    F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl::Device) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
@@ -1504,9 +1493,9 @@ CL_HPP_PARAM_NAME_INFO_1_1_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_1_2_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
 
-#if defined(CL_HPP_USE_CL_DEVICE_FISSION)
-CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
-#endif // CL_HPP_USE_CL_DEVICE_FISSION
+#if defined(cl_ext_device_fission)
+CL_HPP_PARAM_NAME_DEVICE_FISSION_EXT_(CL_HPP_DECLARE_PARAM_TRAITS_);
+#endif // cl_ext_device_fission
 
 #if defined(cl_khr_extended_versioning)
 #if CL_HPP_TARGET_OPENCL_VERSION < 300
@@ -2294,7 +2283,6 @@ public:
         return param;
     }
 
-
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Return the current value of the host clock as seen by the device.
@@ -2341,9 +2329,6 @@ public:
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-    /**
-     * CL 1.2 version
-     */
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     //! \brief Wrapper for clCreateSubDevices().
     cl_int createSubDevices(
@@ -2378,11 +2363,10 @@ public:
 
         return CL_SUCCESS;
     }
-#elif defined(CL_HPP_USE_CL_DEVICE_FISSION)
+#endif
 
-/**
- * CL 1.1 version that uses device fission extension.
- */
+#if defined(cl_ext_device_fission)
+    //! \brief Wrapper for clCreateSubDevices().
     cl_int createSubDevices(
         const cl_device_partition_property_ext * properties,
         vector<Device>* devices)
@@ -2424,7 +2408,7 @@ public:
         }
         return CL_SUCCESS;
     }
-#endif // defined(CL_HPP_USE_CL_DEVICE_FISSION)
+#endif // defined(cl_ext_device_fission)
 };
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Device::default_initialized_;
@@ -10326,10 +10310,6 @@ namespace compatibility {
 // Extensions
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_
-
-#if defined(CL_HPP_USE_CL_DEVICE_FISSION)
-#undef CL_HPP_PARAM_NAME_DEVICE_FISSION_
-#endif // CL_HPP_USE_CL_DEVICE_FISSION
 
 #undef CL_HPP_NOEXCEPT_
 #undef CL_HPP_DEFINE_STATIC_MEMBER_
