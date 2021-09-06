@@ -165,10 +165,6 @@
  *   the cl::allocate_pointer functions are not defined and may be
  *   defined by the user before opencl.hpp is included.
  *
- * - CL_HPP_ENABLE_DEVICE_FISSION
- *
- *   Enables device fission for OpenCL 1.2 platforms.
- *
  * - CL_HPP_ENABLE_EXCEPTIONS
  *
  *   Enable exceptions for use in the C++ bindings header. This is the
@@ -194,9 +190,21 @@
  *   applies to use of cl::Program construction and other program
  *   build variants.
  *
+ * - CL_HPP_USE_CL_DEVICE_FISSION
+ *
+ *   Enable the cl_ext_device_fission extension.
+ *
+ * - CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
+ *
+ *   Enable the cl_khr_image2d_from_buffer extension.
+ *
  * - CL_HPP_USE_CL_SUB_GROUPS_KHR
  *
  *   Enable the cl_khr_subgroups extension.
+ *
+ * - CL_HPP_USE_DX_INTEROP
+ *
+ *   Enable the cl_khr_d3d10_sharing extension.
  *
  * - CL_HPP_USE_IL_KHR
  *
