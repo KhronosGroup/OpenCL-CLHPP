@@ -220,6 +220,24 @@ static cl_int clGetPlatformInfo_version_2_0(
 
 /**
  * A stub for clGetPlatformInfo that will only support querying
+ * CL_PLATFORM_VERSION, and will return version 2.1.
+ */
+static cl_int clGetPlatformInfo_version_2_1(
+    cl_platform_id id,
+    cl_platform_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    return clGetPlatformInfo_version(
+        id, param_name, param_value_size, param_value,
+        param_value_size_ret, "OpenCL 2.1 Mock");
+}
+
+/**
+ * A stub for clGetPlatformInfo that will only support querying
  * CL_PLATFORM_VERSION, and will return version 3.0.
  */
 static cl_int clGetPlatformInfo_version_3_0(
@@ -2373,12 +2391,11 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     }
 }
 
-void testSubGroups()
+void testGetKernelSubGroupInfo21()
 {
-// TODO support testing cl_khr_subgroups on 2.0
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_1);
     clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
@@ -2395,6 +2412,91 @@ void testSubGroups()
 
     TEST_ASSERT_EQUAL(res1, 32);
     TEST_ASSERT_EQUAL(res2, 2);
+#endif
+}
+
+static cl_int clGetDeviceInfo_MaxNumSubGroupsNonZero(
+    cl_device_id id,
+    cl_device_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void)num_calls;
+    switch (param_name) {
+    case CL_DEVICE_PLATFORM:
+        if (param_value != NULL) {
+            *static_cast<cl_platform_id*>(param_value) = make_platform_id(0);
+        }
+        if (param_value_size_ret != NULL) {
+            *param_value_size_ret = sizeof(cl_platform_id);
+        }
+        return CL_SUCCESS;
+    case CL_DEVICE_MAX_NUM_SUB_GROUPS:
+        TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_uint));
+        TEST_ASSERT_NOT_EQUAL(param_value, NULL);
+        if (param_value != NULL) {
+            *static_cast<cl_uint*>(param_value) = 4;
+        }
+        if (param_value_size_ret != NULL) {
+            *param_value_size_ret = sizeof(cl_uint);
+        }
+        return CL_SUCCESS;
+    default: break;
+    }
+    TEST_FAIL();
+    return CL_INVALID_OPERATION;
+}
+
+void testGetKernelSubGroupInfo30()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_MaxNumSubGroupsNonZero);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+    clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+
+    cl::Kernel k(make_kernel(0));
+    cl::Device d(make_device_id(0));
+    cl_int err;
+    cl::NDRange ndrange(8, 8);
+    size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
+        d, ndrange, &err);
+    size_t res2 = 0;
+    err = k.getSubGroupInfo(
+        d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+
+    TEST_ASSERT_EQUAL(res1, 32);
+    TEST_ASSERT_EQUAL(res2, 2);
+#endif
+}
+
+void testGetKernelSubGroupInfoTryKHR()
+{
+// Because this test generates an error it does not work with exceptions enabled
+#if !defined(CL_HPP_ENABLE_EXCEPTIONS)
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#if defined(cl_khr_subgroups)
+    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", NULL);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", NULL);
+#endif
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+
+    cl::Kernel k(make_kernel(0));
+    cl::Device d(make_device_id(0));
+    cl_int err;
+    cl::NDRange ndrange(8, 8);
+    size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
+        d, ndrange, &err);
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+    size_t res2 = 0;
+    err = k.getSubGroupInfo(
+        d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
 #endif
 }
 
@@ -3034,6 +3136,5 @@ void testDevicePCIBusInfo_KHR()
     TEST_ASSERT_EQUAL_HEX(0x44, info.pci_function);
 #endif
 }
-
 
 } // extern "C"

@@ -35,8 +35,6 @@
  *
  *         cl_khr_d3d10_sharing
  *         #define CL_HPP_USE_DX_INTEROP
- *         cl_khr_sub_groups
- *         #define CL_HPP_USE_CL_SUB_GROUPS_KHR
  *         cl_khr_image2d_from_buffer
  *         #define CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
  *
@@ -187,22 +185,6 @@
  *   Default to OpenCL C 1.2 compilation rather than OpenCL C 2.0
  *   applies to use of cl::Program construction and other program
  *   build variants.
- *
- * - CL_HPP_USE_CL_DEVICE_FISSION
- *
- *   Enable the cl_ext_device_fission extension.
- *
- * - CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
- *
- *   Enable the cl_khr_image2d_from_buffer extension.
- *
- * - CL_HPP_USE_CL_SUB_GROUPS_KHR
- *
- *   Enable the cl_khr_subgroups extension.
- *
- * - CL_HPP_USE_DX_INTEROP
- *
- *   Enable the cl_khr_d3d10_sharing extension.
  *
  * - CL_HPP_USE_IL_KHR
  *
@@ -817,9 +799,11 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __GET_KERNEL_ARG_INFO_ERR           CL_HPP_ERR_STR_(clGetKernelArgInfo)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __GET_KERNEL_SUB_GROUP_INFO_ERR     CL_HPP_ERR_STR_(clGetKernelSubGroupInfo)
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#else
+#define __GET_KERNEL_SUB_GROUP_INFO_ERR     CL_HPP_ERR_STR_(clGetKernelSubGroupInfoKHR)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __GET_KERNEL_WORK_GROUP_INFO_ERR    CL_HPP_ERR_STR_(clGetKernelWorkGroupInfo)
 #define __GET_PROGRAM_INFO_ERR              CL_HPP_ERR_STR_(clGetProgramInfo)
 #define __GET_PROGRAM_BUILD_INFO_ERR        CL_HPP_ERR_STR_(clGetProgramBuildInfo)
@@ -1462,9 +1446,9 @@ CL_HPP_PARAM_NAME_INFO_2_2_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_3_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 
-#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
+#if defined(cl_khr_subgroups) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
+#endif // #if defined(cl_khr_subgroups) && CL_HPP_TARGET_OPENCL_VERSION < 210
 
 #if defined(CL_HPP_USE_IL_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_IL_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
@@ -6013,26 +5997,44 @@ public:
         return param;
     }
     
-#if (CL_HPP_TARGET_OPENCL_VERSION >= 200 && defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)) || CL_HPP_TARGET_OPENCL_VERSION >= 210
+#if defined(cl_khr_subgroups) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, size_type* param) const
     {
+        cl_int error = CL_INVALID_OPERATION;
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+        bool useCore = false;
+        if (error != CL_SUCCESS) {
+            // Run-time decision based on the device
+            cl_uint version = detail::getDevicePlatformVersion(dev());
+            if (version >= 0x30000) {
+                // Optional support in OpenCL 3.0 or newer
+                cl_uint maxNumSubGroups = 0;
+                clGetDeviceInfo(dev(), CL_DEVICE_MAX_NUM_SUB_GROUPS, sizeof(maxNumSubGroups), &maxNumSubGroups, nullptr);
+                useCore = (maxNumSubGroups > 0);
+            } else {
+                // Supported in OpenCL 2.1 or newer
+                useCore = (version >= 0x20001);
+            }
+            if (useCore) {
+                error = clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr);
+            }
+        }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-        return detail::errHandler(
-            clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
-            __GET_KERNEL_SUB_GROUP_INFO_ERR);
+#if defined(cl_khr_subgroups)
+        if (error != CL_SUCCESS) {
+            typedef clGetKernelSubGroupInfoKHR_fn PFN_clGetKernelSubGroupInfoKHR;
+            static PFN_clGetKernelSubGroupInfoKHR pfn_clGetKernelSubGroupInfoKHR = NULL;
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetKernelSubGroupInfoKHR);
 
-#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+            if (pfn_clGetKernelSubGroupInfoKHR) {
+                error = pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr);
+            }
+        }
+#endif // defined(cl_khr_subgroups)
 
-        typedef clGetKernelSubGroupInfoKHR_fn PFN_clGetKernelSubGroupInfoKHR;
-        static PFN_clGetKernelSubGroupInfoKHR pfn_clGetKernelSubGroupInfoKHR = NULL;
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetKernelSubGroupInfoKHR);
-
-        return detail::errHandler(
-            pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr),
-            __GET_KERNEL_SUB_GROUP_INFO_ERR);
-
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+        return detail::errHandler(error, __GET_KERNEL_SUB_GROUP_INFO_ERR);
     }
 
     template <cl_kernel_sub_group_info name>
@@ -6045,7 +6047,7 @@ public:
         }
         return param;
     }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#endif // defined(cl_khr_subgroups) || CL_HPP_TARGET_OPENCL_VERSION >= 210
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief setArg overload taking a shared_ptr type
