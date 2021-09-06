@@ -186,10 +186,6 @@
  *   applies to use of cl::Program construction and other program
  *   build variants.
  *
- * - CL_HPP_USE_IL_KHR
- *
- *   Enable the cl_khr_il_program extension.
- *
  *
  * \section example Example
  *
@@ -834,12 +830,11 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_KERNEL_ERR                 CL_HPP_ERR_STR_(clCreateKernel)
 #define __SET_KERNEL_ARGS_ERR               CL_HPP_ERR_STR_(clSetKernelArg)
 #define __CREATE_PROGRAM_WITH_SOURCE_ERR    CL_HPP_ERR_STR_(clCreateProgramWithSource)
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
-#define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithIL)
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __CREATE_PROGRAM_WITH_BINARY_ERR    CL_HPP_ERR_STR_(clCreateProgramWithBinary)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithIL)
+#else
+#define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithILKHR)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR    CL_HPP_ERR_STR_(clCreateProgramWithBuiltInKernels)
@@ -1450,9 +1445,9 @@ CL_HPP_PARAM_NAME_INFO_3_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // #if defined(cl_khr_subgroups) && CL_HPP_TARGET_OPENCL_VERSION < 210
 
-#if defined(CL_HPP_USE_IL_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
+#if defined(cl_khr_il_program) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_IL_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // #if defined(CL_HPP_USE_IL_KHR)
+#endif // #if defined(cl_khr_il_program) && CL_HPP_TARGET_OPENCL_VERSION < 210
 
 
 // Flags deprecated in OpenCL 2.0
@@ -1761,7 +1756,7 @@ static cl_uint getVersion(const vector<char> &versionInfo)
 {
     int highVersion = 0;
     int lowVersion = 0;
-    int index = 7;
+    int index = 7;  // 7 characters to skip "OpenCL "
     while(versionInfo[index] != '.' ) {
         highVersion *= 10;
         highVersion += versionInfo[index]-'0';
@@ -6005,18 +6000,9 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
         bool useCore = false;
         if (error != CL_SUCCESS) {
-            // Run-time decision based on the device
+            // Run-time decision: supported in OpenCL 2.1 or newer
             cl_uint version = detail::getDevicePlatformVersion(dev());
-            if (version >= 0x30000) {
-                // Optional support in OpenCL 3.0 or newer
-                cl_uint maxNumSubGroups = 0;
-                clGetDeviceInfo(dev(), CL_DEVICE_MAX_NUM_SUB_GROUPS, sizeof(maxNumSubGroups), &maxNumSubGroups, nullptr);
-                useCore = (maxNumSubGroups > 0);
-            } else {
-                // Supported in OpenCL 2.1 or newer
-                useCore = (version >= 0x20001);
-            }
-            if (useCore) {
+            if (version >= 0x20001) {
                 error = clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr);
             }
         }
@@ -6397,7 +6383,7 @@ public:
     }
 
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 210 || (CL_HPP_TARGET_OPENCL_VERSION==200 && defined(CL_HPP_USE_IL_KHR))
+#if defined(cl_khr_il_program) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL.
      * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
@@ -6407,25 +6393,33 @@ public:
         bool build = false,
         cl_int* err = NULL)
     {
-        cl_int error;
-
         Context context = Context::getDefault(err);
 
+        cl_int error = CL_INVALID_OPERATION;
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+        if (error != CL_SUCCESS) {
+            // Run-time decision: supported in OpenCL 2.1 or newer
+            cl_uint version = detail::getContextPlatformVersion(context());
+            if (version >= 0x20001) {
+                object_ = ::clCreateProgramWithIL(
+                    context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+            }
+        }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-        object_ = ::clCreateProgramWithIL(
-            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+#if defined(cl_khr_il_program)
+        if (error != CL_SUCCESS) {
+            typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
+            static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
 
-#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
-
-        typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
-        static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
-
-        object_ = pfn_clCreateProgramWithILKHR(
-                context(), static_cast<const void*>(IL.data()), IL.size(), &error);
-
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+            if (pfn_clCreateProgramWithILKHR) {
+                object_ = pfn_clCreateProgramWithILKHR(
+                        context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+            }
+        }
+#endif // defined(cl_khr_il_program)
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
 
@@ -6462,23 +6456,31 @@ public:
         bool build = false,
         cl_int* err = NULL)
     {
-        cl_int error;
+        cl_int error = CL_INVALID_OPERATION;
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+        if (error != CL_SUCCESS) {
+            // Run-time decision: supported in OpenCL 2.1 or newer
+            cl_uint version = detail::getContextPlatformVersion(context());
+            if (version >= 0x20001) {
+                object_ = ::clCreateProgramWithIL(
+                    context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+            }
+        }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-        object_ = ::clCreateProgramWithIL(
-            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+#if defined(cl_khr_il_program)
+        if (error != CL_SUCCESS) {
+            typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
+            static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
 
-#else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
-
-        typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
-        static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
-
-        object_ = pfn_clCreateProgramWithILKHR(
-            context(), static_cast<const void*>(IL.data()), IL.size(), &error);
-
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+            if (pfn_clCreateProgramWithILKHR) {
+                object_ = pfn_clCreateProgramWithILKHR(
+                        context(), static_cast<const void*>(IL.data()), IL.size(), &error);
+            }
+        }
+#endif // defined(cl_khr_il_program)
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
 
@@ -6502,7 +6504,8 @@ public:
             *err = error;
         }
     }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+#endif // #if defined(cl_khr_il_program) || CL_HPP_TARGET_OPENCL_VERSION >= 210
+
 
     /**
      * Construct a program object from a list of devices and a per-device list of binaries.
@@ -10248,7 +10251,6 @@ namespace compatibility {
 #undef __CREATE_KERNEL_ERR                 
 #undef __SET_KERNEL_ARGS_ERR               
 #undef __CREATE_PROGRAM_WITH_SOURCE_ERR    
-#undef __CREATE_PROGRAM_WITH_IL_ERR        
 #undef __CREATE_PROGRAM_WITH_BINARY_ERR    
 #undef __CREATE_PROGRAM_WITH_IL_ERR        
 #undef __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR    

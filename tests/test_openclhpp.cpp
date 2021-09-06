@@ -1773,6 +1773,71 @@ void testCopyHostToBuffer()
 }
 
 /****************************************************************************
+* Tests for creating Programs
+****************************************************************************/
+
+static cl_program clCreateProgramWithIL_testCreate(
+    cl_context context,
+    const void* il,
+    size_t length,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(context, make_context(0));
+    TEST_ASSERT_NOT_EQUAL(il, nullptr);
+    TEST_ASSERT_EQUAL(length, 128);
+    if (errcode_ret != NULL) {
+        *errcode_ret = CL_SUCCESS;
+    }
+    return make_program(0);
+}
+
+void testCreateProgramWithIL21()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+    std::vector<char> il(128);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_1);
+    clCreateProgramWithIL_StubWithCallback(clCreateProgramWithIL_testCreate);
+    clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context context(make_context(0));
+
+    cl_int err = CL_INVALID_OPERATION;
+    cl::Program program(context, il, false, &err);
+
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+#endif
+}
+
+void testCreateProgramWithILTryKHR()
+{
+// Because this test generates an error it does not work with exceptions enabled
+#if !defined(CL_HPP_ENABLE_EXCEPTIONS)
+    std::vector<char> il(128);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#if defined(cl_khr_il_program)
+    clGetExtensionFunctionAddress_ExpectAndReturn("clCreateProgramWithILKHR", NULL);
+#endif
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context context(make_context(0));
+
+    cl_int err = CL_INVALID_OPERATION;
+    cl::Program program(context, il, false, &err);
+
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
+}
+
+
+/****************************************************************************
 * Tests for building Programs
 ****************************************************************************/
 
@@ -2396,64 +2461,6 @@ void testGetKernelSubGroupInfo21()
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_1);
-    clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
-    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
-    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
-
-    cl::Kernel k(make_kernel(0));
-    cl::Device d(make_device_id(0));
-    cl_int err;
-    cl::NDRange ndrange(8, 8);
-    size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
-        d, ndrange, &err);
-    size_t res2 = 0;
-    err = k.getSubGroupInfo(
-        d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
-
-    TEST_ASSERT_EQUAL(res1, 32);
-    TEST_ASSERT_EQUAL(res2, 2);
-#endif
-}
-
-static cl_int clGetDeviceInfo_MaxNumSubGroupsNonZero(
-    cl_device_id id,
-    cl_device_info param_name,
-    size_t param_value_size,
-    void *param_value,
-    size_t *param_value_size_ret,
-    int num_calls)
-{
-    (void)num_calls;
-    switch (param_name) {
-    case CL_DEVICE_PLATFORM:
-        if (param_value != NULL) {
-            *static_cast<cl_platform_id*>(param_value) = make_platform_id(0);
-        }
-        if (param_value_size_ret != NULL) {
-            *param_value_size_ret = sizeof(cl_platform_id);
-        }
-        return CL_SUCCESS;
-    case CL_DEVICE_MAX_NUM_SUB_GROUPS:
-        TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_uint));
-        TEST_ASSERT_NOT_EQUAL(param_value, NULL);
-        if (param_value != NULL) {
-            *static_cast<cl_uint*>(param_value) = 4;
-        }
-        if (param_value_size_ret != NULL) {
-            *param_value_size_ret = sizeof(cl_uint);
-        }
-        return CL_SUCCESS;
-    default: break;
-    }
-    TEST_FAIL();
-    return CL_INVALID_OPERATION;
-}
-
-void testGetKernelSubGroupInfo30()
-{
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300
-    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_MaxNumSubGroupsNonZero);
-    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
     clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
