@@ -1776,12 +1776,11 @@ void testCopyHostToBuffer()
 * Tests for creating Programs
 ****************************************************************************/
 
-static cl_program clCreateProgramWithIL_testCreate(
+static cl_program clCreateProgramWithIL_func(
     cl_context context,
     const void* il,
     size_t length,
-    cl_int* errcode_ret,
-    int num_calls)
+    cl_int* errcode_ret)
 {
     TEST_ASSERT_EQUAL(context, make_context(0));
     TEST_ASSERT_NOT_EQUAL(il, nullptr);
@@ -1790,6 +1789,16 @@ static cl_program clCreateProgramWithIL_testCreate(
         *errcode_ret = CL_SUCCESS;
     }
     return make_program(0);
+}
+
+static cl_program clCreateProgramWithIL_testCreate(
+    cl_context context,
+    const void* il,
+    size_t length,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    return clCreateProgramWithIL_func(context, il, length, errcode_ret);
 }
 
 void testCreateProgramWithIL21()
@@ -1815,8 +1824,6 @@ void testCreateProgramWithIL21()
 
 void testCreateProgramWithILTryKHR()
 {
-// Because this test generates an error it does not work with exceptions enabled
-#if !defined(CL_HPP_ENABLE_EXCEPTIONS)
     std::vector<char> il(128);
 
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
@@ -1830,9 +1837,36 @@ void testCreateProgramWithILTryKHR()
     cl::Context context(make_context(0));
 
     cl_int err = CL_INVALID_OPERATION;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try {
+#endif
+        cl::Program program(context, il, false, &err);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    } catch (cl::Error& e) {
+        TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
+    }
+#endif
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+}
+
+void testCreateProgramWithILUseKHR()
+{
+#if defined(cl_khr_il_program)
+    std::vector<char> il(128);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clCreateProgramWithILKHR", clCreateProgramWithIL_func);
+    clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context context(make_context(0));
+
+    cl_int err = CL_INVALID_OPERATION;
     cl::Program program(context, il, false, &err);
 
-    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
 #endif
 }
 
@@ -2423,15 +2457,15 @@ void testCreatePipe()
 #endif
 }
 
-static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
+static cl_int clGetKernelSubGroupInfo_func(
+    cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
     size_t input_value_size,
     const void *input_value,
     size_t param_value_size,
     void *param_value,
-    size_t *param_value_size_ret,
-    int num_calls)
+    size_t *param_value_size_ret)
 {    
     TEST_ASSERT_NOT_NULL(input_value);
     TEST_ASSERT_NOT_NULL(param_value);
@@ -2456,6 +2490,28 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     }
 }
 
+static cl_int clGetKernelSubGroupInfo_testSubGroups(
+    cl_kernel kernel,
+    cl_device_id device,
+    cl_kernel_sub_group_info param_name,
+    size_t input_value_size,
+    const void *input_value,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    return clGetKernelSubGroupInfo_func(
+        kernel,
+        device,
+        param_name,
+        input_value_size,
+        input_value,
+        param_value_size,
+        param_value,
+        param_value_size_ret);
+}
+
 void testGetKernelSubGroupInfo21()
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
@@ -2471,9 +2527,12 @@ void testGetKernelSubGroupInfo21()
     cl::NDRange ndrange(8, 8);
     size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
         d, ndrange, &err);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+
     size_t res2 = 0;
     err = k.getSubGroupInfo(
         d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
 
     TEST_ASSERT_EQUAL(res1, 32);
     TEST_ASSERT_EQUAL(res2, 2);
@@ -2482,8 +2541,6 @@ void testGetKernelSubGroupInfo21()
 
 void testGetKernelSubGroupInfoTryKHR()
 {
-// Because this test generates an error it does not work with exceptions enabled
-#if !defined(CL_HPP_ENABLE_EXCEPTIONS)
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
 #if defined(cl_khr_subgroups)
@@ -2495,17 +2552,63 @@ void testGetKernelSubGroupInfoTryKHR()
 
     cl::Kernel k(make_kernel(0));
     cl::Device d(make_device_id(0));
+    cl::NDRange ndrange(8, 8);
+    cl_int err;
+
+    size_t res1 = 0;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try {
+#endif
+        res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
+            d, ndrange, &err);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    } catch (cl::Error& e) {
+        TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
+    }
+#endif
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+
+    size_t res2 = 0;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try {
+#endif
+        err = k.getSubGroupInfo(
+            d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    } catch (cl::Error& e) {
+        TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
+    }
+#endif
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+}
+
+void testGetKernelSubGroupInfoUseKHR()
+{
+#if defined(cl_khr_subgroups)
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", clGetKernelSubGroupInfo_func);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+
+    cl::Kernel k(make_kernel(0));
+    cl::Device d(make_device_id(0));
     cl_int err;
     cl::NDRange ndrange(8, 8);
     size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
         d, ndrange, &err);
-    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+
     size_t res2 = 0;
     err = k.getSubGroupInfo(
         d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
-    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+
+    TEST_ASSERT_EQUAL(res1, 32);
+    TEST_ASSERT_EQUAL(res2, 2);
 #endif
 }
+
 
 /**
 * Stub implementation of clGetDeviceInfo that returns an absense of builtin kernels
