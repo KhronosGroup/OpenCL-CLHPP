@@ -35,8 +35,6 @@
  *
  *         cl_khr_d3d10_sharing
  *         #define CL_HPP_USE_DX_INTEROP
- *         cl_khr_image2d_from_buffer
- *         #define CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
  *
  *   Doxygen documentation for this header is available here:
  *
@@ -1496,6 +1494,16 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NODE_MASK_KHR, cl_uint)
 #if defined(cl_khr_pci_bus_info)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_PCI_BUS_INFO_KHR, cl_device_pci_bus_info_khr)
 #endif
+
+// Note: some headers do not define cl_khr_image2d_from_buffer
+#if CL_HPP_TARGET_OPENCL_VERSION < 200
+#if defined(CL_DEVICE_IMAGE_PITCH_ALIGNMENT_KHR)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_IMAGE_PITCH_ALIGNMENT_KHR, cl_uint)
+#endif
+#if defined(CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_KHR)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_KHR, cl_uint)
+#endif
+#endif // CL_HPP_TARGET_OPENCL_VERSION < 200
 
 #if defined(cl_khr_integer_dot_product)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR, cl_device_integer_dot_product_capabilities_khr)
@@ -4803,9 +4811,10 @@ public:
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200 || defined(CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR)
     /*! \brief Constructs a 2D Image from a buffer.
     * \note This will share storage with the underlying buffer.
+    *
+    *  Requires OpenCL 2.0 or the cl_khr_image2d_from_buffer extension.
     *
     *  Wraps clCreateImage().
     */
@@ -4840,7 +4849,6 @@ public:
             *err = error;
         }
     }
-#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200 || defined(CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR)
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief Constructs a 2D Image from an image.

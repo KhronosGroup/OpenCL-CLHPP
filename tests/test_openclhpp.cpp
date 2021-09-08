@@ -2095,9 +2095,8 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     return image_desc->buffer;
 }
 
-void testCreateImage2DFromBuffer_2_0()
+void testCreateImage2DFromBuffer()
 {
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -2119,7 +2118,6 @@ void testCreateImage2DFromBuffer_2_0()
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
 
     buffer() = NULL;
-#endif
 }
 
 static cl_mem clCreateImage_testCreateImage2D_2_0(
