@@ -1857,7 +1857,7 @@ void testCreateProgramWithILUseKHR()
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clCreateProgramWithILKHR", clCreateProgramWithIL_func);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clCreateProgramWithILKHR", (void*)clCreateProgramWithIL_func);
     clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 
@@ -2585,7 +2585,7 @@ void testGetKernelSubGroupInfoUseKHR()
 #if defined(cl_khr_subgroups)
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", clGetKernelSubGroupInfo_func);
+    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", (void*)clGetKernelSubGroupInfo_func);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
 
