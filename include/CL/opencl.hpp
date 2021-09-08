@@ -4814,7 +4814,7 @@ public:
     /*! \brief Constructs a 2D Image from a buffer.
     * \note This will share storage with the underlying buffer.
     *
-    *  Requires OpenCL 2.0 or the cl_khr_image2d_from_buffer extension.
+    *  Requires OpenCL 2.0 or newer or the cl_khr_image2d_from_buffer extension.
     *
     *  Wraps clCreateImage().
     */
@@ -6394,7 +6394,8 @@ public:
 #if defined(cl_khr_il_program) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL.
-     * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
+     *
+     * Requires OpenCL 2.1 or newer or the cl_khr_il_program extension.
      */
     Program(
         const vector<char>& IL,
@@ -6456,7 +6457,8 @@ public:
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL
      * for a specific context.
-     * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
+     *
+     * Requires OpenCL 2.1 or newer or the cl_khr_il_program extension.
      */
     Program(
         const Context& context,
