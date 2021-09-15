@@ -6006,7 +6006,6 @@ public:
         cl_int error = CL_INVALID_OPERATION;
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
-        bool useCore = false;
         if (error != CL_SUCCESS) {
             // Run-time decision: supported in OpenCL 2.1 or newer
             cl_uint version = detail::getDevicePlatformVersion(dev());
