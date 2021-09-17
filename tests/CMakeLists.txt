@@ -1,18 +1,12 @@
 get_target_property(OPENCL_INCLUDE_DIR OpenCL::Headers INTERFACE_INCLUDE_DIRECTORIES)
 
-if(Python_EXECUTABLE)
-  set(PYTHON ${Python_EXECUTABLE})
-else()
-  set(PYTHON ${PYTHON_EXECUTABLE})
-endif()
-
 add_custom_command(
     OUTPUT stripped/cl.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
-    COMMAND ${PYTHON} ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.py ${OPENCL_INCLUDE_DIR}/CL/cl.h stripped/cl.h
+    COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_INCLUDE_DIR}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
     COMMENT "Stripping defines from cl.h"
-    DEPENDS ${OPENCL_INCLUDE_DIR}/CL/cl.h strip_defines.py)
+    DEPENDS ${OPENCL_INCLUDE_DIR}/CL/cl.h strip_defines.cmake)
 	
 add_custom_command(
     OUTPUT mocks/Mockcl.c mocks/Mockcl.h
