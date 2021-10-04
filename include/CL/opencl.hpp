@@ -522,14 +522,14 @@
 // Define deprecated prefixes and suffixes to ensure compilation
 // in case they are not pre-defined
 #if !defined(CL_API_PREFIX__VERSION_1_1_DEPRECATED)
-#define CL_API_PREFIX__VERSION_1_1_DEPRECATED  
+#define CL_API_PREFIX__VERSION_1_1_DEPRECATED
 #endif // #if !defined(CL_API_PREFIX__VERSION_1_1_DEPRECATED)
 #if !defined(CL_API_SUFFIX__VERSION_1_1_DEPRECATED)
 #define CL_API_SUFFIX__VERSION_1_1_DEPRECATED
 #endif // #if !defined(CL_API_PREFIX__VERSION_1_1_DEPRECATED)
 
 #if !defined(CL_API_PREFIX__VERSION_1_2_DEPRECATED)
-#define CL_API_PREFIX__VERSION_1_2_DEPRECATED  
+#define CL_API_PREFIX__VERSION_1_2_DEPRECATED
 #endif // #if !defined(CL_API_PREFIX__VERSION_1_2_DEPRECATED)
 #if !defined(CL_API_SUFFIX__VERSION_1_2_DEPRECATED)
 #define CL_API_SUFFIX__VERSION_1_2_DEPRECATED
@@ -678,21 +678,35 @@ namespace cl {
 namespace cl {
     class Memory;
 
-#define CL_HPP_INIT_CL_EXT_FCN_PTR_(name) \
-    if (!pfn_##name) {    \
-    pfn_##name = (PFN_##name) \
-    clGetExtensionFunctionAddress(#name); \
-    if (!pfn_##name) {    \
-    } \
+#if CL_HPP_TARGET_OPENCL_VERSION < 120
+// Before OpenCL 1.2, use clGetExtensionFunctionAddress:
+#define CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, name)                     \
+    if (!pfn_##name) {                                                  \
+        pfn_##name = (PFN_##name)                                       \
+            clGetExtensionFunctionAddress(#name);                       \
     }
-
-#define CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, name) \
-    if (!pfn_##name) {    \
-    pfn_##name = (PFN_##name) \
-    clGetExtensionFunctionAddressForPlatform(platform, #name); \
-    if (!pfn_##name) {    \
-    } \
+#elif CL_HPP_MINIMUM_OPENCL_VERSION < 120
+// Before OpenCL 1.2, use clGetExtensionFunctionAddress, otherwise use
+// clGetExtensionFunctionAddressForPlatform:
+#define CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, name)                     \
+    if (!pfn_##name) {                                                  \
+        cl_uint version = detail::getPlatformVersion(platform);         \
+        if (version >= 0x10002) {                                       \
+            pfn_##name = (PFN_##name)                                   \
+                clGetExtensionFunctionAddressForPlatform(platform, #name);\
+        } else {                                                        \
+            pfn_##name = (PFN_##name)                                   \
+                clGetExtensionFunctionAddress(#name);                   \
+        }                                                               \
     }
+#else
+// For OpenCL 1.2 or newer use clGetExtensionFunctionAddressForPlatform:
+#define CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, name)                     \
+    if (!pfn_##name) {                                                  \
+        pfn_##name = (PFN_##name)                                       \
+            clGetExtensionFunctionAddressForPlatform(platform, #name);  \
+    }
+#endif
 
     class Program;
     class Device;
@@ -1758,7 +1772,9 @@ struct ReferenceHandler<cl_event>
 };
 
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
+// TODO: What should these ifdefs be?
+//#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
+
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
 static cl_uint getVersion(const vector<char> &versionInfo)
 {
@@ -1789,26 +1805,29 @@ static cl_uint getPlatformVersion(cl_platform_id platform)
     return getVersion(versionInfo);
 }
 
-static cl_uint getDevicePlatformVersion(cl_device_id device)
+static cl_platform_id getDevicePlatform(cl_device_id device)
 {
-    cl_platform_id platform;
+    cl_platform_id platform = NULL;
     clGetDeviceInfo(device, CL_DEVICE_PLATFORM, sizeof(platform), &platform, NULL);
-    return getPlatformVersion(platform);
+    return platform;
 }
 
-static cl_uint getContextPlatformVersion(cl_context context)
+static cl_platform_id getContextPlatform(cl_context context)
 {
     // The platform cannot be queried directly, so we first have to grab a
-    // device and obtain its context
+    // device and the platform from it.
     size_type size = 0;
     clGetContextInfo(context, CL_CONTEXT_DEVICES, 0, NULL, &size);
-    if (size == 0)
-        return 0;
-    vector<cl_device_id> devices(size/sizeof(cl_device_id));
-    clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices.data(), NULL);
-    return getDevicePlatformVersion(devices[0]);
+    if (size != 0) {
+        vector<cl_device_id> devices(size/sizeof(cl_device_id));
+        clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices.data(), NULL);
+        return getDevicePlatform(devices[0]);
+    }
+    return NULL;
 }
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
+
+// TODO: what should these ifdefs be?
+//#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
 
 template <typename T>
 class Wrapper
@@ -1920,8 +1939,9 @@ protected:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         if (device != NULL) {
-            int version = getDevicePlatformVersion(device);
-            if(version > ((1 << 16) + 1)) {
+            cl_platform_id platform = getDevicePlatform(device);
+            cl_uint version = getPlatformVersion(platform);
+            if (version >= 0x10002) {
                 retVal = true;
             }
         }
@@ -2358,6 +2378,9 @@ public:
         const cl_device_partition_property_ext * properties,
         vector<Device>* devices)
     {
+        cl_platform_id platform(detail::getDevicePlatform(object_));
+        cl_int error = CL_INVALID_OPERATION;
+
         typedef CL_API_ENTRY cl_int 
             ( CL_API_CALL * PFN_clCreateSubDevicesEXT)(
                 cl_device_id /*in_device*/,
@@ -2367,33 +2390,37 @@ public:
                 cl_uint * /*num_devices*/ ) CL_API_SUFFIX__VERSION_1_1;
 
         static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = NULL;
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSubDevicesEXT);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clCreateSubDevicesEXT);
 
-        cl_uint n = 0;
-        cl_int err = pfn_clCreateSubDevicesEXT(object_, properties, 0, NULL, &n);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
-        }
+        if (pfn_clCreateSubDevicesEXT) {
+            cl_uint n = 0;
+            error = pfn_clCreateSubDevicesEXT(object_, properties, 0, NULL, &n);
+            if (error != CL_SUCCESS) {
+                return detail::errHandler(error, __CREATE_SUB_DEVICES_ERR);
+            }
 
-        vector<cl_device_id> ids(n);
-        err = pfn_clCreateSubDevicesEXT(object_, properties, n, ids.data(), NULL);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
-        }
-        // Cannot trivially assign because we need to capture intermediates 
-        // with safe construction
-        if (devices) {
-            devices->resize(ids.size());
+            vector<cl_device_id> ids(n);
+            error = pfn_clCreateSubDevicesEXT(object_, properties, n, ids.data(), NULL);
+            if (error != CL_SUCCESS) {
+                return detail::errHandler(error, __CREATE_SUB_DEVICES_ERR);
+            }
 
-            // Assign to param, constructing with retain behaviour
-            // to correctly capture each underlying CL object
-            for (size_type i = 0; i < ids.size(); i++) {
-                // We do not need to retain because this device is being created 
-                // by the runtime
-                (*devices)[i] = Device(ids[i], false);
+            // Cannot trivially assign because we need to capture intermediates
+            // with safe construction
+            if (devices) {
+                devices->resize(ids.size());
+
+                // Assign to param, constructing with retain behaviour
+                // to correctly capture each underlying CL object
+                for (size_type i = 0; i < ids.size(); i++) {
+                    // We do not need to retain because this device is being created 
+                    // by the runtime
+                    (*devices)[i] = Device(ids[i], false);
+                }
             }
         }
-        return CL_SUCCESS;
+
+        return detail::errHandler(error, __CREATE_SUB_DEVICES_ERR);
     }
 #endif // defined(cl_ext_device_fission)
 };
@@ -4103,32 +4130,27 @@ public:
         const Context& context,
         cl_mem_flags flags,
         ID3D10Buffer* bufobj,
-        cl_int * err = NULL) : pfn_clCreateFromD3D10BufferKHR(nullptr)
+        cl_int * err = NULL)
     {
+        cl_platform_id platform = detail::getContextPlatform(context());
+        cl_int error = CL_INVALID_OPERATION;
+
         typedef CL_API_ENTRY cl_mem (CL_API_CALL *PFN_clCreateFromD3D10BufferKHR)(
             cl_context context, cl_mem_flags flags, ID3D10Buffer*  buffer,
             cl_int* errcode_ret);
-        PFN_clCreateFromD3D10BufferKHR pfn_clCreateFromD3D10BufferKHR;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        vector<cl_context_properties> props = context.getInfo<CL_CONTEXT_PROPERTIES>();
-        cl_platform platform = -1;
-        for( int i = 0; i < props.size(); ++i ) {
-            if( props[i] == CL_CONTEXT_PLATFORM ) {
-                platform = props[i+1];
-            }
+        static PFN_clCreateFromD3D10BufferKHR pfn_clCreateFromD3D10BufferKHR = NULL;
+
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clCreateFromD3D10BufferKHR);
+
+        if (pfn_clCreateFromD3D10BufferKHR) {
+            object_ = pfn_clCreateFromD3D10BufferKHR(
+                context(),
+                flags,
+                bufobj,
+                &error);
         }
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateFromD3D10BufferKHR);
-#elif CL_HPP_TARGET_OPENCL_VERSION >= 110
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateFromD3D10BufferKHR);
-#endif
 
-        cl_int error;
-        object_ = pfn_clCreateFromD3D10BufferKHR(
-            context(),
-            flags,
-            bufobj,
-            &error);
-
+        // TODO: This should really have a D3D10 rerror code!
         detail::errHandler(error, __CREATE_GL_BUFFER_ERR);
         if (err != NULL) {
             *err = error;
@@ -4765,7 +4787,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
         // Run-time decision based on the actual platform
         {
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_platform_id platform = detail::getContextPlatform(context());
+            cl_uint version = detail::getPlatformVersion(platform);
             useCreateImage = (version >= 0x10002); // OpenCL 1.2 or above
         }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -4811,10 +4834,12 @@ public:
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     /*! \brief Constructs a 2D Image from a buffer.
     * \note This will share storage with the underlying buffer.
     *
-    *  Requires OpenCL 2.0 or newer or the cl_khr_image2d_from_buffer extension.
+    *  Requires OpenCL 2.0 or newer or OpenCL 1.2 and the 
+    *  cl_khr_image2d_from_buffer extension.
     *
     *  Wraps clCreateImage().
     */
@@ -4849,6 +4874,7 @@ public:
             *err = error;
         }
     }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief Constructs a 2D Image from an image.
@@ -5184,7 +5210,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
         // Run-time decision based on the actual platform
         {
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_platform_id platform = detail::getContextPlatform(context());
+            cl_uint version = detail::getPlatformVersion(platform);
             useCreateImage = (version >= 0x10002); // OpenCL 1.2 or above
         }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -6003,29 +6030,30 @@ public:
 #if defined(cl_khr_subgroups) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, size_type* param) const
     {
+        cl_platform_id platform = detail::getDevicePlatform(dev());
         cl_int error = CL_INVALID_OPERATION;
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
         if (error != CL_SUCCESS) {
             // Run-time decision: supported in OpenCL 2.1 or newer
-            cl_uint version = detail::getDevicePlatformVersion(dev());
+            cl_uint version = detail::getPlatformVersion(platform);
             if (version >= 0x20001) {
                 error = clGetKernelSubGroupInfo(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr);
             }
         }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-#if defined(cl_khr_subgroups)
+#if defined(cl_khr_subgroups) && CL_HPP_MINIMUM_OPENCL_VERSION < 210
         if (error != CL_SUCCESS) {
             typedef clGetKernelSubGroupInfoKHR_fn PFN_clGetKernelSubGroupInfoKHR;
             static PFN_clGetKernelSubGroupInfoKHR pfn_clGetKernelSubGroupInfoKHR = NULL;
-            CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetKernelSubGroupInfoKHR);
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clGetKernelSubGroupInfoKHR);
 
             if (pfn_clGetKernelSubGroupInfoKHR) {
                 error = pfn_clGetKernelSubGroupInfoKHR(object_, dev(), name, range.size(), range.get(), sizeof(size_type), param, nullptr);
             }
         }
-#endif // defined(cl_khr_subgroups)
+#endif // defined(cl_khr_subgroups) && CL_HPP_MINIMUM_OPENCL_VERSION < 210
 
         return detail::errHandler(error, __GET_KERNEL_SUB_GROUP_INFO_ERR);
     }
@@ -6403,12 +6431,13 @@ public:
     {
         Context context = Context::getDefault(err);
 
+        cl_platform_id platform = detail::getContextPlatform(context());
         cl_int error = CL_INVALID_OPERATION;
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
         if (error != CL_SUCCESS) {
             // Run-time decision: supported in OpenCL 2.1 or newer
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_uint version = detail::getPlatformVersion(platform);
             if (version >= 0x20001) {
                 object_ = ::clCreateProgramWithIL(
                     context(), static_cast<const void*>(IL.data()), IL.size(), &error);
@@ -6416,18 +6445,18 @@ public:
         }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-#if defined(cl_khr_il_program)
+#if defined(cl_khr_il_program) && CL_HPP_MINIMUM_OPENCL_VERSION < 210
         if (error != CL_SUCCESS) {
             typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
             static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
-            CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clCreateProgramWithILKHR);
 
             if (pfn_clCreateProgramWithILKHR) {
                 object_ = pfn_clCreateProgramWithILKHR(
                         context(), static_cast<const void*>(IL.data()), IL.size(), &error);
             }
         }
-#endif // defined(cl_khr_il_program)
+#endif // defined(cl_khr_il_program) && CL_HPP_MINIMUM_OPENCL_VERSION < 210
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
 
@@ -6465,12 +6494,13 @@ public:
         bool build = false,
         cl_int* err = NULL)
     {
+        cl_platform_id platform = detail::getContextPlatform(context());
         cl_int error = CL_INVALID_OPERATION;
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
         if (error != CL_SUCCESS) {
             // Run-time decision: supported in OpenCL 2.1 or newer
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_uint version = detail::getPlatformVersion(platform);
             if (version >= 0x20001) {
                 object_ = ::clCreateProgramWithIL(
                     context(), static_cast<const void*>(IL.data()), IL.size(), &error);
@@ -6478,18 +6508,18 @@ public:
         }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-#if defined(cl_khr_il_program)
+#if defined(cl_khr_il_program) && CL_HPP_MINIMUM_OPENCL_VERSION < 210
         if (error != CL_SUCCESS) {
             typedef clCreateProgramWithILKHR_fn PFN_clCreateProgramWithILKHR;
             static PFN_clCreateProgramWithILKHR pfn_clCreateProgramWithILKHR = NULL;
-            CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateProgramWithILKHR);
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clCreateProgramWithILKHR);
 
             if (pfn_clCreateProgramWithILKHR) {
                 object_ = pfn_clCreateProgramWithILKHR(
                         context(), static_cast<const void*>(IL.data()), IL.size(), &error);
             }
         }
-#endif // defined(cl_khr_il_program)
+#endif // defined(cl_khr_il_program) && CL_HPP_MINIMUM_OPENCL_VERSION < 210
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
 
@@ -7183,7 +7213,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
             // Run-time decision based on the actual platform
             {
-                cl_uint version = detail::getContextPlatformVersion(context());
+                cl_platform_id platform = detail::getDevicePlatform(device());
+                cl_uint version = detail::getPlatformVersion(platform);
                 useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
             }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -7249,7 +7280,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
            // Run-time decision based on the actual platform
            {
-               cl_uint version = detail::getContextPlatformVersion(context());
+               cl_platform_id platform = detail::getDevicePlatform(device());
+               cl_uint version = detail::getPlatformVersion(platform);
                useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
            }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -7314,7 +7346,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
         // Run-time decision based on the actual platform
         {
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_platform_id platform = detail::getDevicePlatform(devices[0]());
+            cl_uint version = detail::getPlatformVersion(platform);
             useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
         }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -7381,7 +7414,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
         // Run-time decision based on the actual platform
         {
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_platform_id platform = detail::getDevicePlatform(devices[0]());
+            cl_uint version = detail::getPlatformVersion(platform);
             useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
         }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -7432,7 +7466,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
         // Run-time decision based on the actual platform
         {
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_platform_id platform = detail::getDevicePlatform(device());
+            cl_uint version = detail::getPlatformVersion(platform);
             useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
         }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -7483,7 +7518,8 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
         // Run-time decision based on the actual platform
         {
-            cl_uint version = detail::getContextPlatformVersion(context());
+            cl_platform_id platform = detail::getDevicePlatform(device());
+            cl_uint version = detail::getPlatformVersion(platform);
             useWithProperties = (version >= 0x20000); // OpenCL 2.0 or above
         }
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -8653,7 +8689,7 @@ public:
  * Deprecated APIs for 1.2
  */
 #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
-    CL_API_PREFIX__VERSION_1_1_DEPRECATED 
+    CL_API_PREFIX__VERSION_1_1_DEPRECATED
     cl_int enqueueMarker(Event* event = NULL) const CL_API_SUFFIX__VERSION_1_1_DEPRECATED
     {
         cl_event tmp;
@@ -8726,46 +8762,37 @@ public:
      }
 
 #if defined (CL_HPP_USE_DX_INTEROP)
-typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueAcquireD3D10ObjectsKHR)(
-    cl_command_queue command_queue, cl_uint num_objects,
-    const cl_mem* mem_objects, cl_uint num_events_in_wait_list,
-    const cl_event* event_wait_list, cl_event* event);
-typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
-    cl_command_queue command_queue, cl_uint num_objects,
-    const cl_mem* mem_objects,  cl_uint num_events_in_wait_list,
-    const cl_event* event_wait_list, cl_event* event);
-
     cl_int enqueueAcquireD3D10Objects(
          const vector<Memory>* mem_objects = NULL,
          const vector<Event>* events = NULL,
          Event* event = NULL) const
     {
+        cl_platform_id platform = detail::getDevicePlatform(getInfo<CL_QUEUE_DEVICE>()());
+        cl_int error = CL_INVALID_OPERATION;
+
+        typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueAcquireD3D10ObjectsKHR)(
+            cl_command_queue command_queue, cl_uint num_objects,
+            const cl_mem* mem_objects, cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list, cl_event* event);
         static PFN_clEnqueueAcquireD3D10ObjectsKHR pfn_clEnqueueAcquireD3D10ObjectsKHR = NULL;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        cl_context context = getInfo<CL_QUEUE_CONTEXT>();
-        cl::Device device(getInfo<CL_QUEUE_DEVICE>());
-        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireD3D10ObjectsKHR);
-#endif
-#if CL_HPP_TARGET_OPENCL_VERSION >= 110
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueAcquireD3D10ObjectsKHR);
-#endif
-        
-        cl_event tmp;
-        cl_int err = detail::errHandler(
-             pfn_clEnqueueAcquireD3D10ObjectsKHR(
-                 object_,
-                 (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
-                 (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
-                 (events != NULL) ? (cl_uint) events->size() : 0,
-                 (events != NULL) ? (cl_event*) &events->front() : NULL,
-                 (event != NULL) ? &tmp : NULL),
-             __ENQUEUE_ACQUIRE_GL_ERR);
 
-        if (event != NULL && err == CL_SUCCESS)
-            *event = tmp;
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clEnqueueAcquireD3D10ObjectsKHR);
 
-        return err;
+        if (pfn_clEnqueueAcquireD3D10ObjectsKHR) {
+            cl_event tmp;
+            error = pfn_clEnqueueAcquireD3D10ObjectsKHR(
+                object_,
+                (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
+                (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
+                (events != NULL) ? (cl_uint) events->size() : 0,
+                (events != NULL) ? (cl_event*) &events->front() : NULL,
+                (event != NULL) ? &tmp : NULL);
+
+            if (event != NULL && error == CL_SUCCESS)
+                *event = tmp;
+        }
+
+        return detail::errHandler(error, __ENQUEUE_ACQUIRE_GL_ERR);
      }
 
     cl_int enqueueReleaseD3D10Objects(
@@ -8773,32 +8800,32 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
          const vector<Event>* events = NULL,
          Event* event = NULL) const
     {
-        static PFN_clEnqueueReleaseD3D10ObjectsKHR pfn_clEnqueueReleaseD3D10ObjectsKHR = NULL;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        cl_context context = getInfo<CL_QUEUE_CONTEXT>();
-        cl::Device device(getInfo<CL_QUEUE_DEVICE>());
-        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseD3D10ObjectsKHR);
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
-#if CL_HPP_TARGET_OPENCL_VERSION >= 110
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueReleaseD3D10ObjectsKHR);
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+        cl_platform_id platform = detail::getDevicePlatform(getInfo<CL_QUEUE_DEVICE>()());
+        cl_int error = CL_INVALID_OPERATION;
 
-        cl_event tmp;
-        cl_int err = detail::errHandler(
-            pfn_clEnqueueReleaseD3D10ObjectsKHR(
+        typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
+            cl_command_queue command_queue, cl_uint num_objects,
+            const cl_mem* mem_objects,  cl_uint num_events_in_wait_list,
+            const cl_event* event_wait_list, cl_event* event);
+        static PFN_clEnqueueReleaseD3D10ObjectsKHR pfn_clEnqueueReleaseD3D10ObjectsKHR = NULL;
+
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(platform, clEnqueueReleaseD3D10ObjectsKHR);
+
+        if (pfn_clEnqueueReleaseD3D10ObjectsKHR) {
+            cl_event tmp;
+            cl_int err = pfn_clEnqueueReleaseD3D10ObjectsKHR(
                 object_,
                 (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
                 (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
-                (event != NULL) ? &tmp : NULL),
-            __ENQUEUE_RELEASE_GL_ERR);
+                (event != NULL) ? &tmp : NULL);
 
-        if (event != NULL && err == CL_SUCCESS)
-            *event = tmp;
+            if (event != NULL && err == CL_SUCCESS)
+                *event = tmp;
+        }
 
-        return err;
+        return detail::errHandler(error, __ENQUEUE_RELEASE_GL_ERR);
     }
 #endif
 
@@ -10320,9 +10347,7 @@ namespace compatibility {
 
 #endif //CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 
-// Extensions
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_
-#undef CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_
 
 #undef CL_HPP_NOEXCEPT_
 #undef CL_HPP_DEFINE_STATIC_MEMBER_

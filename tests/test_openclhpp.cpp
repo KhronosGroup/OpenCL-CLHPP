@@ -1830,13 +1830,13 @@ void testCreateProgramWithILTryKHR()
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
 #if defined(cl_khr_il_program)
-    clGetExtensionFunctionAddress_ExpectAndReturn("clCreateProgramWithILKHR", NULL);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clCreateProgramWithILKHR", NULL);
 #endif
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 
     cl::Context context(make_context(0));
 
-    cl_int err = CL_INVALID_OPERATION;
+    cl_int err = CL_SUCCESS;
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
     try {
 #endif
@@ -1845,8 +1845,9 @@ void testCreateProgramWithILTryKHR()
     } catch (cl::Error& e) {
         TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
     }
-#endif
+#else
     TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
 }
 
 void testCreateProgramWithILUseKHR()
@@ -1857,7 +1858,7 @@ void testCreateProgramWithILUseKHR()
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clCreateProgramWithILKHR", (void*)clCreateProgramWithIL_func);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clCreateProgramWithILKHR", (void*)clCreateProgramWithIL_func);
     clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 
@@ -2542,8 +2543,8 @@ void testGetKernelSubGroupInfoTryKHR()
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
 #if defined(cl_khr_subgroups)
-    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", NULL);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", NULL);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clGetKernelSubGroupInfoKHR", NULL);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clGetKernelSubGroupInfoKHR", NULL);
 #endif
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
@@ -2551,8 +2552,8 @@ void testGetKernelSubGroupInfoTryKHR()
     cl::Kernel k(make_kernel(0));
     cl::Device d(make_device_id(0));
     cl::NDRange ndrange(8, 8);
-    cl_int err;
 
+    cl_int err = CL_SUCCESS;
     size_t res1 = 0;
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
     try {
@@ -2563,9 +2564,11 @@ void testGetKernelSubGroupInfoTryKHR()
     } catch (cl::Error& e) {
         TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
     }
-#endif
+#else
     TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
 
+    err = CL_SUCCESS;
     size_t res2 = 0;
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
     try {
@@ -2576,8 +2579,9 @@ void testGetKernelSubGroupInfoTryKHR()
     } catch (cl::Error& e) {
         TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
     }
-#endif
+#else
     TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
 }
 
 void testGetKernelSubGroupInfoUseKHR()
@@ -2585,7 +2589,7 @@ void testGetKernelSubGroupInfoUseKHR()
 #if defined(cl_khr_subgroups)
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
-    clGetExtensionFunctionAddress_ExpectAndReturn("clGetKernelSubGroupInfoKHR", (void*)clGetKernelSubGroupInfo_func);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clGetKernelSubGroupInfoKHR", (void*)clGetKernelSubGroupInfo_func);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
 
