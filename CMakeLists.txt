@@ -19,9 +19,9 @@ set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL
 
 find_package(OpenCLHeaders REQUIRED)
 find_package(OpenCLICDLoader REQUIRED)
-find_package(Threads REQUIRED)
 if(BUILD_TESTS)
   enable_language(C)
+  find_package(Threads REQUIRED)
   find_program(RUBY_EXECUTABLE ruby REQUIRED)
 endif()
 
