@@ -6,9 +6,6 @@ endif()
 
 file(READ "${INPUT}" INPUT_STRING)
 
-message(STATUS "INPUT: ${INPUT}")
-message(STATUS "OUTPUT: ${OUTPUT}")
-
 string(REGEX REPLACE
   [[CL_(API_ENTRY|API_SUFFIX|EXT|CALLBACK)[A-Za-z0-9_]*]]
   ""
