@@ -101,7 +101,7 @@ build:cmake-minimum:
       -B$DEPS_DIR/OpenCL-ICD-Loader/build
       -H$DEPS_DIR/OpenCL-ICD-Loader
     - cmake
-      --build $DEPS_DIR/OpenCL-Headers/build
+      --build $DEPS_DIR/OpenCL-ICD-Loader/build
       --target install
     # Configure, build, install OpenCL-CLHPP
     - cmake
