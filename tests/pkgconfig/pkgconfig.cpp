@@ -12,8 +12,6 @@ int main()
         std::vector<cl::Platform> platforms;
         cl::Platform::get(&platforms);
 
-        if (platforms.empty()) throw std::runtime_error{ "No OpenCL platforms found." };
-
         std::cout <<
             "Found " <<
             platforms.size() <<
@@ -34,8 +32,16 @@ int main()
     }
     catch (cl::Error& error) // If any OpenCL error occurs
     {
-        std::cerr << error.what() << "(" << error.err() << ")" << std::endl;
-        std::exit(error.err());
+        if(error.err() == CL_PLATFORM_NOT_FOUND_KHR)
+        {
+            std::cout << "No OpenCL platform found." << std::endl;
+            std::exit(EXIT_SUCCESS);
+        }
+        else
+        {
+            std::cerr << error.what() << "(" << error.err() << ")" << std::endl;
+            std::exit(error.err());
+        }
     }
     catch (std::exception& error) // If STL/CRT error occurs
     {
