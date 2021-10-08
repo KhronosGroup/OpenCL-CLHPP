@@ -30,6 +30,7 @@ if(BUILD_TESTS)
 endif()
 
 add_library(HeadersCpp INTERFACE)
+add_library(OpenCL::HeadersCpp ALIAS HeadersCpp)
 target_include_directories(HeadersCpp
   INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
