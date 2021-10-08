@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.1)
 
 project(OpenCLHeadersCpp
   VERSION 2.2
@@ -17,8 +17,12 @@ set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL
   "find_package(Threads) preference. Recommendation is to keep default value."
 )
 
-find_package(OpenCLHeaders REQUIRED)
-find_package(OpenCLICDLoader REQUIRED)
+if(NOT TARGET OpenCL::Headers)
+  find_package(OpenCLHeaders REQUIRED)
+endif()
+if(NOT TARGET OpenCL::OpenCL)
+  find_package(OpenCLICDLoader REQUIRED)
+endif()
 if(BUILD_TESTS)
   enable_language(C)
   find_package(Threads REQUIRED)
