@@ -1,12 +1,48 @@
-get_target_property(OPENCL_INCLUDE_DIR OpenCL::Headers INTERFACE_INCLUDE_DIRECTORIES)
+set(OPENCL_HEADERS_INCLUDE_DIR_GENEXPR $<TARGET_PROPERTY:OpenCL::Headers,INTERFACE_INCLUDE_DIRECTORIES>)
+###############################
+###                         ###
+### Workaround to CMake bug ###
+###                         ###
+###############################
+#
+# The generated mocks\Mockcl.h include the OpenCL headers as
+#
+# #include "CL/cl_platform.h"
+# #include "cl.h"
+#
+# which requires the tests to no only inherit the INTERFACE_INCLUDE_DIRECTORIES, but also the same dir with
+# /CL appended at the end. There seems to be a bug CMake (3.19 even) where if a target has the same genexpr
+# predicate twice, the second time it always fails. Having both
+#
+# $<TARGET_PROPERTY:Headers,INTERFACE_INCLUDE_DIRECTORIES> (invisbly via linking to OpenCL::Headers)
+# $<TARGET_PROPERTY:Headers,INTERFACE_INCLUDE_DIRECTORIES>/CL
+#
+# means we can only get one of these switches. We forcibly go around it by extracting the value manually.
+#
+# Bug ticket: https://gitlab.kitware.com/cmake/cmake/-/issues/22735
+get_target_property(OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES OpenCL::Headers INTERFACE_INCLUDE_DIRECTORIES)
+
+if(OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES MATCHES "BUILD_INTERFACE")
+  # When building OpenCL::Headers is part of this build (OpenCL-SDK), we have a property like for eg.
+  # $<BUILD_INTERFACE:C:/OpenCL-SDK/external/OpenCL-Headers>;$<INSTALL_INTERFACE:include>
+  # and need to touch up this property. We want the BUILD_INTERFACE part only.
+  # When OpenCL::Headers is consumed through a Package Config file (OpenCL-CLHPP), this property
+  # no longer holds unevaluated generator expressions.
+  string(REGEX MATCHALL
+    [[\$<BUILD_INTERFACE:(.*)>;]]
+    OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES
+    "${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}")
+  set(OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES "${CMAKE_MATCH_1}")
+endif()
+# End of workaround
 
 add_custom_command(
     OUTPUT stripped/cl.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
-    COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_INCLUDE_DIR}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
+    COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INCLUDE_DIR_GENEXPR}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
     COMMENT "Stripping defines from cl.h"
-    DEPENDS ${OPENCL_INCLUDE_DIR}/CL/cl.h strip_defines.cmake)
+    DEPENDS ${OPENCL_HEADERS_INCLUDE_DIR_GENEXPR}/CL/cl.h strip_defines.cmake)
 	
 add_custom_command(
     OUTPUT mocks/Mockcl.c mocks/Mockcl.h
@@ -20,15 +56,6 @@ add_custom_command(
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Generating test runner"
     DEPENDS test_openclhpp.cpp cmock.yml)
-	
-include_directories(
-    ${PROJECT_SOURCE_DIR}/include
-    ${CMAKE_CURRENT_BINARY_DIR}/mocks
-    ${OPENCL_DIST_DIR}/include
-    ${OPENCL_INCLUDE_DIR}
-    ${OPENCL_INCLUDE_DIR}/CL
-    ${UNITY_DIR}/src
-    ${CMOCK_DIR}/src)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID MATCHES "(Apple)?Clang")
     add_compile_options(-Wno-deprecated-declarations)
@@ -72,16 +99,27 @@ foreach(VERSION 120 200 210 220 300)
 
     set(TEST_EXE test_openclhpp_${VERSION}${UNDERSCORE_OPTION})
     add_executable(${TEST_EXE} ${TEST_SOURCES}) #${TEST_HEADERS})
-    target_compile_definitions(${TEST_EXE}
-        PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
-    )
     target_link_libraries(${TEST_EXE}
-      PUBLIC
+      PRIVATE
         OpenCL::Headers
         OpenCL::OpenCL
         Threads::Threads
     )
+    target_include_directories(${TEST_EXE}
+      PRIVATE
+        ${PROJECT_SOURCE_DIR}/include
+        ${CMAKE_CURRENT_BINARY_DIR}/mocks
+
+        ${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL
+        #${OPENCL_HEADERS_INCLUDE_DIR_GENEXPR}/CL
+
+        ${UNITY_DIR}/src
+        ${CMOCK_DIR}/src
+    )
+    target_compile_definitions(${TEST_EXE}
+        PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
+    )
     add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
   endforeach(OPTION)
 endforeach(VERSION)
-
+file(GENERATE OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/valami.txt CONTENT "$<TARGET_PROPERTY:Headers,INTERFACE_INCLUDE_DIRECTORIES> $<TARGET_PROPERTY:Headers,INTERFACE_INCLUDE_DIRECTORIES>/CL")
