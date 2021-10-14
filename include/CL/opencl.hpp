@@ -1771,9 +1771,7 @@ struct ReferenceHandler<cl_event>
     { return ::clReleaseEvent(event); }
 };
 
-
-// TODO: What should these ifdefs be?
-//#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
+// Helper functions to get the platform version:
 
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
 static cl_uint getVersion(const vector<char> &versionInfo)
@@ -1825,9 +1823,6 @@ static cl_platform_id getContextPlatform(cl_context context)
     }
     return NULL;
 }
-
-// TODO: what should these ifdefs be?
-//#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
 
 template <typename T>
 class Wrapper
