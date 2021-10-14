@@ -11,28 +11,30 @@ const int numElements = 32;
 
 int main(void)
 {
-    // Filter for a 2.0 platform and set it as the default
+    // Filter for a 2.0 or newer platform and set it as the default
     std::vector<cl::Platform> platforms;
     cl::Platform::get(&platforms);
     cl::Platform plat;
     for (auto &p : platforms) {
         std::string platver = p.getInfo<CL_PLATFORM_VERSION>();
-        if (platver.find("OpenCL 2.") != std::string::npos) {
+        if (platver.find("OpenCL 2.") != std::string::npos ||
+            platver.find("OpenCL 3.") != std::string::npos) {
+            // Note: an OpenCL 3.x platform may not support all required features!
             plat = p;
         }
     }
     if (plat() == 0) {
-        std::cout << "No OpenCL 2.0 platform found.";
+        std::cout << "No OpenCL 2.0 or newer platform found.\n";
         return -1;
     }
 
     cl::Platform newP = cl::Platform::setDefault(plat);
     if (newP != plat) {
-        std::cout << "Error setting default platform.";
+        std::cout << "Error setting default platform.\n";
         return -1;
     }
 
-    // Use C++11 raw string literals for kernel source code
+    // C++11 raw string literal for the first kernel
     std::string kernel1{R"CLC(
         global int globalA;
         kernel void updateGlobal()
@@ -40,6 +42,8 @@ int main(void)
           globalA = 75;
         }
     )CLC"};
+
+    // Raw string literal for the second kernel
     std::string kernel2{R"CLC(
         typedef struct { global int *bar; } Foo;
         kernel void vectorAdd(global const Foo* aNum, global const int *inputA, global const int *inputB,
@@ -66,7 +70,6 @@ int main(void)
         }
     )CLC"};
 
-    // New simpler string interface style
     std::vector<std::string> programStrings;
     programStrings.push_back(kernel1);
     programStrings.push_back(kernel2);
@@ -108,10 +111,9 @@ int main(void)
     std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> inputA(numElements, 1, svmAlloc);
     cl::coarse_svm_vector<int> inputB(numElements, 2, svmAlloc);
 
-    //
     //////////////
-
     // Traditional cl_mem allocations
+
     std::vector<int> output(numElements, 0xdeadbeef);
     cl::Buffer outputBuffer(begin(output), end(output), false);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
@@ -135,8 +137,8 @@ int main(void)
     // This one was not passed as a parameter
     vectorAddKernel.setSVMPointers(anSVMInt);
 
-	cl_int error;
-	vectorAddKernel(
+    cl_int error;
+    vectorAddKernel(
         cl::EnqueueArgs(
             cl::NDRange(numElements/2),
             cl::NDRange(numElements/2)),
@@ -147,7 +149,7 @@ int main(void)
         3,
         aPipe,
         defaultDeviceQueue,
-		error
+        error
         );
 
     cl::copy(outputBuffer, begin(output), end(output));
