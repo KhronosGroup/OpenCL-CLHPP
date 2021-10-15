@@ -218,7 +218,7 @@
  * also the supplied vector and string classes, see following sections for
  * decriptions of these features.
  * 
- * Note: the C++ bindings use std::run_once and therefore may need to be
+ * Note: the C++ bindings use std::call_once and therefore may need to be
  * compiled using special command-line options (such as "-pthread") on some
  * platforms!
  *
