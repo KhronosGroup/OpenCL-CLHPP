@@ -10,7 +10,7 @@ set(OPENCL_HEADERS_INCLUDE_DIR_GENEXPR $<TARGET_PROPERTY:OpenCL::Headers,INTERFA
 # #include "CL/cl_platform.h"
 # #include "cl.h"
 #
-# which requires the tests to no only inherit the INTERFACE_INCLUDE_DIRECTORIES, but also the same dir with
+# which requires the tests to not only inherit the INTERFACE_INCLUDE_DIRECTORIES, but also the same dir with
 # /CL appended at the end. There seems to be a bug CMake (3.19 even) where if a target has the same genexpr
 # predicate twice, the second time it always fails. Having both
 #
