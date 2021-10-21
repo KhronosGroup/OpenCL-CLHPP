@@ -11,7 +11,7 @@ set(OPENCL_HEADERS_INCLUDE_DIR_GENEXPR $<TARGET_PROPERTY:OpenCL::Headers,INTERFA
 # #include "cl.h"
 #
 # which requires the tests to not only inherit the INTERFACE_INCLUDE_DIRECTORIES, but also the same dir with
-# /CL appended at the end. There seems to be a bug CMake (3.19 even) where if a target has the same genexpr
+# /CL appended at the end. There seems to be a bug in CMake (3.19 even) where if a target has the same genexpr
 # predicate twice, the second time it always fails. Having both
 #
 # $<TARGET_PROPERTY:Headers,INTERFACE_INCLUDE_DIRECTORIES> (invisbly via linking to OpenCL::Headers)
@@ -20,6 +20,9 @@ set(OPENCL_HEADERS_INCLUDE_DIR_GENEXPR $<TARGET_PROPERTY:OpenCL::Headers,INTERFA
 # means we can only get one of these switches. We forcibly go around it by extracting the value manually.
 #
 # Bug ticket: https://gitlab.kitware.com/cmake/cmake/-/issues/22735
+#
+# ticket closed with by-design. We should find a way to fix the Mock tests to not consume the public API using
+# mixed style includes.
 get_target_property(OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES OpenCL::Headers INTERFACE_INCLUDE_DIRECTORIES)
 
 if(OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES MATCHES "BUILD_INTERFACE")
