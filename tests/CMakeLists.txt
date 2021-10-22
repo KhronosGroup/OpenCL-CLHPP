@@ -43,9 +43,9 @@ add_custom_command(
     OUTPUT stripped/cl.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
-    COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INCLUDE_DIR_GENEXPR}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
+    COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
     COMMENT "Stripping defines from cl.h"
-    DEPENDS ${OPENCL_HEADERS_INCLUDE_DIR_GENEXPR}/CL/cl.h strip_defines.cmake)
+    DEPENDS ${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h strip_defines.cmake)
 	
 add_custom_command(
     OUTPUT mocks/Mockcl.c mocks/Mockcl.h
