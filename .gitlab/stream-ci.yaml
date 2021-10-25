@@ -89,7 +89,7 @@ build:cmake-minimum:
     # NOTE: OpenCL-ICD-Loader URL set in repo settings
     - git clone
       --depth 1
-      --branch initial-ci
+      --branch develop_stream
       https://gitlab-ci-token:${CI_JOB_TOKEN}@${OPENCL_ICD_LOADER_GIT_URL}
       $DEPS_DIR/OpenCL-ICD-Loader
     - cmake
@@ -159,7 +159,7 @@ build:cmake-latest:
     # NOTE: OpenCL-ICD-Loader URL set in repo settings
     - git clone
       --depth 1
-      --branch initial-ci
+      --branch develop_stream
       https://gitlab-ci-token:${CI_JOB_TOKEN}@${OPENCL_ICD_LOADER_GIT_URL}
       $DEPS_DIR/OpenCL-ICD-Loader
     - cmake
