@@ -71,7 +71,7 @@ build:cmake-minimum:
     # NOTE: OpenCL-Headers URL set in repo settings
     - git clone
       --depth 1
-      --branch initial-ci
+      --branch develop_stream
       https://gitlab-ci-token:${CI_JOB_TOKEN}@${OPENCL_HEADERS_GIT_URL}
       $DEPS_DIR/OpenCL-Headers
     - cmake
@@ -137,7 +137,7 @@ build:cmake-latest:
     # NOTE: OpenCL-Headers URL set in repo settings
     - git clone
       --depth 1
-      --branch initial-ci
+      --branch develop_stream
       https://gitlab-ci-token:${CI_JOB_TOKEN}@${OPENCL_HEADERS_GIT_URL}
       $DEPS_DIR/OpenCL-Headers
     - cmake
