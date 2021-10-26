@@ -6730,7 +6730,7 @@ public:
             notifyFptr,
             data);
 
-        BuildLogType buildLog(1);
+        BuildLogType buildLog(0);
         buildLog.push_back(std::make_pair(device, getBuildInfo<CL_PROGRAM_BUILD_LOG>(device)));
         return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, buildLog);
     }
