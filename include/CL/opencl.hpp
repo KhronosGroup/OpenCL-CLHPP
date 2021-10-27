@@ -7108,6 +7108,11 @@ inline QueueProperties operator|(QueueProperties lhs, QueueProperties rhs)
     return static_cast<QueueProperties>(static_cast<cl_command_queue_properties>(lhs) | static_cast<cl_command_queue_properties>(rhs));
 }
 
+inline QueueProperties operator&(QueueProperties lhs, QueueProperties rhs)
+{
+    return static_cast<QueueProperties>(static_cast<cl_command_queue_properties>(lhs) & static_cast<cl_command_queue_properties>(rhs));
+}
+
 /*! \class CommandQueue
  * \brief CommandQueue interface for cl_command_queue.
  */
