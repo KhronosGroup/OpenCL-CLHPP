@@ -46,19 +46,36 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
     COMMENT "Stripping defines from cl.h"
     DEPENDS ${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h strip_defines.cmake)
-	
+
+add_custom_target(
+    strip_cl_defines ALL
+    DEPENDS stripped/cl.h
+    SOURCES strip_defines.cmake)
+
 add_custom_command(
     OUTPUT mocks/Mockcl.c mocks/Mockcl.h
     COMMAND ${RUBY_EXECUTABLE} ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/cmock.yml stripped/cl.h
     COMMENT "Generating mocks"
     DEPENDS stripped/cl.h cmock.yml)
-	
+
+add_custom_target(
+    mock_cl_header ALL
+    DEPENDS mocks/Mockcl.c mocks/Mockcl.h
+    SOURCES cmock.yml)
+
+add_dependencies(mock_cl_header strip_cl_defines)
+
 add_custom_command(
     OUTPUT test_openclhpp_Runner.c
     COMMAND ${RUBY_EXECUTABLE} ${UNITY_DIR}/auto/generate_test_runner.rb test_openclhpp.cpp cmock.yml ${CMAKE_CURRENT_BINARY_DIR}/test_openclhpp_Runner.c
     WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
     COMMENT "Generating test runner"
     DEPENDS test_openclhpp.cpp cmock.yml)
+
+add_custom_target(
+    openclhpp_runner ALL
+    DEPENDS test_openclhpp_Runner.c
+    SOURCES test_openclhpp.cpp)
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID MATCHES "(Apple)?Clang")
     add_compile_options(-Wno-deprecated-declarations)
@@ -121,6 +138,11 @@ foreach(VERSION 120 200 210 220 300)
     )
     target_compile_definitions(${TEST_EXE}
         PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
+    )
+    add_dependencies(${TEST_EXE}
+        strip_cl_defines
+        mock_cl_header
+        openclhpp_runner
     )
     add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
   endforeach(OPTION)
