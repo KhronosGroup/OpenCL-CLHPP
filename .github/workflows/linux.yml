@@ -98,7 +98,8 @@ jobs:
       # no -Werror during configuration because:
       # warning: ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]
       # warning: unused parameter [-Wunused-parameter]
-      run: [[ "${{matrix.COMPILER}}" =~ ([0-9]+) ]]; COMPILER_VER=${BASH_REMATCH[1]};
+      run: |
+        [[ "${{matrix.COMPILER}}" =~ ([0-9]+) ]]; COMPILER_VER=${BASH_REMATCH[1]};
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D BUILD_TESTS=ON
@@ -135,7 +136,8 @@ jobs:
 
     - name: "Consume (standalone): Configure/Build/Test"
       shell: bash
-      run: $CMAKE_EXE
+      run: |
+        [[ "${{matrix.COMPILER}}" =~ ([0-9]+) ]]; COMPILER_VER=${BASH_REMATCH[1]};$CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
         -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
@@ -152,7 +154,8 @@ jobs:
 
     - name: "Consume (SDK): Configure/Build/Test"
       shell: bash
-      run: $CMAKE_EXE -E make_directory $GITHUB_WORKSPACE/install/share/cmake/OpenCL ;
+      run: |
+        [[ "${{matrix.COMPILER}}" =~ ([0-9]+) ]]; COMPILER_VER=${BASH_REMATCH[1]};$CMAKE_EXE -E make_directory $GITHUB_WORKSPACE/install/share/cmake/OpenCL ;
         echo -e 'include("/home/runner/work/OpenCL-ICD-Loader/OpenCL-ICD-Loader/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake")\ninclude("${CMAKE_CURRENT_LIST_DIR}/../OpenCLICDLoader/OpenCLICDLoaderTargets.cmake")' > $GITHUB_WORKSPACE/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
