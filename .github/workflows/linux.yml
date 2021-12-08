@@ -70,7 +70,6 @@ jobs:
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=cc
-        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -B$GITHUB_WORKSPACE/external/OpenCL-Headers/build
         -H$GITHUB_WORKSPACE/external/OpenCL-Headers &&
@@ -86,7 +85,6 @@ jobs:
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=cc
-        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
         -B$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/build
@@ -110,7 +108,6 @@ jobs:
         -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_CXX_COMPILER=cpp
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
-        -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/install
         -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
         -B$GITHUB_WORKSPACE/build
@@ -144,7 +141,6 @@ jobs:
         -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_CXX_COMPILER=cpp
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
-        -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install;$GITHUB_WORKSPACE/install"
         -B$GITHUB_WORKSPACE/build/downstream/bare
         -H$GITHUB_WORKSPACE/tests/pkgconfig/bare ;
@@ -163,7 +159,6 @@ jobs:
         -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_CXX_COMPILER=cpp
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
-        -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/install"
         -D DRIVER_STUB_PATH=$GITHUB_WORKSPACE/build/libOpenCLDriverStub.so
         -B$GITHUB_WORKSPACE/build/downstream/sdk
@@ -224,7 +219,6 @@ jobs:
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=${{matrix.COMPILER}}
         -D CMAKE_C_STANDARD=${{matrix.STD}}
-        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -B $GITHUB_WORKSPACE/external/OpenCL-Headers/build
         -S $GITHUB_WORKSPACE/external/OpenCL-Headers;
@@ -246,7 +240,6 @@ jobs:
         -D CMAKE_C_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=${{matrix.COMPILER}}
         -D CMAKE_C_STANDARD=${{matrix.STD}}
-        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/install
         -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -B $GITHUB_WORKSPACE/build
@@ -281,7 +274,6 @@ jobs:
         -D CMAKE_C_COMPILER=${{matrix.COMPILER}}
         -D CMAKE_C_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_C_STANDARD=${{matrix.STD}}
-        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/install"
         -D DRIVER_STUB_PATH=$GITHUB_WORKSPACE/build/Release/libOpenCLDriverStub.so
         -B $GITHUB_WORKSPACE/build/downstream/bare
@@ -301,7 +293,6 @@ jobs:
         -D CMAKE_C_COMPILER=${{matrix.COMPILER}}
         -D CMAKE_C_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_C_STANDARD=${{matrix.STD}}
-        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/install"
         -D DRIVER_STUB_PATH=$GITHUB_WORKSPACE/build/Release/libOpenCLDriverStub.so
         -B $GITHUB_WORKSPACE/build/downstream/sdk
