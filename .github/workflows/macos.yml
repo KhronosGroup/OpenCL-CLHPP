@@ -1,0 +1,97 @@
+name: MacOS
+
+on: [push, pull_request]
+
+jobs:
+  macos-gcc:
+    if: false
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        VER: [9, 10, 11]
+        EXT: [ON, OFF]
+        GEN: [Xcode, Ninja Multi-Config]
+        STD: [99, 11] # 90 results in errors
+
+    steps:
+    - name: Checkout OpenCL-ICD-Loader
+      uses: actions/checkout@v2
+
+    - name: Checkout OpenCL-Headers
+      uses: actions/checkout@v2
+      with:
+        repository: KhronosGroup/OpenCL-Headers
+        path: external/OpenCL-Headers
+
+    - name: Create Build Environment
+      run: |
+        cmake -E make_directory $GITHUB_WORKSPACE/build;
+        cmake -E make_directory $GITHUB_WORKSPACE/install;
+        if [[ "${{matrix.GEN}}" == "Ninja Multi-Config" && ! `which ninja` ]]; then brew install ninja; fi;
+        # Install Ninja only if it's the selected generator and it's not available.
+
+    - name: Build & install OpenCL-Headers
+      run: cmake
+        -G "${{matrix.GEN}}"
+        -D CMAKE_C_FLAGS="-w"
+        -D CMAKE_C_COMPILER=/usr/local/bin/gcc-${{matrix.VER}}
+        -D CMAKE_C_STANDARD=${{matrix.STD}}
+        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
+        -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
+        -S $GITHUB_WORKSPACE/external/OpenCL-Headers
+        -B $GITHUB_WORKSPACE/external/OpenCL-Headers/build &&
+        cmake
+        --build $GITHUB_WORKSPACE/external/OpenCL-Headers/build
+        --target install
+        --config Release
+        --parallel `sysctl -n hw.logicalcpu`
+
+    - name: Configure CMake
+      # no -Werror during configuration because:
+      # warning: ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]
+      # warning: unused parameter [-Wunused-parameter]
+      shell: bash
+      run: cmake
+        -G "${{matrix.GEN}}"
+        -D BUILD_TESTING=ON
+        -D CMAKE_C_FLAGS="-Wall -Wextra -pedantic -Wno-format"
+        -D CMAKE_C_COMPILER=/usr/local/bin/gcc-${{matrix.VER}}
+        -D CMAKE_C_STANDARD=${{matrix.STD}}
+        -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
+        -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/install
+        -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
+        -S $GITHUB_WORKSPACE
+        -B $GITHUB_WORKSPACE/build
+
+    - name: Build (Xcode)
+      if: matrix.GEN == 'Xcode'
+      shell: bash
+      run: |
+        cmake --build $GITHUB_WORKSPACE/build --config Release --parallel `sysctl -n hw.logicalcpu`
+        cmake --build $GITHUB_WORKSPACE/build --config Debug --parallel `sysctl -n hw.logicalcpu`
+
+    - name: Build (Ninja)
+      if: matrix.GEN == 'Ninja Multi-Config'
+      shell: bash
+      run: |
+        cmake --build $GITHUB_WORKSPACE/build --config Release --parallel `sysctl -n hw.logicalcpu`
+        cmake --build $GITHUB_WORKSPACE/build --config Debug --parallel `sysctl -n hw.logicalcpu`
+
+    - name: Test
+      working-directory: ${{runner.workspace}}/OpenCL-ICD-Loader/build
+      shell: bash
+      run: |
+        ctest -C Release --output-on-failure --parallel `sysctl -n hw.logicalcpu`
+        ctest -C Debug --output-on-failure --parallel `sysctl -n hw.logicalcpu`
+
+    - name: Install (Xcode)
+      if: matrix.GEN == 'Xcode'
+      shell: bash
+      run: |
+        cmake --build $GITHUB_WORKSPACE/build --config Release --target install
+
+    - name: Install (Ninja)
+      if: matrix.GEN == 'Ninja Multi-Config'
+      shell: bash
+      run: |
+        cmake --build $GITHUB_WORKSPACE/build --config Release --target install
