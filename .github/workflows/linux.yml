@@ -12,9 +12,9 @@ jobs:
         EXT: [ON] # OFF = icd_linux.c:66 error: ‘DT_UNKNOWN’ undeclared (first use in this function)
         GEN: [Unix Makefiles]
         CONFIG: [Debug, Release]
-        STD: [99, 11]
+        STD: [11, 14]
         BIN: [32, 64]
-        CMAKE: [3.1.3, 3.21.2]
+        CMAKE: [3.1.3]
     env:
       CMAKE_URL: https://github.com/Kitware/CMake/releases/download/v${{ matrix.CMAKE }}/cmake-${{ matrix.CMAKE }}-Linux-x86_64.tar.gz
       CMAKE_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cmake
@@ -70,7 +70,6 @@ jobs:
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=cc
-        -D CMAKE_C_STANDARD=${{matrix.STD}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -B$GITHUB_WORKSPACE/external/OpenCL-Headers/build
@@ -87,7 +86,6 @@ jobs:
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=cc
-        -D CMAKE_C_STANDARD=${{matrix.STD}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
