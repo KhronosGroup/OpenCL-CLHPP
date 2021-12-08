@@ -45,12 +45,14 @@ jobs:
         [[ "${{matrix.COMPILER}}" =~ ([0-9]+) ]]; COMPILER_VER=${BASH_REMATCH[1]};
         if [[ "${{matrix.COMPILER}}" =~ "gcc" ]];
         then sudo apt install ${{matrix.COMPILER}} g++-${COMPILER_VER};
-        sudo update-alternatives --install /usr/bin/cc cc /usr/bin/gcc-${COMPILER_VER} 100 --slave /usr/bin/cpp cpp /usr/bin/g++-${COMPILER_VER};
+        sudo update-alternatives --install /usr/bin/cc  cc  /usr/bin/gcc-${COMPILER_VER} 100;
+        sudo update-alternatives --install /usr/bin/cpp cpp /usr/bin/g++-${COMPILER_VER} 100;
         if [[ "${{matrix.BIN}}" == "32" ]];
         then sudo apt install gcc-${COMPILER_VER}-multilib;
         fi;
         else sudo apt install ${{matrix.COMPILER}};
-        sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang-${COMPILER_VER} 100 --slave /usr/bin/cpp cpp /usr/bin/clang++-${COMPILER_VER};
+        sudo update-alternatives --install /usr/bin/cc  cc  /usr/bin/clang-${COMPILER_VER}   100;
+        sudo update-alternatives --install /usr/bin/cpp cpp /usr/bin/clang++-${COMPILER_VER} 100;
         if [[ "${{matrix.BIN}}" == "32" ]];
         then sudo apt install gcc-multilib;
         fi;
