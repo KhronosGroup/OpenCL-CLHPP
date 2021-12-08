@@ -24,6 +24,8 @@ jobs:
     steps:
     - name: Checkout OpenCL-CLHPP
       uses: actions/checkout@v2
+      with:
+        submodules: recursive
 
     - name: Checkout OpenCL-Headers
       uses: actions/checkout@v2
