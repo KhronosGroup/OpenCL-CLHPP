@@ -396,6 +396,10 @@
 #ifndef CL_HPP_
 #define CL_HPP_
 
+#ifndef CL_WRAPPER_NS
+#define CL_WRAPPER_NS
+#endif
+
 /* Handle deprecated preprocessor definitions. In each case, we only check for
  * the old name if the new name is not defined, so that user code can define
  * both and hence work with either version of the bindings.
@@ -1349,7 +1353,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     \
     F(cl_image_info, CL_IMAGE_ARRAY_SIZE, size_type) \
     F(cl_image_info, CL_IMAGE_NUM_MIP_LEVELS, cl_uint) \
-    F(cl_image_info, CL_IMAGE_NUM_SAMPLES, cl_uint)
+    F(cl_image_info, CL_IMAGE_NUM_SAMPLES, cl_uint) \
+    F(cl_device_info, CL_DEVICE_IMAGE_PITCH_ALIGNMENT, cl_uint) \
+    F(cl_device_info, CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT, cl_uint)
 
 #define CL_HPP_PARAM_NAME_INFO_2_0_(F) \
     F(cl_device_info, CL_DEVICE_QUEUE_ON_HOST_PROPERTIES, cl_command_queue_properties) \
@@ -1365,8 +1371,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_PREFERRED_PLATFORM_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_GLOBAL_ATOMIC_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_PREFERRED_LOCAL_ATOMIC_ALIGNMENT, cl_uint) \
-    F(cl_device_info, CL_DEVICE_IMAGE_PITCH_ALIGNMENT, cl_uint) \
-    F(cl_device_info, CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT, cl_uint) \
     F(cl_device_info, CL_DEVICE_MAX_READ_WRITE_IMAGE_ARGS, cl_uint ) \
     F(cl_device_info, CL_DEVICE_MAX_GLOBAL_VARIABLE_SIZE, size_type ) \
     F(cl_device_info, CL_DEVICE_GLOBAL_VARIABLE_PREFERRED_TOTAL_SIZE, size_type ) \
@@ -1641,7 +1645,11 @@ struct GetInfoFunctor0
     Func f_; const Arg0& arg0_;
     cl_int operator ()(
         cl_uint param, size_type size, void* value, size_type* size_ret)
+#if defined(CL_USE_FUNCTION_POINTERS)
+    { return (*f_)(arg0_, param, size, value, size_ret); }
+#else
     { return f_(arg0_, param, size, value, size_ret); }
+#endif
 };
 
 template <typename Func, typename Arg0, typename Arg1>
@@ -1650,7 +1658,11 @@ struct GetInfoFunctor1
     Func f_; const Arg0& arg0_; const Arg1& arg1_;
     cl_int operator ()(
         cl_uint param, size_type size, void* value, size_type* size_ret)
+#if defined(CL_USE_FUNCTION_POINTERS)
+    { return (*f_)(arg0_, arg1_, param, size, value, size_ret); }
+#else
     { return f_(arg0_, arg1_, param, size, value, size_ret); }
+#endif
 };
 
 template <typename Func, typename Arg0, typename T>
@@ -1691,7 +1703,7 @@ struct ReferenceHandler<cl_device_id>
      *   CL_OUT_OF_HOST_MEMORY
      */
     static cl_int retain(cl_device_id device)
-    { return ::clRetainDevice(device); }
+    { return CL_WRAPPER_NS::clRetainDevice(device); }
     /**
      * Retain the device.
      * \param device A valid device created using createSubDevices
@@ -1702,7 +1714,7 @@ struct ReferenceHandler<cl_device_id>
      *   CL_OUT_OF_HOST_MEMORY
      */
     static cl_int release(cl_device_id device)
-    { return ::clReleaseDevice(device); }
+    { return CL_WRAPPER_NS::clReleaseDevice(device); }
 };
 #else // CL_HPP_TARGET_OPENCL_VERSION >= 120
 /**
@@ -1735,63 +1747,63 @@ template <>
 struct ReferenceHandler<cl_context>
 {
     static cl_int retain(cl_context context)
-    { return ::clRetainContext(context); }
+    { return CL_WRAPPER_NS::clRetainContext(context); }
     static cl_int release(cl_context context)
-    { return ::clReleaseContext(context); }
+    { return CL_WRAPPER_NS::clReleaseContext(context); }
 };
 
 template <>
 struct ReferenceHandler<cl_command_queue>
 {
     static cl_int retain(cl_command_queue queue)
-    { return ::clRetainCommandQueue(queue); }
+    { return CL_WRAPPER_NS::clRetainCommandQueue(queue); }
     static cl_int release(cl_command_queue queue)
-    { return ::clReleaseCommandQueue(queue); }
+    { return CL_WRAPPER_NS::clReleaseCommandQueue(queue); }
 };
 
 template <>
 struct ReferenceHandler<cl_mem>
 {
     static cl_int retain(cl_mem memory)
-    { return ::clRetainMemObject(memory); }
+    { return CL_WRAPPER_NS::clRetainMemObject(memory); }
     static cl_int release(cl_mem memory)
-    { return ::clReleaseMemObject(memory); }
+    { return CL_WRAPPER_NS::clReleaseMemObject(memory); }
 };
 
 template <>
 struct ReferenceHandler<cl_sampler>
 {
     static cl_int retain(cl_sampler sampler)
-    { return ::clRetainSampler(sampler); }
+    { return CL_WRAPPER_NS::clRetainSampler(sampler); }
     static cl_int release(cl_sampler sampler)
-    { return ::clReleaseSampler(sampler); }
+    { return CL_WRAPPER_NS::clReleaseSampler(sampler); }
 };
 
 template <>
 struct ReferenceHandler<cl_program>
 {
     static cl_int retain(cl_program program)
-    { return ::clRetainProgram(program); }
+    { return CL_WRAPPER_NS::clRetainProgram(program); }
     static cl_int release(cl_program program)
-    { return ::clReleaseProgram(program); }
+    { return CL_WRAPPER_NS::clReleaseProgram(program); }
 };
 
 template <>
 struct ReferenceHandler<cl_kernel>
 {
     static cl_int retain(cl_kernel kernel)
-    { return ::clRetainKernel(kernel); }
+    { return CL_WRAPPER_NS::clRetainKernel(kernel); }
     static cl_int release(cl_kernel kernel)
-    { return ::clReleaseKernel(kernel); }
+    { return CL_WRAPPER_NS::clReleaseKernel(kernel); }
 };
 
 template <>
 struct ReferenceHandler<cl_event>
 {
     static cl_int retain(cl_event event)
-    { return ::clRetainEvent(event); }
+    { return CL_WRAPPER_NS::clRetainEvent(event); }
     static cl_int release(cl_event event)
-    { return ::clReleaseEvent(event); }
+    { return CL_WRAPPER_NS::clReleaseEvent(event); }
 };
 
 
@@ -2289,7 +2301,7 @@ public:
     cl_int getInfo(cl_device_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetDeviceInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetDeviceInfo, object_, name, param),
             __GET_DEVICE_INFO_ERR);
     }
 
@@ -2475,7 +2487,7 @@ private:
             // Otherwise set it
             cl_uint n = 0;
 
-            cl_int err = ::clGetPlatformIDs(0, NULL, &n);
+            cl_int err = CL_WRAPPER_NS::clGetPlatformIDs(0, NULL, &n);
             if (err != CL_SUCCESS) {
                 default_error_ = err;
                 return;
@@ -2486,7 +2498,7 @@ private:
             }
 
             vector<cl_platform_id> ids(n);
-            err = ::clGetPlatformIDs(n, ids.data(), NULL);
+            err = CL_WRAPPER_NS::clGetPlatformIDs(n, ids.data(), NULL);
             if (err != CL_SUCCESS) {
                 default_error_ = err;
                 return;
@@ -2576,7 +2588,7 @@ public:
     cl_int getInfo(cl_platform_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetPlatformInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetPlatformInfo, object_, name, param),
             __GET_PLATFORM_INFO_ERR);
     }
 
@@ -2606,14 +2618,14 @@ public:
         if( devices == NULL ) {
             return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
         }
-        cl_int err = ::clGetDeviceIDs(object_, type, 0, NULL, &n);
+        cl_int err = CL_WRAPPER_NS::clGetDeviceIDs(object_, type, 0, NULL, &n);
         if (err != CL_SUCCESS  && err != CL_DEVICE_NOT_FOUND) {
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
         }
 
         vector<cl_device_id> ids(n);
         if (n>0) {
-            err = ::clGetDeviceIDs(object_, type, n, ids.data(), NULL);
+            err = CL_WRAPPER_NS::clGetDeviceIDs(object_, type, n, ids.data(), NULL);
             if (err != CL_SUCCESS) {
                 return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
             }
@@ -2737,13 +2749,13 @@ public:
             return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_PLATFORM_IDS_ERR);
         }
 
-        cl_int err = ::clGetPlatformIDs(0, NULL, &n);
+        cl_int err = CL_WRAPPER_NS::clGetPlatformIDs(0, NULL, &n);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
         vector<cl_platform_id> ids(n);
-        err = ::clGetPlatformIDs(n, ids.data(), NULL);
+        err = CL_WRAPPER_NS::clGetPlatformIDs(n, ids.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
@@ -2798,7 +2810,7 @@ public:
     cl_int
     unloadCompiler()
     {
-        return ::clUnloadPlatformCompiler(object_);
+        return CL_WRAPPER_NS::clUnloadPlatformCompiler(object_);
     }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 }; // class Platform
@@ -2821,7 +2833,7 @@ UnloadCompiler() CL_API_SUFFIX__VERSION_1_1_DEPRECATED;
 inline cl_int
 UnloadCompiler()
 {
-    return ::clUnloadCompiler();
+    return CL_WRAPPER_NS::clUnloadCompiler();
 }
 #endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
@@ -2925,7 +2937,7 @@ public:
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
-        object_ = ::clCreateContext(
+        object_ = CL_WRAPPER_NS::clCreateContext(
             properties, (cl_uint) numDevices,
             deviceIDs.data(),
             notifyFptr, data, &error);
@@ -2955,7 +2967,7 @@ public:
 
         cl_device_id deviceID = device();
 
-        object_ = ::clCreateContext(
+        object_ = CL_WRAPPER_NS::clCreateContext(
             properties, 1,
             &deviceID,
             notifyFptr, data, &error);
@@ -3044,7 +3056,7 @@ public:
             properties = &prop[0];
         }
 #endif
-        object_ = ::clCreateContextFromType(
+        object_ = CL_WRAPPER_NS::clCreateContextFromType(
             properties, type, notifyFptr, data, &error);
 
         detail::errHandler(error, __CREATE_CONTEXT_FROM_TYPE_ERR);
@@ -3137,7 +3149,7 @@ public:
     cl_int getInfo(cl_context_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetContextInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetContextInfo, object_, name, param),
             __GET_CONTEXT_INFO_ERR);
     }
 
@@ -3170,7 +3182,7 @@ public:
             return CL_SUCCESS;
         }
 
-        cl_int err = ::clGetSupportedImageFormats(
+        cl_int err = CL_WRAPPER_NS::clGetSupportedImageFormats(
            object_, 
            flags,
            type, 
@@ -3183,7 +3195,7 @@ public:
 
         if (numEntries > 0) {
             vector<ImageFormat> value(numEntries);
-            err = ::clGetSupportedImageFormats(
+            err = CL_WRAPPER_NS::clGetSupportedImageFormats(
                 object_,
                 flags,
                 type,
@@ -3279,7 +3291,7 @@ public:
     cl_int getInfo(cl_event_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetEventInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetEventInfo, object_, name, param),
             __GET_EVENT_INFO_ERR);
     }
 
@@ -3302,7 +3314,7 @@ public:
     cl_int getProfilingInfo(cl_profiling_info name, T* param) const
     {
         return detail::errHandler(detail::getInfo(
-            &::clGetEventProfilingInfo, object_, name, param),
+                &CL_WRAPPER_NS::clGetEventProfilingInfo, object_, name, param),
             __GET_EVENT_PROFILE_INFO_ERR);
     }
 
@@ -3327,7 +3339,7 @@ public:
     cl_int wait() const
     {
         return detail::errHandler(
-            ::clWaitForEvents(1, &object_),
+            CL_WRAPPER_NS::clWaitForEvents(1, &object_),
             __WAIT_FOR_EVENTS_ERR);
     }
 
@@ -3342,7 +3354,7 @@ public:
         void * user_data = NULL)
     {
         return detail::errHandler(
-            ::clSetEventCallback(
+            CL_WRAPPER_NS::clSetEventCallback(
                 object_,
                 type,
                 pfn_notify,
@@ -3359,7 +3371,7 @@ public:
     waitForEvents(const vector<Event>& events)
     {
         return detail::errHandler(
-            ::clWaitForEvents(
+            CL_WRAPPER_NS::clWaitForEvents(
                 (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : NULL),
             __WAIT_FOR_EVENTS_ERR);
     }
@@ -3382,7 +3394,7 @@ public:
         cl_int * err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateUserEvent(
+        object_ = CL_WRAPPER_NS::clCreateUserEvent(
             context(),
             &error);
 
@@ -3402,7 +3414,7 @@ public:
     cl_int setStatus(cl_int status)
     {
         return detail::errHandler(
-            ::clSetUserEventStatus(object_,status), 
+            CL_WRAPPER_NS::clSetUserEventStatus(object_,status),
             __SET_USER_EVENT_STATUS_ERR);
     }
 };
@@ -3416,7 +3428,7 @@ inline static cl_int
 WaitForEvents(const vector<Event>& events)
 {
     return detail::errHandler(
-        ::clWaitForEvents(
+        CL_WRAPPER_NS::clWaitForEvents(
             (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : NULL),
         __WAIT_FOR_EVENTS_ERR);
 }
@@ -3494,7 +3506,7 @@ public:
     cl_int getInfo(cl_mem_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetMemObjectInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetMemObjectInfo, object_, name, param),
             __GET_MEM_OBJECT_INFO_ERR);
     }
 
@@ -3531,7 +3543,7 @@ public:
         void * user_data = NULL)
     {
         return detail::errHandler(
-            ::clSetMemObjectDestructorCallback(
+            CL_WRAPPER_NS::clSetMemObjectDestructorCallback(
                 object_,
                 pfn_notify,
                 user_data), 
@@ -3938,7 +3950,7 @@ public:
         cl_int* err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateBuffer(context(), flags, size, host_ptr, &error);
+        object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, host_ptr, &error);
 
         detail::errHandler(error, __CREATE_BUFFER_ERR);
         if (err != NULL) {
@@ -3965,7 +3977,7 @@ public:
 
         Context context = Context::getDefault(err);
 
-        object_ = ::clCreateBuffer(context(), flags, size, host_ptr, &error);
+        object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, host_ptr, &error);
 
         detail::errHandler(error, __CREATE_BUFFER_ERR);
         if (err != NULL) {
@@ -4005,9 +4017,9 @@ public:
         Context context = Context::getDefault(err);
 
         if( useHostPtr ) {
-            object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+            object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
         } else {
-            object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
+            object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, 0, &error);
         }
 
         detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -4105,7 +4117,7 @@ public:
     {
         Buffer result;
         cl_int error;
-        result.object_ = ::clCreateSubBuffer(
+        result.object_ = CL_WRAPPER_NS::clCreateSubBuffer(
             object_, 
             flags, 
             buffer_create_type, 
@@ -4254,7 +4266,7 @@ public:
         cl_int * err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateFromGLBuffer(
+        object_ = CL_WRAPPER_NS::clCreateFromGLBuffer(
             context(),
             flags,
             bufobj,
@@ -4323,7 +4335,7 @@ public:
         cl_GLuint * gl_object_name)
     {
         return detail::errHandler(
-            ::clGetGLObjectInfo(object_,type,gl_object_name),
+            CL_WRAPPER_NS::clGetGLObjectInfo(object_,type,gl_object_name),
             __GET_GL_OBJECT_INFO_ERR);
     }
 };
@@ -4351,7 +4363,7 @@ public:
         cl_int * err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateFromGLRenderbuffer(
+        object_ = CL_WRAPPER_NS::clCreateFromGLRenderbuffer(
             context(),
             flags,
             bufobj,
@@ -4420,7 +4432,7 @@ public:
         cl_GLuint * gl_object_name)
     {
         return detail::errHandler(
-            ::clGetGLObjectInfo(object_,type,gl_object_name),
+            CL_WRAPPER_NS::clGetGLObjectInfo(object_,type,gl_object_name),
             __GET_GL_OBJECT_INFO_ERR);
     }
 };
@@ -4492,7 +4504,7 @@ public:
     cl_int getImageInfo(cl_image_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetImageInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetImageInfo, object_, name, param),
             __GET_IMAGE_INFO_ERR);
     }
     
@@ -4539,7 +4551,7 @@ public:
         desc.image_type = CL_MEM_OBJECT_IMAGE1D;
         desc.image_width = width;
 
-        object_ = ::clCreateImage(
+        object_ = CL_WRAPPER_NS::clCreateImage(
             context(), 
             flags, 
             &format, 
@@ -4627,7 +4639,7 @@ public:
         desc.image_width = width;
         desc.buffer = buffer();
 
-        object_ = ::clCreateImage(
+        object_ = CL_WRAPPER_NS::clCreateImage(
             context(), 
             flags, 
             &format, 
@@ -4713,7 +4725,7 @@ public:
         desc.image_array_size = arraySize;
         desc.image_row_pitch = rowPitch;
 
-        object_ = ::clCreateImage(
+        object_ = CL_WRAPPER_NS::clCreateImage(
             context(), 
             flags, 
             &format, 
@@ -4825,7 +4837,7 @@ public:
             desc.image_height = height;
             desc.image_row_pitch = row_pitch;
 
-            object_ = ::clCreateImage(
+            object_ = CL_WRAPPER_NS::clCreateImage(
                 context(),
                 flags,
                 &format,
@@ -4842,7 +4854,7 @@ public:
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         if (!useCreateImage)
         {
-            object_ = ::clCreateImage2D(
+            object_ = CL_WRAPPER_NS::clCreateImage2D(
                 context(), flags,&format, width, height, row_pitch, host_ptr, &error);
 
             detail::errHandler(error, __CREATE_IMAGE2D_ERR);
@@ -4877,7 +4889,7 @@ public:
         desc.image_row_pitch = row_pitch;
         desc.buffer = sourceBuffer();
 
-        object_ = ::clCreateImage(
+        object_ = CL_WRAPPER_NS::clCreateImage(
             context(),
             0, // flags inherited from buffer
             &format,
@@ -4940,7 +4952,7 @@ public:
         desc.num_samples = sourceNumSamples;
         desc.buffer = sourceImage();
 
-        object_ = ::clCreateImage(
+        object_ = CL_WRAPPER_NS::clCreateImage(
             context(),
             0, // flags should be inherited from mem_object
             &sourceFormat,
@@ -5036,7 +5048,7 @@ public:
         cl_int * err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateFromGLTexture2D(
+        object_ = CL_WRAPPER_NS::clCreateFromGLTexture2D(
             context(),
             flags,
             target,
@@ -5134,7 +5146,7 @@ public:
         desc.image_row_pitch = rowPitch;
         desc.image_slice_pitch = slicePitch;
 
-        object_ = ::clCreateImage(
+        object_ = CL_WRAPPER_NS::clCreateImage(
             context(), 
             flags, 
             &format, 
@@ -5246,7 +5258,7 @@ public:
             desc.image_row_pitch = row_pitch;
             desc.image_slice_pitch = slice_pitch;
 
-            object_ = ::clCreateImage(
+            object_ = CL_WRAPPER_NS::clCreateImage(
                 context(), 
                 flags, 
                 &format, 
@@ -5263,7 +5275,7 @@ public:
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         if (!useCreateImage)
         {
-            object_ = ::clCreateImage3D(
+            object_ = CL_WRAPPER_NS::clCreateImage3D(
                 context(), flags, &format, width, height, depth, row_pitch,
                 slice_pitch, host_ptr, &error);
 
@@ -5353,7 +5365,7 @@ public:
         cl_int * err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateFromGLTexture3D(
+        object_ = CL_WRAPPER_NS::clCreateFromGLTexture3D(
             context(),
             flags,
             target,
@@ -5439,7 +5451,7 @@ public:
         cl_int * err = NULL)
     {
         cl_int error;
-        object_ = ::clCreateFromGLTexture(
+        object_ = CL_WRAPPER_NS::clCreateFromGLTexture(
             context(), 
             flags, 
             target,
@@ -5532,7 +5544,7 @@ public:
         cl_int error;
 
         cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
-        object_ = ::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
+        object_ = CL_WRAPPER_NS::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
 
         detail::errHandler(error, __CREATE_PIPE_ERR);
         if (err != NULL) {
@@ -5558,7 +5570,7 @@ public:
         Context context = Context::getDefault(err);
 
         cl_mem_flags flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
-        object_ = ::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
+        object_ = CL_WRAPPER_NS::clCreatePipe(context(), flags, packet_size, max_packets, nullptr, &error);
 
         detail::errHandler(error, __CREATE_PIPE_ERR);
         if (err != NULL) {
@@ -5622,7 +5634,7 @@ public:
     cl_int getInfo(cl_pipe_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetPipeInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetPipeInfo, object_, name, param),
             __GET_PIPE_INFO_ERR);
     }
 
@@ -5676,7 +5688,7 @@ public:
             CL_SAMPLER_ADDRESSING_MODE, addressing_mode,
             CL_SAMPLER_FILTER_MODE, filter_mode,
             0 };
-        object_ = ::clCreateSamplerWithProperties(
+        object_ = CL_WRAPPER_NS::clCreateSamplerWithProperties(
             context(),
             sampler_properties,
             &error);
@@ -5686,7 +5698,7 @@ public:
             *err = error;
         }
 #else
-        object_ = ::clCreateSampler(
+        object_ = CL_WRAPPER_NS::clCreateSampler(
             context(),
             normalized_coords,
             addressing_mode,
@@ -5755,7 +5767,7 @@ public:
     cl_int getInfo(cl_sampler_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetSamplerInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetSamplerInfo, object_, name, param),
             __GET_SAMPLER_INFO_ERR);
     }
 
@@ -5979,7 +5991,7 @@ public:
     cl_int getInfo(cl_kernel_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetKernelInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetKernelInfo, object_, name, param),
             __GET_KERNEL_INFO_ERR);
     }
 
@@ -6001,7 +6013,7 @@ public:
     cl_int getArgInfo(cl_uint argIndex, cl_kernel_arg_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetKernelArgInfo, object_, argIndex, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetKernelArgInfo, object_, argIndex, name, param),
             __GET_KERNEL_ARG_INFO_ERR);
     }
 
@@ -6025,7 +6037,7 @@ public:
     {
         return detail::errHandler(
             detail::getInfo(
-                &::clGetKernelWorkGroupInfo, object_, device(), name, param),
+                &CL_WRAPPER_NS::clGetKernelWorkGroupInfo, object_, device(), name, param),
                 __GET_KERNEL_WORK_GROUP_INFO_ERR);
     }
 
@@ -6083,7 +6095,7 @@ public:
     cl_int setArg(cl_uint index, const cl::pointer<T, D> &argPtr)
     {
         return detail::errHandler(
-            ::clSetKernelArgSVMPointer(object_, index, argPtr.get()),
+            CL_WRAPPER_NS::clSetKernelArgSVMPointer(object_, index, argPtr.get()),
             __SET_KERNEL_ARGS_ERR);
     }
 
@@ -6093,7 +6105,7 @@ public:
     cl_int setArg(cl_uint index, const cl::vector<T, Alloc> &argPtr)
     {
         return detail::errHandler(
-            ::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
+            CL_WRAPPER_NS::clSetKernelArgSVMPointer(object_, index, argPtr.data()),
             __SET_KERNEL_ARGS_ERR);
     }
 
@@ -6104,7 +6116,7 @@ public:
         setArg(cl_uint index, const T argPtr)
     {
         return detail::errHandler(
-            ::clSetKernelArgSVMPointer(object_, index, argPtr),
+            CL_WRAPPER_NS::clSetKernelArgSVMPointer(object_, index, argPtr),
             __SET_KERNEL_ARGS_ERR);
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -6116,7 +6128,7 @@ public:
         setArg(cl_uint index, const T &value)
     {
         return detail::errHandler(
-            ::clSetKernelArg(
+            CL_WRAPPER_NS::clSetKernelArg(
                 object_,
                 index,
                 detail::KernelArgumentHandler<T>::size(value),
@@ -6127,7 +6139,7 @@ public:
     cl_int setArg(cl_uint index, size_type size, const void* argPtr)
     {
         return detail::errHandler(
-            ::clSetKernelArg(object_, index, size, argPtr),
+            CL_WRAPPER_NS::clSetKernelArg(object_, index, size, argPtr),
             __SET_KERNEL_ARGS_ERR);
     }
 
@@ -6139,7 +6151,7 @@ public:
     cl_int setSVMPointers(const vector<void*> &pointerList)
     {
         return detail::errHandler(
-            ::clSetKernelExecInfo(
+            CL_WRAPPER_NS::clSetKernelExecInfo(
                 object_,
                 CL_KERNEL_EXEC_INFO_SVM_PTRS,
                 sizeof(void*)*pointerList.size(),
@@ -6154,7 +6166,7 @@ public:
     cl_int setSVMPointers(const std::array<void*, ArrayLength> &pointerList)
     {
         return detail::errHandler(
-            ::clSetKernelExecInfo(
+            CL_WRAPPER_NS::clSetKernelExecInfo(
                 object_,
                 CL_KERNEL_EXEC_INFO_SVM_PTRS,
                 sizeof(void*)*pointerList.size(),
@@ -6176,7 +6188,7 @@ public:
     {
         cl_bool svmEnabled_ = svmEnabled ? CL_TRUE : CL_FALSE;
         return detail::errHandler(
-            ::clSetKernelExecInfo(
+            CL_WRAPPER_NS::clSetKernelExecInfo(
                 object_,
                 CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,
                 sizeof(cl_bool),
@@ -6221,7 +6233,7 @@ public:
 
         setSVMPointersHelper<0, 1 + sizeof...(Ts)>(pointerList, t0, ts...);
         return detail::errHandler(
-            ::clSetKernelExecInfo(
+            CL_WRAPPER_NS::clSetKernelExecInfo(
             object_,
             CL_KERNEL_EXEC_INFO_SVM_PTRS,
             sizeof(void*)*(1 + sizeof...(Ts)),
@@ -6232,7 +6244,7 @@ public:
     cl_int setExecInfo(cl_kernel_exec_info param_name, const T& val)
     {
         return detail::errHandler(
-            ::clSetKernelExecInfo(
+            CL_WRAPPER_NS::clSetKernelExecInfo(
             object_,
             param_name,
             sizeof(T),
@@ -6289,14 +6301,14 @@ public:
 
         Context context = Context::getDefault(err);
 
-        object_ = ::clCreateProgramWithSource(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithSource(
             context(), (cl_uint)1, &strings, &length, &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
 
         if (error == CL_SUCCESS && build) {
 
-            error = ::clBuildProgram(
+            error = CL_WRAPPER_NS::clBuildProgram(
                 object_,
                 0,
                 NULL,
@@ -6327,13 +6339,13 @@ public:
         const char * strings = source.c_str();
         const size_type length  = source.size();
 
-        object_ = ::clCreateProgramWithSource(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithSource(
             context(), (cl_uint)1, &strings, &length, &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
 
         if (error == CL_SUCCESS && build) {
-            error = ::clBuildProgram(
+            error = CL_WRAPPER_NS::clBuildProgram(
                 object_,
                 0,
                 NULL,
@@ -6379,7 +6391,7 @@ public:
 #endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
         }
 
-        object_ = ::clCreateProgramWithSource(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithSource(
             context(), (cl_uint)n, strings.data(), lengths.data(), &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
@@ -6414,7 +6426,7 @@ public:
 #endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
         }
 
-        object_ = ::clCreateProgramWithSource(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithSource(
             context(), (cl_uint)n, strings.data(), lengths.data(), &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
@@ -6440,7 +6452,7 @@ public:
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-        object_ = ::clCreateProgramWithIL(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithIL(
             context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
@@ -6458,7 +6470,7 @@ public:
 
         if (error == CL_SUCCESS && build) {
 
-            error = ::clBuildProgram(
+            error = CL_WRAPPER_NS::clBuildProgram(
                 object_,
                 0,
                 NULL,
@@ -6493,7 +6505,7 @@ public:
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-        object_ = ::clCreateProgramWithIL(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithIL(
             context(), static_cast<const void*>(IL.data()), IL.size(), &error);
 
 #else // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
@@ -6510,7 +6522,7 @@ public:
         detail::errHandler(error, __CREATE_PROGRAM_WITH_IL_ERR);
 
         if (error == CL_SUCCESS && build) {
-            error = ::clBuildProgram(
+            error = CL_WRAPPER_NS::clBuildProgram(
                 object_,
                 0,
                 NULL,
@@ -6595,7 +6607,7 @@ public:
             binaryStatus->resize(numDevices);
         }
         
-        object_ = ::clCreateProgramWithBinary(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithBinary(
             context(), (cl_uint) devices.size(),
             deviceIDs.data(),
             lengths.data(), images.data(), (binaryStatus != NULL && numDevices > 0)
@@ -6629,7 +6641,7 @@ public:
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
         
-        object_ = ::clCreateProgramWithBuiltInKernels(
+        object_ = CL_WRAPPER_NS::clCreateProgramWithBuiltInKernels(
             context(), 
             (cl_uint) devices.size(),
             deviceIDs.data(),
@@ -6702,7 +6714,7 @@ public:
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
 
-        cl_int buildError = ::clBuildProgram(
+        cl_int buildError = CL_WRAPPER_NS::clBuildProgram(
             object_,
             (cl_uint)
             devices.size(),
@@ -6722,7 +6734,7 @@ public:
     {
         cl_device_id deviceID = device();
 
-        cl_int buildError = ::clBuildProgram(
+        cl_int buildError = CL_WRAPPER_NS::clBuildProgram(
             object_,
             1,
             &deviceID,
@@ -6740,7 +6752,7 @@ public:
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
     {
-        cl_int buildError = ::clBuildProgram(
+        cl_int buildError = CL_WRAPPER_NS::clBuildProgram(
             object_,
             0,
             NULL,
@@ -6757,7 +6769,7 @@ public:
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
         void* data = NULL) const
     {
-        cl_int error = ::clCompileProgram(
+        cl_int error = CL_WRAPPER_NS::clCompileProgram(
             object_,
             0,
             NULL,
@@ -6775,7 +6787,7 @@ public:
     cl_int getInfo(cl_program_info name, T* param) const
     {
         return detail::errHandler(
-            detail::getInfo(&::clGetProgramInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetProgramInfo, object_, name, param),
             __GET_PROGRAM_INFO_ERR);
     }
 
@@ -6798,7 +6810,7 @@ public:
     {
         return detail::errHandler(
             detail::getInfo(
-                &::clGetProgramBuildInfo, object_, device(), name, param),
+                &CL_WRAPPER_NS::clGetProgramBuildInfo, object_, device(), name, param),
                 __GET_PROGRAM_BUILD_INFO_ERR);
     }
 
@@ -6862,14 +6874,14 @@ public:
     cl_int createKernels(vector<Kernel>* kernels)
     {
         cl_uint numKernels;
-        cl_int err = ::clCreateKernelsInProgram(object_, 0, NULL, &numKernels);
+        cl_int err = CL_WRAPPER_NS::clCreateKernelsInProgram(object_, 0, NULL, &numKernels);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_KERNELS_IN_PROGRAM_ERR);
         }
 
         vector<cl_kernel> value(numKernels);
         
-        err = ::clCreateKernelsInProgram(
+        err = CL_WRAPPER_NS::clCreateKernelsInProgram(
             object_, numKernels, value.data(), NULL);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_KERNELS_IN_PROGRAM_ERR);
@@ -6906,7 +6918,7 @@ public:
         void * user_data = NULL) CL_API_SUFFIX__VERSION_2_2_DEPRECATED
     {
         return detail::errHandler(
-            ::clSetProgramReleaseCallback(
+            CL_WRAPPER_NS::clSetProgramReleaseCallback(
                 object_,
                 pfn_notify,
                 user_data),
@@ -6923,7 +6935,7 @@ public:
         setSpecializationConstant(cl_uint index, const T &value)
     {
         return detail::errHandler(
-            ::clSetProgramSpecializationConstant(
+            CL_WRAPPER_NS::clSetProgramSpecializationConstant(
                 object_,
                 index,
                 sizeof(value),
@@ -6938,7 +6950,7 @@ public:
     cl_int setSpecializationConstant(cl_uint index, size_type size, const void* value)
     {
         return detail::errHandler(
-            ::clSetProgramSpecializationConstant(
+            CL_WRAPPER_NS::clSetProgramSpecializationConstant(
                 object_,
                 index,
                 size,
@@ -6966,7 +6978,7 @@ inline Program linkProgram(
         detail::errHandler(error_local, __LINK_PROGRAM_ERR);
     }
 
-    cl_program prog = ::clLinkProgram(
+    cl_program prog = CL_WRAPPER_NS::clLinkProgram(
         ctx(),
         0,
         NULL,
@@ -7007,7 +7019,7 @@ inline Program linkProgram(
             detail::errHandler(error_local, __LINK_PROGRAM_ERR);
         }
     }
-    cl_program prog = ::clLinkProgram(
+    cl_program prog = CL_WRAPPER_NS::clLinkProgram(
         ctx(),
         0,
         NULL,
@@ -7048,7 +7060,7 @@ inline cl_int cl::Program::getInfo(cl_program_info name, vector<vector<unsigned 
         }
 
         return detail::errHandler(
-            detail::getInfo(&::clGetProgramInfo, object_, name, param),
+            detail::getInfo(&CL_WRAPPER_NS::clGetProgramInfo, object_, name, param),
             __GET_PROGRAM_INFO_ERR);
     }
 
@@ -7074,7 +7086,7 @@ inline cl_int cl::Program::setSpecializationConstant(cl_uint index, const bool &
 {
     cl_uchar ucValue = value ? CL_UCHAR_MAX : 0;
     return detail::errHandler(
-        ::clSetProgramSpecializationConstant(
+        CL_WRAPPER_NS::clSetProgramSpecializationConstant(
             object_,
             index,
             sizeof(ucValue),
@@ -7087,7 +7099,7 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 {
     cl_int error;
 
-    object_ = ::clCreateKernel(program(), name, &error);
+    object_ = CL_WRAPPER_NS::clCreateKernel(program(), name, &error);
     detail::errHandler(error, __CREATE_KERNEL_ERR);
 
     if (err != NULL) {
@@ -7212,7 +7224,7 @@ public:
                 cl_queue_properties queue_properties[] = {
                     CL_QUEUE_PROPERTIES, properties, 0 };
                 if ((properties & CL_QUEUE_ON_DEVICE) == 0) {
-                    object_ = ::clCreateCommandQueueWithProperties(
+                    object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                         context(), device(), queue_properties, &error);
                 }
                 else {
@@ -7227,7 +7239,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 200
             if (!useWithProperties) {
-                object_ = ::clCreateCommandQueue(
+                object_ = CL_WRAPPER_NS::clCreateCommandQueue(
                     context(), device(), properties, &error);
 
                 detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -7278,7 +7290,7 @@ public:
                cl_queue_properties queue_properties[] = {
                    CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
 
-               object_ = ::clCreateCommandQueueWithProperties(
+               object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                    context(), device(), queue_properties, &error);
 
                detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -7289,7 +7301,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 200
            if (!useWithProperties) {
-               object_ = ::clCreateCommandQueue(
+               object_ = CL_WRAPPER_NS::clCreateCommandQueue(
                    context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
 
                detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -7343,7 +7355,7 @@ public:
             cl_queue_properties queue_properties[] = {
                 CL_QUEUE_PROPERTIES, properties, 0 };
             if ((properties & CL_QUEUE_ON_DEVICE) == 0) {
-                object_ = ::clCreateCommandQueueWithProperties(
+                object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                     context(), devices[0](), queue_properties, &error);
             }
             else {
@@ -7358,7 +7370,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 200
         if (!useWithProperties) {
-            object_ = ::clCreateCommandQueue(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueue(
                 context(), devices[0](), properties, &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -7409,7 +7421,7 @@ public:
         if (useWithProperties) {
             cl_queue_properties queue_properties[] = {
                 CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
-            object_ = ::clCreateCommandQueueWithProperties(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                 context(), devices[0](), queue_properties, &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -7420,7 +7432,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 200
         if (!useWithProperties) {
-            object_ = ::clCreateCommandQueue(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueue(
                 context(), devices[0](), static_cast<cl_command_queue_properties>(properties), &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -7460,7 +7472,7 @@ public:
         if (useWithProperties) {
             cl_queue_properties queue_properties[] = {
                 CL_QUEUE_PROPERTIES, properties, 0 };
-            object_ = ::clCreateCommandQueueWithProperties(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                 context(), device(), queue_properties, &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -7471,7 +7483,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 200
         if (!useWithProperties) {
-            object_ = ::clCreateCommandQueue(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueue(
                 context(), device(), properties, &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -7511,7 +7523,7 @@ public:
         if (useWithProperties) {
             cl_queue_properties queue_properties[] = {
                 CL_QUEUE_PROPERTIES, static_cast<cl_queue_properties>(properties), 0 };
-            object_ = ::clCreateCommandQueueWithProperties(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                 context(), device(), queue_properties, &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -7522,7 +7534,7 @@ public:
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_MINIMUM_OPENCL_VERSION < 200
         if (!useWithProperties) {
-            object_ = ::clCreateCommandQueue(
+            object_ = CL_WRAPPER_NS::clCreateCommandQueue(
                 context(), device(), static_cast<cl_command_queue_properties>(properties), &error);
 
             detail::errHandler(error, __CREATE_COMMAND_QUEUE_ERR);
@@ -7612,7 +7624,7 @@ public:
     {
         return detail::errHandler(
             detail::getInfo(
-                &::clGetCommandQueueInfo, object_, name, param),
+                &CL_WRAPPER_NS::clGetCommandQueueInfo, object_, name, param),
                 __GET_COMMAND_QUEUE_INFO_ERR);
     }
 
@@ -7640,7 +7652,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueReadBuffer(
+            CL_WRAPPER_NS::clEnqueueReadBuffer(
                 object_, buffer(), blocking, offset, size,
                 ptr,
                 (events != NULL) ? (cl_uint) events->size() : 0,
@@ -7665,7 +7677,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueWriteBuffer(
+            CL_WRAPPER_NS::clEnqueueWriteBuffer(
                 object_, buffer(), blocking, offset, size,
                 ptr,
                 (events != NULL) ? (cl_uint) events->size() : 0,
@@ -7690,7 +7702,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueCopyBuffer(
+            CL_WRAPPER_NS::clEnqueueCopyBuffer(
                 object_, src(), dst(), src_offset, dst_offset, size,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -7719,7 +7731,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueReadBufferRect(
+            CL_WRAPPER_NS::clEnqueueReadBufferRect(
                 object_, 
                 buffer(), 
                 blocking,
@@ -7758,7 +7770,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueWriteBufferRect(
+            CL_WRAPPER_NS::clEnqueueWriteBufferRect(
                 object_, 
                 buffer(), 
                 blocking,
@@ -7796,7 +7808,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueCopyBufferRect(
+            CL_WRAPPER_NS::clEnqueueCopyBufferRect(
                 object_, 
                 src(), 
                 dst(), 
@@ -7841,7 +7853,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueFillBuffer(
+            CL_WRAPPER_NS::clEnqueueFillBuffer(
                 object_, 
                 buffer(),
                 static_cast<void*>(&pattern),
@@ -7873,7 +7885,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueReadImage(
+            CL_WRAPPER_NS::clEnqueueReadImage(
                 object_, 
                 image(), 
                 blocking, 
@@ -7906,7 +7918,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueWriteImage(
+            CL_WRAPPER_NS::clEnqueueWriteImage(
                 object_, 
                 image(), 
                 blocking, 
@@ -7937,7 +7949,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueCopyImage(
+            CL_WRAPPER_NS::clEnqueueCopyImage(
                 object_, 
                 src(), 
                 dst(), 
@@ -7973,7 +7985,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueFillImage(
+            CL_WRAPPER_NS::clEnqueueFillImage(
                 object_, 
                 image(),
                 static_cast<void*>(&fillColor), 
@@ -8007,7 +8019,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueFillImage(
+            CL_WRAPPER_NS::clEnqueueFillImage(
                 object_, 
                 image(),
                 static_cast<void*>(&fillColor), 
@@ -8041,7 +8053,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueFillImage(
+            CL_WRAPPER_NS::clEnqueueFillImage(
                 object_, 
                 image(),
                 static_cast<void*>(&fillColor), 
@@ -8070,7 +8082,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueCopyImageToBuffer(
+            CL_WRAPPER_NS::clEnqueueCopyImageToBuffer(
                 object_, 
                 src(), 
                 dst(), 
@@ -8099,7 +8111,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueCopyBufferToImage(
+            CL_WRAPPER_NS::clEnqueueCopyBufferToImage(
                 object_, 
                 src(), 
                 dst(), 
@@ -8129,7 +8141,7 @@ public:
     {
         cl_event tmp;
         cl_int error;
-        void * result = ::clEnqueueMapBuffer(
+        void * result = CL_WRAPPER_NS::clEnqueueMapBuffer(
             object_, buffer(), blocking, flags, offset, size,
             (events != NULL) ? (cl_uint) events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -8160,7 +8172,7 @@ public:
     {
         cl_event tmp;
         cl_int error;
-        void * result = ::clEnqueueMapImage(
+        void * result = CL_WRAPPER_NS::clEnqueueMapImage(
             object_, buffer(), blocking, flags,
             origin.data(), 
             region.data(),
@@ -8270,7 +8282,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueUnmapMemObject(
+            CL_WRAPPER_NS::clEnqueueUnmapMemObject(
                 object_, memory(), mapped_ptr,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -8297,7 +8309,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueSVMUnmap(
+            CL_WRAPPER_NS::clEnqueueSVMUnmap(
             object_, static_cast<void*>(ptr),
             (events != NULL) ? (cl_uint)events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*)&events->front() : NULL,
@@ -8322,7 +8334,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueSVMUnmap(
+            CL_WRAPPER_NS::clEnqueueSVMUnmap(
             object_, static_cast<void*>(ptr.get()),
             (events != NULL) ? (cl_uint)events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*)&events->front() : NULL,
@@ -8347,7 +8359,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueSVMUnmap(
+            CL_WRAPPER_NS::clEnqueueSVMUnmap(
             object_, static_cast<void*>(container.data()),
             (events != NULL) ? (cl_uint)events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*)&events->front() : NULL,
@@ -8379,7 +8391,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueMarkerWithWaitList(
+            CL_WRAPPER_NS::clEnqueueMarkerWithWaitList(
                 object_,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -8409,7 +8421,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueBarrierWithWaitList(
+            CL_WRAPPER_NS::clEnqueueBarrierWithWaitList(
                 object_,
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -8442,7 +8454,7 @@ public:
         }
         
         cl_int err = detail::errHandler(
-            ::clEnqueueMigrateMemObjects(
+            CL_WRAPPER_NS::clEnqueueMigrateMemObjects(
                 object_, 
                 (cl_uint)memObjects.size(), 
                 localMemObjects.data(),
@@ -8591,7 +8603,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueNDRangeKernel(
+            CL_WRAPPER_NS::clEnqueueNDRangeKernel(
                 object_, kernel(), (cl_uint) global.dimensions(),
                 offset.dimensions() != 0 ? (const size_type*) offset : NULL,
                 (const size_type*) global,
@@ -8615,7 +8627,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueTask(
+            CL_WRAPPER_NS::clEnqueueTask(
                 object_, kernel(),
                 (events != NULL) ? (cl_uint) events->size() : 0,
                 (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -8648,7 +8660,7 @@ public:
         
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueNativeKernel(
+            CL_WRAPPER_NS::clEnqueueNativeKernel(
                 object_, userFptr, args.first, args.second,
                 (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
                 mems.data(),
@@ -8673,7 +8685,7 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
-            ::clEnqueueMarker(
+            CL_WRAPPER_NS::clEnqueueMarker(
                 object_, 
                 (event != NULL) ? &tmp : NULL),
             __ENQUEUE_MARKER_ERR);
@@ -8688,7 +8700,7 @@ public:
     cl_int enqueueWaitForEvents(const vector<Event>& events) const CL_API_SUFFIX__VERSION_1_1_DEPRECATED
     {
         return detail::errHandler(
-            ::clEnqueueWaitForEvents(
+            CL_WRAPPER_NS::clEnqueueWaitForEvents(
                 object_,
                 (cl_uint) events.size(),
                 events.size() > 0 ? (const cl_event*) &events.front() : NULL),
@@ -8703,7 +8715,7 @@ public:
      {
         cl_event tmp;
         cl_int err = detail::errHandler(
-             ::clEnqueueAcquireGLObjects(
+             CL_WRAPPER_NS::clEnqueueAcquireGLObjects(
                  object_,
                  (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
                  (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
@@ -8725,7 +8737,7 @@ public:
      {
         cl_event tmp;
         cl_int err = detail::errHandler(
-             ::clEnqueueReleaseGLObjects(
+             CL_WRAPPER_NS::clEnqueueReleaseGLObjects(
                  object_,
                  (mem_objects != NULL) ? (cl_uint) mem_objects->size() : 0,
                  (mem_objects != NULL && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): NULL,
@@ -8825,7 +8837,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     cl_int enqueueBarrier() const CL_API_SUFFIX__VERSION_1_1_DEPRECATED
     {
         return detail::errHandler(
-            ::clEnqueueBarrier(object_),
+            CL_WRAPPER_NS::clEnqueueBarrier(object_),
             __ENQUEUE_BARRIER_ERR);
     }
 #endif // CL_USE_DEPRECATED_OPENCL_1_1_APIS
@@ -8884,7 +8896,7 @@ public:
 
         cl_queue_properties queue_properties[] = {
             CL_QUEUE_PROPERTIES, mergedProperties, 0 };
-        object_ = ::clCreateCommandQueueWithProperties(
+        object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
             context(), device(), queue_properties, &error);
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -8908,7 +8920,7 @@ public:
             CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_ON_DEVICE | static_cast<cl_command_queue_properties>(properties);
         cl_queue_properties queue_properties[] = {
             CL_QUEUE_PROPERTIES, mergedProperties, 0 };
-        object_ = ::clCreateCommandQueueWithProperties(
+        object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
             context(), device(), queue_properties, &error);
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -8935,7 +8947,7 @@ public:
             CL_QUEUE_PROPERTIES, mergedProperties,
             CL_QUEUE_SIZE, queueSize, 
             0 };
-        object_ = ::clCreateCommandQueueWithProperties(
+        object_ = CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
             context(), device(), queue_properties, &error);
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -8992,7 +9004,7 @@ public:
     {
         return detail::errHandler(
             detail::getInfo(
-            &::clGetCommandQueueInfo, object_, name, param),
+            &CL_WRAPPER_NS::clGetCommandQueueInfo, object_, name, param),
             __GET_COMMAND_QUEUE_INFO_ERR);
     }
 
@@ -9028,7 +9040,7 @@ public:
             CL_QUEUE_PROPERTIES, properties,
             0 };
         DeviceCommandQueue deviceQueue(
-            ::clCreateCommandQueueWithProperties(
+            CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
             context(), device(), queue_properties, &error));
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -9056,7 +9068,7 @@ public:
             CL_QUEUE_PROPERTIES, properties,
             0 };
         DeviceCommandQueue deviceQueue(
-            ::clCreateCommandQueueWithProperties(
+            CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
             context(), device(), queue_properties, &error));
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -9085,7 +9097,7 @@ public:
             CL_QUEUE_SIZE, queueSize,
             0 };
         DeviceCommandQueue deviceQueue(
-            ::clCreateCommandQueueWithProperties(
+            CL_WRAPPER_NS::clCreateCommandQueueWithProperties(
                 context(), device(), queue_properties, &error));
 
         detail::errHandler(error, __CREATE_COMMAND_QUEUE_WITH_PROPERTIES_ERR);
@@ -9168,9 +9180,9 @@ Buffer::Buffer(
     size_type size = sizeof(DataType)*(endIterator - startIterator);
 
     if( useHostPtr ) {
-        object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+        object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
     } else {
-        object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
+        object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, 0, &error);
     }
 
     detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -9221,10 +9233,10 @@ Buffer::Buffer(
     Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
     if (useHostPtr) {
-        object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+        object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
     }
     else {
-        object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
+        object_ = CL_WRAPPER_NS::clCreateBuffer(context(), flags, size, 0, &error);
     }
 
     detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -9296,7 +9308,7 @@ inline void* enqueueMapBuffer(
         *err = error;
     }
 
-    void * result = ::clEnqueueMapBuffer(
+    void * result = CL_WRAPPER_NS::clEnqueueMapBuffer(
             queue(), buffer(), blocking, flags, offset, size,
             (events != NULL) ? (cl_uint) events->size() : 0,
             (events != NULL && events->size() > 0) ? (cl_event*) &events->front() : NULL,
@@ -9400,7 +9412,7 @@ inline cl_int enqueueUnmapMemObject(
 
     cl_event tmp;
     cl_int err = detail::errHandler(
-        ::clEnqueueUnmapMemObject(
+        CL_WRAPPER_NS::clEnqueueUnmapMemObject(
         queue(), memory(), mapped_ptr,
         (events != NULL) ? (cl_uint)events->size() : 0,
         (events != NULL && events->size() > 0) ? (cl_event*)&events->front() : NULL,
