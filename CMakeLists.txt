@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1)
 
 project(OpenCLHeadersCpp
-  VERSION 2.2
+  VERSION 3.0
   LANGUAGES CXX # Ideally should be NONE, but GNUInstallDirs detects platform arch using try_compile
   # https://stackoverflow.com/questions/43379311/why-does-project-affect-cmakes-opinion-on-cmake-sizeof-void-p
 )

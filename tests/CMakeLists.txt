@@ -121,13 +121,13 @@ foreach(VERSION 120 200 210 220 300)
     add_executable(${TEST_EXE} ${TEST_SOURCES}) #${TEST_HEADERS})
     target_link_libraries(${TEST_EXE}
       PRIVATE
+        OpenCL::HeadersCpp
         OpenCL::Headers
         OpenCL::OpenCL
         Threads::Threads
     )
     target_include_directories(${TEST_EXE}
       PRIVATE
-        ${PROJECT_SOURCE_DIR}/include
         ${CMAKE_CURRENT_BINARY_DIR}/mocks
 
         ${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL
