@@ -30,17 +30,14 @@ jobs:
     - name: Checkout OpenCL-Headers
       uses: actions/checkout@v2
       with:
-        repository: StreamHPC/OpenCL-Headers
-        ref: develop_stream
+        repository: KhronosGroup/OpenCL-Headers
         path: external/OpenCL-Headers
 
     - name: Checkout OpenCL-ICD-Loader
       uses: actions/checkout@v2
       with:
-        repository: StreamHPC/OpenCL-ICD-Loader
-        ref: develop_stream
+        repository: KhronosGroup/OpenCL-ICD-Loader
         path: external/OpenCL-ICD-Loader
-      # Temporary redirection to external repo. Changes needed from there.
 
     - name: Create Build Environment
       run: sudo apt-get update -q;
@@ -199,10 +196,8 @@ jobs:
     - name: Checkout OpenCL-ICD-Loader
       uses: actions/checkout@v2
       with:
-        repository: StreamHPC/OpenCL-ICD-Loader
-        ref: develop_stream
+        repository: KhronosGroup/OpenCL-ICD-Loader
         path: external/OpenCL-ICD-Loader
-      # Temporary redirection to external repo. Changes needed from there.
 
     - name: Create Build Environment
       run: sudo apt-get update -q;
