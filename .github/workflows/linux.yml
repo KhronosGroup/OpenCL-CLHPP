@@ -9,7 +9,7 @@ jobs:
       matrix:
         OS: [ubuntu-18.04]
         VER: [7, 8] # clang-8, clang-10
-        EXT: [ON] # OFF = icd_linux.c:66 error: ‘DT_UNKNOWN’ undeclared (first use in this function)
+        EXT: [ON, OFF]
         GEN: [Unix Makefiles]
         CONFIG: [Debug, Release]
         STD: [11, 14]
@@ -170,7 +170,7 @@ jobs:
       matrix:
         OS : [ubuntu-20.04]
         VER: [9, 11] # clang-11, clang-13
-        EXT: [ON] # OFF = icd_linux.c:66 error: ‘DT_UNKNOWN’ undeclared (first use in this function)
+        EXT: [ON, OFF]
         GEN: [Ninja Multi-Config]
         STD: [11, 14]
         BIN: [64] # Temporarily disable cross-compilation (will need toolchain files)
