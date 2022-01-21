@@ -123,7 +123,6 @@ foreach(VERSION 120 200 210 220 300)
       PRIVATE
         OpenCL::HeadersCpp
         OpenCL::Headers
-        OpenCL::OpenCL
         Threads::Threads
     )
     target_include_directories(${TEST_EXE}
