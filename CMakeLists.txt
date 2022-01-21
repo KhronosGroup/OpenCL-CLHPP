@@ -17,9 +17,13 @@ set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL
   "find_package(Threads) preference. Recommendation is to keep default value."
 )
 # Legacy helper variables, see later at finding headers and ICD Loader
-set(OPENCL_DIST_DIR "" CACHE PATH "OpenCL source dir")
-set(OPENCL_LIB_DIR "${OPENCL_DIST_DIR}/lib" CACHE PATH "OpenCL library dir" )
-set(OPENCL_INCLUDE_DIR "${OPENCL_DIST_DIR}/include" CACHE PATH "OpenCL source dir")
+set(OPENCL_DIST_DIR "" CACHE PATH "OpenCL source dir (legacy helper var)")
+set(OPENCL_LIB_DIR "${OPENCL_DIST_DIR}/lib" CACHE PATH "OpenCL library dir (legacy helper var)" )
+set(OPENCL_INCLUDE_DIR "${OPENCL_DIST_DIR}/include" CACHE PATH "OpenCL source dir (legacy helper var)")
+# Helper vars with names consistent with OpenCL-ICD-Loader's OPENCL_ICD_LOADER_HEADERS_DIR
+# Default values taken from legacy defaults
+set(OPENCL_CLHPP_HEADERS_DIR "${OPENCL_INCLUDE_DIR}" CACHE PATH "OpenCL headers dir")
+set(OPENCL_CLHPP_LOADER_DIR "${OPENCL_LIB_DIR}" CACHE PATH "OpenCL library dir")
 
 add_library(HeadersCpp INTERFACE)
 add_library(OpenCL::HeadersCpp ALIAS HeadersCpp)
@@ -27,7 +31,7 @@ add_library(OpenCL::HeadersCpp ALIAS HeadersCpp)
 # In the spirit of backward compatibility, to not break existing build automation
 # we first check if the helper vars refer to existing files. If yes, use them.
 # Otherwise search using 3.0 installed CMake Package Configs.
-if(EXISTS "${OPENCL_INCLUDE_DIR}/CL/cl.h")
+if(EXISTS "${OPENCL_CLHPP_HEADERS_DIR}/CL/cl.h")
   if(NOT TARGET OpenCL::Headers)
     message(STATUS "Defining OpenCL::Headers through OPENCL_INCLUDE_DIR")
     add_library(OpenCLHeaders INTERFACE)
