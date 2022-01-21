@@ -39,6 +39,9 @@ Components:
 The C++ Headers require:
 
 - the [OpenCL Headers](https://github.com/KhronosGroup/OpenCL-Headers/).
+  - It is recommended to install the headers via CMake, however a convenience shorthand is provided. Providing `OPENCL_CLHPP_HEADERS_DIR` to CMake, one may specify the location of OpenCL Headers. By default, the C++ Headers will look for OpenCL Headers under `${OPENCL_DIST_DIR}/include`.
+- the [OpenCL-ICD-Loader](https://github.com/KhronosGroup/OpenCL-ICD-Loader/) when building the examples
+  - It is recommended to install the ICD loader via CMake, however a convenience shorthand is provided. Providing `OPENCL_CLHPP_LOADER_DIR` to CMake, one may specify the location of the OpenCL ICD loader. By default, the C++ headers will look for OpenCL ICD loader under `${OPENCL_DIST_DIR}/lib`.
 - The C++ Headers uses CMake for its build system.
 If CMake is not provided by your build system or OS package manager, please consult the [CMake website](https://cmake.org).
 - The unit tests require [CMock](https://github.com/ThrowTheSwitch/CMock) and [Unity](https://github.com/ThrowTheSwitch/Unity). To get these external dependencies, use `--recursive` when cloning
