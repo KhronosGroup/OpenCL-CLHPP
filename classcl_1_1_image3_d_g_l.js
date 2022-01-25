@@ -5,7 +5,7 @@ var classcl_1_1_image3_d_g_l =
     [ "Image3DGL", "classcl_1_1_image3_d_g_l.html#ae4379054235116bf4e7f1107914d0ce7", null ],
     [ "Image3DGL", "classcl_1_1_image3_d_g_l.html#a547ae772ea5529329b278d8d551518f4", null ],
     [ "Image3DGL", "classcl_1_1_image3_d_g_l.html#a43fbcd25852d39c83a789699921ef7aa", null ],
-    [ "operator=", "classcl_1_1_image3_d_g_l.html#a0e85acf1f34fc2bb7b5362c95afed785", null ],
-    [ "operator=", "classcl_1_1_image3_d_g_l.html#ab06b629a6327d2931c6895d798504730", null ],
-    [ "operator=", "classcl_1_1_image3_d_g_l.html#a909150f0ac62ddd907bc71843916ba44", null ]
+    [ "operator=", "classcl_1_1_image3_d_g_l.html#a61af1009d180963022a7107e1ecaf0c7", null ],
+    [ "operator=", "classcl_1_1_image3_d_g_l.html#a039a8f2cab446a5202e6d7081c746033", null ],
+    [ "operator=", "classcl_1_1_image3_d_g_l.html#a4c43fddab51047b7c79412d46d7977cc", null ]
 ];

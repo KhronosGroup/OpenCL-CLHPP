@@ -7,7 +7,7 @@ var classcl_1_1_image2_d =
     [ "Image2D", "classcl_1_1_image2_d.html#a2a8221a4c64c1aaf47468c4ef6c05a61", null ],
     [ "Image2D", "classcl_1_1_image2_d.html#a01f30cbb6b4e74d81de88beb993b3d58", null ],
     [ "Image2D", "classcl_1_1_image2_d.html#a95b1eeb977ec2f65b47617bfb541bdbd", null ],
-    [ "operator=", "classcl_1_1_image2_d.html#ac92eb515aa0d087cc63145ef4cfb536b", null ],
-    [ "operator=", "classcl_1_1_image2_d.html#a368d6a9c12fd9e609a81dbe40f2d9880", null ],
-    [ "operator=", "classcl_1_1_image2_d.html#a644ebfacb26cf161eff6958db7a86a1f", null ]
+    [ "operator=", "classcl_1_1_image2_d.html#a9e7a068876d97b608706d26d1715226e", null ],
+    [ "operator=", "classcl_1_1_image2_d.html#a93cec62a902cda998fbf1b47fbc497eb", null ],
+    [ "operator=", "classcl_1_1_image2_d.html#a2c0ec1456214106fa9064b245d986b8a", null ]
 ];

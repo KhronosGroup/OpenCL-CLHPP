@@ -5,9 +5,9 @@ var classcl_1_1_sampler =
     [ "Sampler", "classcl_1_1_sampler.html#aa32c71d59ca20e83fc283273d0b102cd", null ],
     [ "Sampler", "classcl_1_1_sampler.html#a684ea0f7bb85233239ba3a266795c1a4", null ],
     [ "Sampler", "classcl_1_1_sampler.html#a487aa40df9ababf70fe4c19a0b538f6f", null ],
-    [ "getInfo", "classcl_1_1_sampler.html#aa7ad8b1a123d7878438200591a9ecb47", null ],
-    [ "getInfo", "classcl_1_1_sampler.html#ae0ca4f5c66d461e1627a625db54b8737", null ],
-    [ "operator=", "classcl_1_1_sampler.html#a011eed498881010b78ffdcdd9fcb4056", null ],
-    [ "operator=", "classcl_1_1_sampler.html#ad26196f0282429667828b5b39bbc97f1", null ],
-    [ "operator=", "classcl_1_1_sampler.html#a8d58fcb1dc466f4b1de2c38c6cb76823", null ]
+    [ "getInfo", "classcl_1_1_sampler.html#ae98feb073f7295721af31275530fef5f", null ],
+    [ "getInfo", "classcl_1_1_sampler.html#a692268678bf12b7b754009f9ba291fbc", null ],
+    [ "operator=", "classcl_1_1_sampler.html#a4edef47991d28368cb63f57e924d34bd", null ],
+    [ "operator=", "classcl_1_1_sampler.html#a4c05855fddee1688b229bf333162c794", null ],
+    [ "operator=", "classcl_1_1_sampler.html#a21ef913d8118b7e8f7e2e9bf5c9251a7", null ]
 ];

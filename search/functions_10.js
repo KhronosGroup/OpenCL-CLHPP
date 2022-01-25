@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['wait',['wait',['../classcl_1_1_event.html#abb1dccd98dc3cee29bd6638bc71005cb',1,'cl::Event']]],
-  ['waitforevents',['waitForEvents',['../classcl_1_1_event.html#ae84b90e930f72c1019435dd7cefa2fbd',1,'cl::Event']]]
+  ['wait_0',['wait',['../classcl_1_1_event.html#a51f83064c2024df649667071e81fb847',1,'cl::Event']]],
+  ['waitforevents_1',['waitForEvents',['../classcl_1_1_event.html#ae84b90e930f72c1019435dd7cefa2fbd',1,'cl::Event']]]
 ];

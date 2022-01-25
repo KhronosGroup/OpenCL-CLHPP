@@ -10,7 +10,7 @@ var classcl_1_1_buffer =
     [ "Buffer", "classcl_1_1_buffer.html#a2cfe3144f7d69d4b390edfa934641dcf", null ],
     [ "Buffer", "classcl_1_1_buffer.html#a5ee4055b862daa313919ef577600b9fa", null ],
     [ "createSubBuffer", "classcl_1_1_buffer.html#ab73f1e0ab2224f3d515820dd6b0c1d73", null ],
-    [ "operator=", "classcl_1_1_buffer.html#a7f1c8cf8cd50afde28a6a1e1f2d100b0", null ],
-    [ "operator=", "classcl_1_1_buffer.html#a88ebbe0901b409d64fbef488ba83d82a", null ],
-    [ "operator=", "classcl_1_1_buffer.html#a1954b31fb8d5e1fd221c128d73e387ce", null ]
+    [ "operator=", "classcl_1_1_buffer.html#a377765a15200e00c317ded88dca8b6be", null ],
+    [ "operator=", "classcl_1_1_buffer.html#aded956cded7526705b2e734b00c8bb0d", null ],
+    [ "operator=", "classcl_1_1_buffer.html#a7b4092e9d1481249a5111c523372bb19", null ]
 ];
