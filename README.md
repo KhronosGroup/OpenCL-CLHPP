@@ -30,28 +30,65 @@ Components:
     Build system for the examples and tests and logic for the bindings
     installation.
 
-To get external dependencies needed for testing, use `--recursive` when cloning
+## Build Instructions
+
+> While the C++ Headers can be built and installed in isolation, it is part of the [OpenCL SDK](https://github.com/KhronosGroup/OpenCL-SDK). If looking for streamlined build experience and a complete development package, refer to the SDK build instructions instead of the following guide.
+
+### Dependencies
+
+The C++ Headers require:
+
+- the [OpenCL Headers](https://github.com/KhronosGroup/OpenCL-Headers/).
+  - It is recommended to install the headers via CMake, however a convenience shorthand is provided. Providing `OPENCL_CLHPP_HEADERS_DIR` to CMake, one may specify the location of OpenCL Headers. By default, the C++ Headers will look for OpenCL Headers under `${OPENCL_DIST_DIR}/include`.
+- the [OpenCL-ICD-Loader](https://github.com/KhronosGroup/OpenCL-ICD-Loader/) when building the examples
+  - It is recommended to install the ICD loader via CMake, however a convenience shorthand is provided. Providing `OPENCL_CLHPP_LOADER_DIR` to CMake, one may specify the location of the OpenCL ICD loader. By default, the C++ headers will look for OpenCL ICD loader under `${OPENCL_DIST_DIR}/lib`.
+- The C++ Headers uses CMake for its build system.
+If CMake is not provided by your build system or OS package manager, please consult the [CMake website](https://cmake.org).
+- The unit tests require [CMock](https://github.com/ThrowTheSwitch/CMock) and [Unity](https://github.com/ThrowTheSwitch/Unity). To get these external dependencies, use `--recursive` when cloning
 the repository, or run `git submodule update --init --recursive`.
+- Generating the mock input requires [Ruby](https://www.ruby-lang.org/en/).
+- Generating the docs requires Doxygen. When it is available, you can generate HTML documentation by building the `docs` target.
 
-You may need to tell CMake where to find the OpenCL headers and libraries,
-using the variables `OPENCL_INCLUDE_DIR` and `OPENCL_LIB_DIR`.
+### Example Build
 
-These can be set either as environment variables, or on the cmake command line
-using the syntax `-D<VAR>=<VALUE>`.
+1. Clone this repo, the OpenCL ICD Loader and the OpenCL Headers:
 
-The following is an example set of commands to checkout and build the C++
-bindings (adapt paths as required):
+        git clone --recursive https://github.com/KhronosGroup/OpenCL-CLHPP
+        git clone https://github.com/KhronosGroup/OpenCL-ICD-Loader
+        git clone https://github.com/KhronosGroup/OpenCL-Headers
 
+1. Install OpenCL Headers CMake package
+
+        cmake -D CMAKE_INSTALL_PREFIX=./OpenCL-Headers/install -S ./OpenCL-Headers -B ./OpenCL-Headers/build 
+        cmake --build ./OpenCL-Headers/build --target install
+
+1. Build and install OpenCL ICD Loader CMake package. _(Note that `CMAKE_PREFIX_PATH` need to be an absolute path. Update as needed.)_
+
+        cmake -D CMAKE_PREFIX_PATH=/absolute/path/to/OpenCL-Headers/install -D CMAKE_INSTALL_PREFIX=./OpenCL-ICD-Loader/install -S ./OpenCL-ICD-Loader -B ./OpenCL-ICD-Loader/build 
+        cmake --build ./OpenCL-ICD-Loader/build --target install
+
+1. Build and install OpenCL C++ Headers CMake package.
+
+        cmake -D CMAKE_PREFIX_PATH="/absolute/path/to/OpenCL-Headers/install;/absolute/path/to/OpenCL-ICD-Loader/install" -D CMAKE_INSTALL_PREFIX=./OpenCL-CLHPP/install -S ./OpenCL-CLHPP -B ./OpenCL-CLHPP/build 
+        cmake --build ./OpenCL-CLHPP/build --target install
+
+### Example Use
+
+Example CMake invocation
+
+```bash
+cmake -D CMAKE_PREFIX_PATH="/chosen/install/prefix/of/headers;/chosen/install/prefix/of/loader;/chosen/install/prefix/of/cppheaders" /path/to/opencl/app
 ```
-    git clone --recursive https://github.com/KhronosGroup/OpenCL-CLHPP
-    cd OpenCL-CLHPP
-    mkdir build
-    cd build
-    cmake .. -DOPENCL_INCLUDE_DIR=/path/to/OpenCL/headers -DOPENCL_LIB_DIR=/path/to/OpenCL/library
-    make
-    make test
+
+and sample `CMakeLists.txt`
+
+```cmake
+cmake_minimum_required(VERSION 3.0)
+cmake_policy(VERSION 3.0...3.18.4)
+project(proj)
+add_executable(app main.cpp)
+find_package(OpenCLHeaders REQUIRED)
+find_package(OpenCLICDLoader REQUIRED)
+find_package(OpenCLHeadersCpp REQUIRED)
+target_link_libraries(app PRIVATE OpenCL::Headers OpenCL::OpenCL OpenCL::HeadersCpp)
 ```
-
-After building, the headers appear in `build/include/CL/`.
-
-If Doxygen is available, you can generate HTML documentation by typing `make docs`.

@@ -1966,6 +1966,7 @@ protected:
         retVal = true;
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+        (void)device;
         return retVal;
     }
 
@@ -6730,7 +6731,7 @@ public:
             notifyFptr,
             data);
 
-        BuildLogType buildLog(1);
+        BuildLogType buildLog(0);
         buildLog.push_back(std::make_pair(device, getBuildInfo<CL_PROGRAM_BUILD_LOG>(device)));
         return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, buildLog);
     }
@@ -7106,6 +7107,11 @@ enum class QueueProperties : cl_command_queue_properties
 inline QueueProperties operator|(QueueProperties lhs, QueueProperties rhs)
 {
     return static_cast<QueueProperties>(static_cast<cl_command_queue_properties>(lhs) | static_cast<cl_command_queue_properties>(rhs));
+}
+
+inline QueueProperties operator&(QueueProperties lhs, QueueProperties rhs)
+{
+    return static_cast<QueueProperties>(static_cast<cl_command_queue_properties>(lhs) & static_cast<cl_command_queue_properties>(rhs));
 }
 
 /*! \class CommandQueue
