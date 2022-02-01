@@ -4006,7 +4006,7 @@ public:
         Context context = Context::getDefault(err);
 
         if( useHostPtr ) {
-            object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+            object_ = ::clCreateBuffer(context(), flags, size, const_cast<DataType*>(&*startIterator), &error);
         } else {
             object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
         }
@@ -9174,7 +9174,7 @@ Buffer::Buffer(
     size_type size = sizeof(DataType)*(endIterator - startIterator);
 
     if( useHostPtr ) {
-        object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+        object_ = ::clCreateBuffer(context(), flags, size, const_cast<DataType*>(&*startIterator), &error);
     } else {
         object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
     }
@@ -9227,7 +9227,7 @@ Buffer::Buffer(
     Context context = queue.getInfo<CL_QUEUE_CONTEXT>();
 
     if (useHostPtr) {
-        object_ = ::clCreateBuffer(context(), flags, size, static_cast<DataType*>(&*startIterator), &error);
+        object_ = ::clCreateBuffer(context(), flags, size, const_cast<DataType*>(&*startIterator), &error);
     }
     else {
         object_ = ::clCreateBuffer(context(), flags, size, 0, &error);
