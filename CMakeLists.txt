@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BUILD_DOCS "Build Documentation" ON)
 option(BUILD_EXAMPLES "Build Examples" ON)
-option(BUILD_TESTS "Build Unit Tests" ON)
+option(OPENCL_CLHPP_BUILD_TESTING "Enable support for OpenCL C++ headers testing." OFF)
 set(THREADS_PREFER_PTHREAD_FLAG ON CACHE BOOL
   "find_package(Threads) preference. Recommendation is to keep default value."
 )
@@ -27,6 +27,13 @@ set(OPENCL_CLHPP_LOADER_DIR "${OPENCL_LIB_DIR}" CACHE PATH "OpenCL library dir")
 
 add_library(HeadersCpp INTERFACE)
 add_library(OpenCL::HeadersCpp ALIAS HeadersCpp)
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR OPENCL_CLHPP_BUILD_TESTING)
+  include(CTest)
+endif()
+if((CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME OR OPENCL_CLHPP_BUILD_TESTING) AND BUILD_TESTING)
+  set(CLHPP_BUILD_TESTS ON)
+endif()
 
 # In the spirit of backward compatibility, to not break existing build automation
 # we first check if the helper vars refer to existing files. If yes, use them.
@@ -43,11 +50,11 @@ else()
     find_package(OpenCLHeaders REQUIRED)
   endif()
 endif()
-if(BUILD_EXAMPLES OR BUILD_TESTS)
+if(BUILD_EXAMPLES OR CLHPP_BUILD_TESTS)
   enable_language(C)
   find_package(Threads REQUIRED)
 endif()
-if(BUILD_TESTS)
+if(CLHPP_BUILD_TESTS)
   find_program(RUBY_EXECUTABLE ruby REQUIRED)
 endif()
 
@@ -117,6 +124,6 @@ if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif(BUILD_EXAMPLES)
 
-if(BUILD_TESTS)
+if(CLHPP_BUILD_TESTS)
   add_subdirectory(tests)
-endif(BUILD_TESTS)
+endif(CLHPP_BUILD_TESTS)
