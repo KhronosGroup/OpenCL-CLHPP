@@ -1,6 +1,6 @@
 # OpenCL<sup>TM</sup> API C++ bindings
 
-Doxgen documentation for the bindings is available here:
+Doxygen documentation for the bindings is available here:
 
   http://khronosgroup.github.io/OpenCL-CLHPP/
 
