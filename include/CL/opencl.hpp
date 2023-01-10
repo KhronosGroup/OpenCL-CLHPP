@@ -846,6 +846,9 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_CONTEXT_ERR                CL_HPP_ERR_STR_(clCreateContext)
 #define __CREATE_CONTEXT_FROM_TYPE_ERR      CL_HPP_ERR_STR_(clCreateContextFromType)
 #define __GET_SUPPORTED_IMAGE_FORMATS_ERR   CL_HPP_ERR_STR_(clGetSupportedImageFormats)
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+#define __SET_CONTEXT_DESCTRUCTOR_CALLBACK_ERR  CL_HPP_ERR_STR_(clSetContextDestructorCallback)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 
 #define __CREATE_BUFFER_ERR                 CL_HPP_ERR_STR_(clCreateBuffer)
 #define __COPY_ERR                          CL_HPP_ERR_STR_(cl::copy)
@@ -3218,6 +3221,24 @@ public:
 
         return CL_SUCCESS;
     }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief  Registers a destructor callback function with a context.
+     *
+     *  Wraps clSetContextDestructorCallback().
+    */
+    cl_int setDestructorCallback(
+        void (CL_CALLBACK * pfn_notify)(cl_context, void *),
+        void * user_data = NULL)
+    {
+        return detail::errHandler(
+            ::clSetContextDestructorCallback(
+                object_,
+                pfn_notify,
+                user_data),
+                __SET_CONTEXT_DESCTRUCTOR_CALLBACK_ERR);
+    }
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 };
 
 inline void Device::makeDefault()
@@ -10278,6 +10299,7 @@ namespace compatibility {
 #undef __CREATE_CONTEXT_ERR                
 #undef __CREATE_CONTEXT_FROM_TYPE_ERR      
 #undef __GET_SUPPORTED_IMAGE_FORMATS_ERR   
+#undef __SET_CONTEXT_DESCTRUCTOR_CALLBACK_ERR
 #undef __CREATE_BUFFER_ERR                 
 #undef __COPY_ERR                          
 #undef __CREATE_SUBBUFFER_ERR              
