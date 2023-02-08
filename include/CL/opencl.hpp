@@ -1821,9 +1821,24 @@ template <>
 struct ReferenceHandler<cl_semaphore_khr>
 {
     static cl_int retain(cl_semaphore_khr semaphore)
-    { return ::clRetainSemaphoreKHR(semaphore); }
+    { 
+        typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clRetainSemaphoreKHR)(cl_semaphore_khr sema_object);
+        static PFN_clRetainSemaphoreKHR pfn_clRetainSemaphoreKHR = NULL;
+
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clRetainSemaphoreKHR);
+
+        return pfn_clRetainSemaphoreKHR(semaphore);
+    }
+
     static cl_int release(cl_semaphore_khr semaphore)
-    { return ::clReleaseSemaphoreKHR(semaphore); }
+    {
+        typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clReleaseSemaphoreKHR)(cl_semaphore_khr sema_object);
+        static PFN_clReleaseSemaphoreKHR pfn_clReleaseSemaphoreKHR = NULL;
+
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clReleaseSemaphoreKHR);
+
+        return pfn_clReleaseSemaphoreKHR(semaphore);
+    }
 };
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 
@@ -8891,7 +8906,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         cl_int err = detail::errHandler(
             ::clEnqueueWaitSemaphoresKHR(
                 object_,
-                sema_objects->size(),
+                (cl_uint)sema_objects->size(),
                 (const cl_semaphore_khr *) &sema_objects->front(),
                 (sema_payloads != NULL && sema_payloads->size() > 0) ? &sema_payloads->front() : NULL,
                 (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
@@ -8913,7 +8928,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         cl_int err = detail::errHandler(
             ::clEnqueueSignalSemaphoresKHR(
                 object_,
-                sema_objects->size(),
+                (cl_uint)sema_objects->size(),
                 (const cl_semaphore_khr*) &sema_objects->front(),
                 (sema_payloads != NULL && sema_payloads->size() > 0) ? &sema_payloads->front() : NULL,
                 (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
@@ -10327,30 +10342,29 @@ class SemaphoreKhr : public detail::Wrapper<cl_semaphore_khr>
 public:
     SemaphoreKhr() : detail::Wrapper<cl_type>() {}
     SemaphoreKhr(
-        cl_semaphore_properties_khr sema_props,
-        cl_int *err) 
+        const cl_semaphore_properties_khr *sema_props,
+        cl_int *err = NULL) 
     {
+        typedef CL_API_ENTRY cl_semaphore_khr(
+            CL_API_CALL * PFN_clCreateSemaphoreWithPropertiesKHR)(
+            cl_context context, 
+            const cl_semaphore_properties_khr* sema_props,
+            cl_int* errcode_ret);
+
         cl_int error;
         Context context = Context::getDefault(&error);
         detail::errHandler(error, __CREATE_CONTEXT_ERR);
-        if (err != CL_SUCCESS) {
+
+        if (error != CL_SUCCESS) {
             if (err != NULL) {
                 *err = error;
             }
         }
         else {
-            cl_semaphore_properties_khr semaphor_properties[] = {
-                CL_SEMAPHORE_PROPERTIES_KHR, sema_props, 0
-            };
-            if ((sema_props & CL_SEMAPHORE_TYPE_KHR) == 0) {
-                object_ = clCreateSemaphoreWithPropertiesKHR(
-                context(),
-                semaphor_properties,
-                &error);
-            }
-            else {
-                error = CL_INVALID_PROPERTY;
-            }
+            static PFN_clCreateSemaphoreWithPropertiesKHR pfn_clCreateSemaphoreWithPropertiesKHR = NULL;
+            CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSemaphoreWithPropertiesKHR);
+
+            object_ = pfn_clCreateSemaphoreWithPropertiesKHR(context(), sema_props, &error);
 
             detail::errHandler(error, __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR);
             if (err != NULL) {
