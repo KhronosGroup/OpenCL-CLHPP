@@ -12,6 +12,7 @@ extern "C"
 #include <unity.h>
 #include <cmock.h>
 #include "Mockcl.h"
+#include "Mockcl_ext.h"
 #include <string.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -53,6 +54,11 @@ static inline cl_program make_program(int index)
     return (cl_program)(size_t)(0xcfcfcfcf + index);
 }
 
+static inline cl_command_buffer_khr make_command_buffer_khr(int index)
+{
+    return (cl_command_buffer_khr)(size_t)(0x8f8f8f8f + index);
+}
+
 /* Pools of pre-allocated wrapped objects for tests. There is no device pool,
  * because there is no way to know whether the test wants the device to be
  * reference countable or not.
@@ -66,11 +72,13 @@ static cl::Image2D image2DPool[POOL_MAX];
 static cl::Image3D image3DPool[POOL_MAX];
 static cl::Kernel kernelPool[POOL_MAX];
 static cl::Program programPool[POOL_MAX];
+#if defined(cl_khr_command_buffer)
+static cl::CommandBufferKhr commandBufferKhrPool[POOL_MAX];
+#endif
 
 /****************************************************************************
  * Stub functions shared by multiple tests
  ****************************************************************************/
-
 /**
  * Stub implementation of clGetCommandQueueInfo that returns the first context.
  */
@@ -315,9 +323,13 @@ public:
     }
 
 MAKE_REFCOUNT_STUBS(cl_program, clRetainProgram, clReleaseProgram, programRefcounts)
+MAKE_REFCOUNT_STUBS(cl_command_queue, clRetainCommandQueue, clReleaseCommandQueue, commandQueueRefcounts)
 MAKE_REFCOUNT_STUBS(cl_device_id, clRetainDevice, clReleaseDevice, deviceRefcounts)
 MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcounts)
 MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
+#if defined(cl_khr_command_buffer)
+MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCommandBufferKHR, commandBufferKhrRefcounts)
+#endif
 
 /* The indirection through MAKE_MOVE_TESTS2 with a prefix parameter is to
  * prevent the simple-minded parser from Unity from identifying tests from the
@@ -368,6 +380,15 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
 
 void setUp()
 {
+    /* init extensions addresses with mocked functions */
+#if defined(cl_khr_command_buffer)
+    cl::pfn_clCreateCommandBufferKHR = ::clCreateCommandBufferKHR;
+    cl::pfn_clFinalizeCommandBufferKHR = ::clFinalizeCommandBufferKHR;
+    cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
+    cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
+    cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+#endif
+
     /* We reach directly into the objects rather than using assignment to
      * avoid the reference counting functions from being called.
      */
@@ -381,6 +402,9 @@ void setUp()
         image3DPool[i]() = make_mem(i);
         kernelPool[i]() = make_kernel(i);
         programPool[i]() = make_program(i);
+#if defined(cl_khr_command_buffer)
+        commandBufferKhrPool[i]() = make_command_buffer_khr(i);
+#endif
     }
 
     programRefcounts.reset();
@@ -402,7 +426,18 @@ void tearDown()
         image3DPool[i]() = nullptr;
         kernelPool[i]() = nullptr;
         programPool[i]() = nullptr;
+#if defined(cl_khr_command_buffer)
+        commandBufferKhrPool[i]() = nullptr;
+#endif
     }
+
+#if defined(cl_khr_command_buffer)
+    cl::pfn_clCreateCommandBufferKHR = nullptr;
+    cl::pfn_clFinalizeCommandBufferKHR = nullptr;
+    cl::pfn_clRetainCommandBufferKHR = nullptr;
+    cl::pfn_clReleaseCommandBufferKHR = nullptr;
+    cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+#endif
 }
 
 /****************************************************************************
@@ -2498,6 +2533,9 @@ void testCleanupHeaderState()
     clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
 
+#if defined(cl_khr_command_buffer)
+    cl::CommandBufferKhr::unitTestClearDefault();
+#endif
     cl::CommandQueue::unitTestClearDefault();
     cl::Context::unitTestClearDefault();
     cl::Device::unitTestClearDefault();
@@ -3136,6 +3174,107 @@ void testLinkProgramWithVectorProgramInput()
 
     prog() = nullptr;
 #endif
+}
+
+/****************************************************************************
+ * Tests for cl::CommandBufferKhr
+ ****************************************************************************/
+#if defined(cl_khr_command_buffer)
+void testMoveAssignCommandBufferKhrNonNull();
+void testMoveAssignCommandBufferKhrNull();
+void testMoveConstructCommandBufferKhrNonNull();
+void testMoveConstructCommandBufferKhrNull();
+MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool);
+#endif
+
+// Stub for clGetCommandBufferInfoKHR that returns 1
+static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues(
+    cl_command_buffer_khr command_buffer,
+    cl_command_buffer_info_khr param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+    TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_NUM_QUEUES_KHR, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_uint));
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = sizeof(cl_uint);
+    if (param_value != NULL)
+        *(cl_uint *) param_value = 1;
+    return CL_SUCCESS;
+}
+
+void testCommandBufferInfoKHRNumQueues()
+{
+#if defined(cl_khr_command_buffer)
+    cl_uint expected = 1;
+    int refcount = 1;
+    cl_int error;
+
+    clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues);
+
+    cl_uint num = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_NUM_QUEUES_KHR>();
+    TEST_ASSERT_EQUAL_HEX(expected, num);
+#endif
+}
+
+// Stub for clGetCommandBufferInfoKHR that returns command queues array
+static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
+    cl_command_buffer_khr command_buffer,
+    cl_command_buffer_info_khr param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+    TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_QUEUES_KHR, param_name);
+    TEST_ASSERT(param_value == NULL || param_value_size >= 2 * sizeof(cl_command_queue));
+    if (param_value_size_ret != NULL)
+        *param_value_size_ret = 2 * sizeof(cl_command_queue);
+    if (param_value != NULL)
+    {
+        cl_command_queue *command_queues = (cl_command_queue *)param_value;
+        command_queues[0] = make_command_queue(0);
+        command_queues[1] = make_command_queue(1);
+    }
+    return CL_SUCCESS;
+}
+
+void testCommandBufferInfoKHRCommandQueues()
+{
+    cl_command_queue expected[] = {make_command_queue(0), make_command_queue(1)};
+    int refcount = 2;
+
+    clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
+    prepare_commandQueueRefcounts(2, expected, &refcount);
+
+    VECTOR_CLASS<cl::CommandQueue> command_queues = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
+    TEST_ASSERT_EQUAL(2, command_queues.size());
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
+}
+
+void testSetDefaultCommandBufferKhr()
+{
+    clRetainCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
+    clRetainCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
+    clRetainCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
+    clReleaseCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
+    clReleaseCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
+    clReleaseCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
+
+    cl_int error;
+    cl::CommandBufferKhr b(make_command_buffer_khr(1));
+    cl::CommandBufferKhr b2 = cl::CommandBufferKhr::setDefault(b);
+    cl::CommandBufferKhr b3 = cl::CommandBufferKhr::getDefault(&error);
+    TEST_ASSERT_EQUAL(error, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(b(), b2());
+    TEST_ASSERT_EQUAL(b(), b3());
 }
 
 } // extern "C"
