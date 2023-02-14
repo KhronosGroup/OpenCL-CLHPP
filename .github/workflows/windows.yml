@@ -22,18 +22,18 @@ jobs:
 
     steps:
     - name: Checkout OpenCL-CLHPP
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: recursive
 
     - name: Checkout OpenCL-Headers
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: KhronosGroup/OpenCL-Headers
         path: external/OpenCL-Headers
 
     - name: Checkout OpenCL-ICD-Loader
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: KhronosGroup/OpenCL-ICD-Loader
         path: external/OpenCL-ICD-Loader
