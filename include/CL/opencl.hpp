@@ -3226,7 +3226,13 @@ public:
     /*! \brief  Registers a destructor callback function with a context.
      *
      *  Wraps clSetContextDestructorCallback().
-    */
+     * 
+     * Each call to this function registers the specified callback function on
+     * a destructor callback stack associated with context. The registered
+     * callback functions are called in the reverse order in which they were registered.
+     * If a context callback function was specified when context was created,
+     * it will not be called after any context destructor callback is called.
+     */
     cl_int setDestructorCallback(
         void (CL_CALLBACK * pfn_notify)(cl_context, void *),
         void * user_data = NULL)
