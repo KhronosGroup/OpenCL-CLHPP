@@ -2,6 +2,9 @@ name: MacOS
 
 on: [push, pull_request]
 
+env:
+  OPENCL_PKGCONFIG_PATHS: ${{ github.workspace }}/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-Headers/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-ICD-Loader/install/lib/pkgconfig
+
 jobs:
   macos-gcc:
     #runs-on: macos-latest
@@ -158,3 +161,13 @@ jobs:
         cd $GITHUB_WORKSPACE/build/downstream/sdk ;
         ctest --output-on-failure -C Release ;
         ctest --output-on-failure -C Debug
+
+    - name: Test pkg-config
+      shell: bash
+      run: |
+        if [[ ! `which pkg-config` ]]; then brew install pkg-config; fi;
+        PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/install/include"
+
+    - name: Test pkg-config dependency
+      shell: bash
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/external/OpenCL-Headers/install/include"
