@@ -3,7 +3,7 @@ name: MacOS
 on: [push, pull_request]
 
 env:
-  OPENCL_PKGCONFIG_PATHS: ${{ github.workspace }}/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-Headers/install/lib/pkgconfig:${{ github.workspace }}/external/OpenCL-ICD-Loader/install/lib/pkgconfig
+  OPENCL_PKGCONFIG_PATHS: ${{ github.workspace }}/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-Headers/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-ICD-Loader/install/lib/pkgconfig
 
 jobs:
   macos-gcc:
