@@ -1034,147 +1034,21 @@ CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetSemaphoreInfoKHR              pfn_clGetSem
 #endif // cl_khr_semaphore
 
 #if defined(cl_khr_command_buffer)
-typedef CL_API_ENTRY cl_command_buffer_khr  (CL_API_CALL* PFN_clCreateCommandBufferKHR)(
-    cl_uint num_queues,
-    const cl_command_queue* queues,
-    const cl_command_buffer_properties_khr* properties,
-    cl_int* errcode_ret);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clFinalizeCommandBufferKHR)(cl_command_buffer_khr command_buffer);
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clRetainCommandBufferKHR)(cl_command_buffer_khr command_buffer);
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clReleaseCommandBufferKHR)(cl_command_buffer_khr command_buffer);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clEnqueueCommandBufferKHR)(
-    cl_uint num_queues,
-    cl_command_queue* queues,
-    cl_command_buffer_khr command_buffer,
-    cl_uint num_events_in_wait_list,
-    const cl_event* event_wait_list,
-    cl_event* event);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandBarrierWithWaitListKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandCopyBufferKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem src_buffer,
-    cl_mem dst_buffer,
-    size_type src_offset,
-    size_type dst_offset,
-    size_type size,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandCopyBufferRectKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem src_buffer,
-    cl_mem dst_buffer,
-    const size_type* src_origin,
-    const size_type* dst_origin,
-    const size_type* region,
-    size_type src_row_pitch,
-    size_type src_slice_pitch,
-    size_type dst_row_pitch,
-    size_type dst_slice_pitch,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandCopyBufferToImageKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem src_buffer,
-    cl_mem dst_image,
-    size_type src_offset,
-    const size_type* dst_origin,
-    const size_type* region,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandCopyImageKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem src_image,
-    cl_mem dst_image,
-    const size_type* src_origin,
-    const size_type* dst_origin,
-    const size_type* region,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandCopyImageToBufferKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem src_image,
-    cl_mem dst_buffer,
-    const size_type* src_origin,
-    const size_type* region,
-    size_type dst_offset,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandFillBufferKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem buffer,
-    const void* pattern,
-    size_type pattern_size,
-    size_type offset,
-    size_type size,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandFillImageKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    cl_mem image,
-    const void* fill_color,
-    const size_type* origin,
-    const size_type* region,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clCommandNDRangeKernelKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_queue command_queue,
-    const cl_ndrange_kernel_command_properties_khr* properties,
-    cl_kernel kernel,
-    cl_uint work_dim,
-    const size_type* global_work_offset,
-    const size_type* global_work_size,
-    const size_type* local_work_size,
-    cl_uint num_sync_points_in_wait_list,
-    const cl_sync_point_khr* sync_point_wait_list,
-    cl_sync_point_khr* sync_point,
-    cl_mutable_command_khr* mutable_handle);
-
-typedef CL_API_ENTRY cl_int (CL_API_CALL* PFN_clGetCommandBufferInfoKHR)(
-    cl_command_buffer_khr command_buffer,
-    cl_command_buffer_info_khr param_name,
-    size_type param_value_size,
-    void* param_value,
-    size_type* param_value_size_ret);
-
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateCommandBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clFinalizeCommandBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clRetainCommandBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clReleaseCommandBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetCommandBufferInfoKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueCommandBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandBarrierWithWaitListKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyBufferRectKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyBufferToImageKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyImageKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyImageToBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandFillBufferKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandFillImageKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandNDRangeKernelKHR);
 
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateCommandBufferKHR pfn_clCreateCommandBufferKHR               = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clFinalizeCommandBufferKHR pfn_clFinalizeCommandBufferKHR           = nullptr;
@@ -10721,6 +10595,10 @@ private:
     }
 
 };
+
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
+#endif // cl_khr_semaphore
+
 #if defined(cl_khr_command_buffer)
 /*! \class CommandBufferKhr
  * \brief CommandBufferKhr interface for cl_command_buffer_khr.
@@ -11245,9 +11123,6 @@ CL_HPP_DEFINE_STATIC_MEMBER_ CommandBufferKhr CommandBufferKhr::default_;
 CL_HPP_DEFINE_STATIC_MEMBER_ cl_int CommandBufferKhr::default_error_ = CL_SUCCESS;
 
 #endif // cl_khr_command_buffer
-
-CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
-#endif // cl_khr_semaphore
 //----------------------------------------------------------------------------------------------------------------------
 
 #undef CL_HPP_ERR_STR_
