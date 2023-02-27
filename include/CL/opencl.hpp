@@ -33,14 +33,12 @@
  *
  *   Optional extension support
  *
- *         cl_ext_device_fission
- *         #define CL_HPP_USE_CL_DEVICE_FISSION
  *         cl_khr_d3d10_sharing
  *         #define CL_HPP_USE_DX_INTEROP
+ *         cl_khr_il_program
+ *         #define CL_HPP_USE_IL_KHR
  *         cl_khr_sub_groups
  *         #define CL_HPP_USE_CL_SUB_GROUPS_KHR
- *         cl_khr_image2d_from_buffer
- *         #define CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
  *
  *   Doxygen documentation for this header is available here:
  *
@@ -82,9 +80,9 @@
  *
  * The combination of preprocessor macros CL_HPP_TARGET_OPENCL_VERSION and 
  * CL_HPP_MINIMUM_OPENCL_VERSION control this range. These are three digit
- * decimal values representing OpenCL runime versions. The default for 
- * the target is 200, representing OpenCL 2.0 and the minimum is also 
- * defined as 200. These settings would use 2.0 API calls only.
+ * decimal values representing OpenCL runtime versions. The default for 
+ * the target is 300, representing OpenCL 3.0.  The minimum is defined as 200.
+ * These settings would use 2.0 and newer API calls only.
  * If backward compatibility with a 1.2 runtime is required, the minimum
  * version may be set to 120.
  *
@@ -139,6 +137,11 @@
  * - CL_HPP_TARGET_OPENCL_VERSION
  *
  *   Defines the target OpenCL runtime version to build the header
+ *   against. Defaults to 300, representing OpenCL 3.0.
+ *
+ * - CL_HPP_MINIMUM_OPENCL_VERSION
+ *
+ *   Defines the minimum OpenCL runtime version to build the header
  *   against. Defaults to 200, representing OpenCL 2.0.
  *
  * - CL_HPP_NO_STD_STRING
@@ -190,13 +193,6 @@
  *   applies to use of cl::Program construction and other program
  *   build variants.
  *
- * - CL_HPP_USE_CL_DEVICE_FISSION
- *
- *   Enable the cl_ext_device_fission extension.
- *
- * - CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR
- *
- *   Enable the cl_khr_image2d_from_buffer extension.
  *
  * - CL_HPP_USE_CL_SUB_GROUPS_KHR
  *
@@ -403,10 +399,6 @@
 #if !defined(CL_HPP_USE_DX_INTEROP) && defined(USE_DX_INTEROP)
 # pragma message("opencl.hpp: USE_DX_INTEROP is deprecated. Define CL_HPP_USE_DX_INTEROP instead")
 # define CL_HPP_USE_DX_INTEROP
-#endif
-#if !defined(CL_HPP_USE_CL_DEVICE_FISSION) && defined(USE_CL_DEVICE_FISSION)
-# pragma message("opencl.hpp: USE_CL_DEVICE_FISSION is deprecated. Define CL_HPP_USE_CL_DEVICE_FISSION instead")
-# define CL_HPP_USE_CL_DEVICE_FISSION
 #endif
 #if !defined(CL_HPP_ENABLE_EXCEPTIONS) && defined(__CL_ENABLE_EXCEPTIONS)
 # pragma message("opencl.hpp: __CL_ENABLE_EXCEPTIONS is deprecated. Define CL_HPP_ENABLE_EXCEPTIONS instead")
@@ -718,20 +710,15 @@ namespace cl {
 #define CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(name) \
     using PFN_##name = name##_fn
 
-#define CL_HPP_INIT_CL_EXT_FCN_PTR_(name) \
-    if (!pfn_##name) {    \
-    pfn_##name = (PFN_##name) \
-    clGetExtensionFunctionAddress(#name); \
-    if (!pfn_##name) {    \
-    } \
+#define CL_HPP_INIT_CL_EXT_FCN_PTR_(name)                               \
+    if (!pfn_##name) {                                                  \
+        pfn_##name = (PFN_##name)clGetExtensionFunctionAddress(#name);  \
     }
 
-#define CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, name) \
-    if (!pfn_##name) {    \
-    pfn_##name = (PFN_##name) \
-    clGetExtensionFunctionAddressForPlatform(platform, #name); \
-    if (!pfn_##name) {    \
-    } \
+#define CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, name)            \
+    if (!pfn_##name) {                                                  \
+        pfn_##name = (PFN_##name)                                       \
+            clGetExtensionFunctionAddressForPlatform(platform, #name);  \
     }
 
     class Program;
@@ -836,9 +823,11 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __GET_KERNEL_ARG_INFO_ERR           CL_HPP_ERR_STR_(clGetKernelArgInfo)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __GET_KERNEL_SUB_GROUP_INFO_ERR     CL_HPP_ERR_STR_(clGetKernelSubGroupInfo)
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
+#else
+#define __GET_KERNEL_SUB_GROUP_INFO_ERR     CL_HPP_ERR_STR_(clGetKernelSubGroupInfoKHR)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __GET_KERNEL_WORK_GROUP_INFO_ERR    CL_HPP_ERR_STR_(clGetKernelWorkGroupInfo)
 #define __GET_PROGRAM_INFO_ERR              CL_HPP_ERR_STR_(clGetProgramInfo)
 #define __GET_PROGRAM_BUILD_INFO_ERR        CL_HPP_ERR_STR_(clGetProgramBuildInfo)
@@ -872,12 +861,11 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __CREATE_KERNEL_ERR                 CL_HPP_ERR_STR_(clCreateKernel)
 #define __SET_KERNEL_ARGS_ERR               CL_HPP_ERR_STR_(clSetKernelArg)
 #define __CREATE_PROGRAM_WITH_SOURCE_ERR    CL_HPP_ERR_STR_(clCreateProgramWithSource)
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
-#define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithIL)
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
 #define __CREATE_PROGRAM_WITH_BINARY_ERR    CL_HPP_ERR_STR_(clCreateProgramWithBinary)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 #define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithIL)
+#else
+#define __CREATE_PROGRAM_WITH_IL_ERR        CL_HPP_ERR_STR_(clCreateProgramWithILKHR)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 #define __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR    CL_HPP_ERR_STR_(clCreateProgramWithBuiltInKernels)
@@ -1431,8 +1419,8 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_program_info, CL_PROGRAM_SCOPE_GLOBAL_CTORS_PRESENT, cl_bool) \
     F(cl_program_info, CL_PROGRAM_SCOPE_GLOBAL_DTORS_PRESENT, cl_bool)
 
-#define CL_HPP_PARAM_NAME_DEVICE_FISSION_(F) \
-    F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl_device_id) \
+#define CL_HPP_PARAM_NAME_DEVICE_FISSION_EXT_(F) \
+    F(cl_device_info, CL_DEVICE_PARENT_DEVICE_EXT, cl::Device) \
     F(cl_device_info, CL_DEVICE_PARTITION_TYPES_EXT, cl::vector<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_AFFINITY_DOMAINS_EXT, cl::vector<cl_device_partition_property_ext>) \
     F(cl_device_info, CL_DEVICE_REFERENCE_COUNT_EXT , cl_uint) \
@@ -1512,13 +1500,13 @@ CL_HPP_PARAM_NAME_INFO_2_2_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_3_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 
-#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
+#if defined(cl_khr_subgroups) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_SUBGROUP_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // #if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
+#endif // #if defined(cl_khr_subgroups) && CL_HPP_TARGET_OPENCL_VERSION < 210
 
-#if defined(CL_HPP_USE_IL_KHR) && CL_HPP_TARGET_OPENCL_VERSION < 210
+#if defined(cl_khr_il_program) && CL_HPP_TARGET_OPENCL_VERSION < 210
 CL_HPP_PARAM_NAME_INFO_IL_KHR_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // #if defined(CL_HPP_USE_IL_KHR)
+#endif // #if defined(cl_khr_il_program) && CL_HPP_TARGET_OPENCL_VERSION < 210
 
 
 // Flags deprecated in OpenCL 2.0
@@ -1543,9 +1531,9 @@ CL_HPP_PARAM_NAME_INFO_1_1_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_INFO_1_2_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
 
-#if defined(CL_HPP_USE_CL_DEVICE_FISSION)
-CL_HPP_PARAM_NAME_DEVICE_FISSION_(CL_HPP_DECLARE_PARAM_TRAITS_);
-#endif // CL_HPP_USE_CL_DEVICE_FISSION
+#if defined(cl_ext_device_fission)
+CL_HPP_PARAM_NAME_DEVICE_FISSION_EXT_(CL_HPP_DECLARE_PARAM_TRAITS_);
+#endif // cl_ext_device_fission
 
 #if defined(cl_khr_extended_versioning)
 #if CL_HPP_TARGET_OPENCL_VERSION < 300
@@ -1571,6 +1559,16 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NODE_MASK_KHR, cl_uint)
 #if defined(cl_khr_pci_bus_info)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_PCI_BUS_INFO_KHR, cl_device_pci_bus_info_khr)
 #endif
+
+// Note: some headers do not define cl_khr_image2d_from_buffer
+#if CL_HPP_TARGET_OPENCL_VERSION < 200
+#if defined(CL_DEVICE_IMAGE_PITCH_ALIGNMENT_KHR)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_IMAGE_PITCH_ALIGNMENT_KHR, cl_uint)
+#endif
+#if defined(CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_KHR)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_IMAGE_BASE_ADDRESS_ALIGNMENT_KHR, cl_uint)
+#endif
+#endif // CL_HPP_TARGET_OPENCL_VERSION < 200
 
 #if defined(cl_khr_integer_dot_product)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_INTEGER_DOT_PRODUCT_CAPABILITIES_KHR, cl_device_integer_dot_product_capabilities_khr)
@@ -2335,7 +2333,6 @@ public:
         return param;
     }
 
-
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Return the current value of the host clock as seen by the device.
@@ -2382,9 +2379,6 @@ public:
     }
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 
-    /**
-     * CL 1.2 version
-     */
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     //! \brief Wrapper for clCreateSubDevices().
     cl_int createSubDevices(
@@ -2419,11 +2413,10 @@ public:
 
         return CL_SUCCESS;
     }
-#elif defined(CL_HPP_USE_CL_DEVICE_FISSION)
+#endif
 
-/**
- * CL 1.1 version that uses device fission extension.
- */
+#if defined(cl_ext_device_fission)
+    //! \brief Wrapper for clCreateSubDevices().
     cl_int createSubDevices(
         const cl_device_partition_property_ext * properties,
         vector<Device>* devices)
@@ -2437,7 +2430,14 @@ public:
                 cl_uint * /*num_devices*/ ) CL_API_SUFFIX__VERSION_1_1;
 
         static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = nullptr;
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+        cl::Device device(object_);
+        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateSubDevicesEXT);
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSubDevicesEXT);
+#endif
 
         cl_uint n = 0;
         cl_int err = pfn_clCreateSubDevicesEXT(object_, properties, 0, nullptr, &n);
@@ -2463,9 +2463,10 @@ public:
                 (*devices)[i] = Device(ids[i], false);
             }
         }
+
         return CL_SUCCESS;
     }
-#endif // defined(CL_HPP_USE_CL_DEVICE_FISSION)
+#endif // defined(cl_ext_device_fission)
 };
 
 using BuildLogType = vector<std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, CL_PROGRAM_BUILD_LOG>::param_type>>;
@@ -2753,7 +2754,12 @@ public:
         }
 
         static PFN_clGetDeviceIDsFromD3D10KHR pfn_clGetDeviceIDsFromD3D10KHR = nullptr;
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(object_, clGetDeviceIDsFromD3D10KHR);
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetDeviceIDsFromD3D10KHR);
+#endif
 
         cl_uint n = 0;
         cl_int err = pfn_clGetDeviceIDsFromD3D10KHR(
@@ -4254,14 +4260,15 @@ public:
         PFN_clCreateFromD3D10BufferKHR pfn_clCreateFromD3D10BufferKHR;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         vector<cl_context_properties> props = context.getInfo<CL_CONTEXT_PROPERTIES>();
-        cl_platform platform = -1;
+        cl_platform platform = NULL;
         for( int i = 0; i < props.size(); ++i ) {
             if( props[i] == CL_CONTEXT_PLATFORM ) {
                 platform = props[i+1];
             }
         }
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateFromD3D10BufferKHR);
-#elif CL_HPP_TARGET_OPENCL_VERSION >= 110
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateFromD3D10BufferKHR);
 #endif
 
@@ -4272,6 +4279,7 @@ public:
             bufobj,
             &error);
 
+        // TODO: This should really have a D3D10 rerror code!
         detail::errHandler(error, __CREATE_GL_BUFFER_ERR);
         if (err != nullptr) {
             *err = error;
@@ -4954,9 +4962,12 @@ public:
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200 || defined(CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR)
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     /*! \brief Constructs a 2D Image from a buffer.
     * \note This will share storage with the underlying buffer.
+    *
+    *  Requires OpenCL 2.0 or newer or OpenCL 1.2 and the 
+    *  cl_khr_image2d_from_buffer extension.
     *
     *  Wraps clCreateImage().
     */
@@ -4991,7 +5002,7 @@ public:
             *err = error;
         }
     }
-#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200 || defined(CL_HPP_USE_CL_IMAGE2D_FROM_BUFFER_KHR)
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief Constructs a 2D Image from an image.
@@ -6143,7 +6154,7 @@ public:
         return param;
     }
     
-#if (CL_HPP_TARGET_OPENCL_VERSION >= 200 && defined(CL_HPP_USE_CL_SUB_GROUPS_KHR)) || CL_HPP_TARGET_OPENCL_VERSION >= 210
+#if defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     cl_int getSubGroupInfo(const cl::Device &dev, cl_kernel_sub_group_info name, const cl::NDRange &range, size_type* param) const
     {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
@@ -6175,7 +6186,7 @@ public:
         }
         return param;
     }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#endif // defined(CL_HPP_USE_CL_SUB_GROUPS_KHR) || CL_HPP_TARGET_OPENCL_VERSION >= 210
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     /*! \brief setArg overload taking a shared_ptr type
@@ -6525,10 +6536,11 @@ public:
     }
 
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 210 || (CL_HPP_TARGET_OPENCL_VERSION==200 && defined(CL_HPP_USE_IL_KHR))
+#if defined(CL_HPP_USE_IL_KHR) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL.
-     * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
+     *
+     * Requires OpenCL 2.1 or newer or the cl_khr_il_program extension.
      */
     Program(
         const vector<char>& IL,
@@ -6582,7 +6594,8 @@ public:
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL
      * for a specific context.
-     * Valid for either OpenCL >= 2.1 or when CL_HPP_USE_IL_KHR is defined.
+     *
+     * Requires OpenCL 2.1 or newer or the cl_khr_il_program extension.
      */
     Program(
         const Context& context,
@@ -6630,7 +6643,7 @@ public:
             *err = error;
         }
     }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 210
+#endif // defined(CL_HPP_USE_IL_KHR) || CL_HPP_TARGET_OPENCL_VERSION >= 210
 
     /**
      * Construct a program object from a list of devices and a per-device list of binaries.
@@ -8865,7 +8878,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireD3D10ObjectsKHR);
 #endif
-#if CL_HPP_TARGET_OPENCL_VERSION >= 110
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueAcquireD3D10ObjectsKHR);
 #endif
         
@@ -8897,10 +8910,10 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         cl::Device device(getInfo<CL_QUEUE_DEVICE>());
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseD3D10ObjectsKHR);
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
-#if CL_HPP_TARGET_OPENCL_VERSION >= 110
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueReleaseD3D10ObjectsKHR);
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
+#endif
 
         cl_event tmp;
         cl_int err = detail::errHandler(
@@ -10555,7 +10568,6 @@ CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
 #undef __CREATE_KERNEL_ERR                 
 #undef __SET_KERNEL_ARGS_ERR               
 #undef __CREATE_PROGRAM_WITH_SOURCE_ERR    
-#undef __CREATE_PROGRAM_WITH_IL_ERR        
 #undef __CREATE_PROGRAM_WITH_BINARY_ERR    
 #undef __CREATE_PROGRAM_WITH_IL_ERR        
 #undef __CREATE_PROGRAM_WITH_BUILT_IN_KERNELS_ERR    
@@ -10623,10 +10635,6 @@ CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
 // Extensions
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_
-
-#if defined(CL_HPP_USE_CL_DEVICE_FISSION)
-#undef CL_HPP_PARAM_NAME_DEVICE_FISSION_
-#endif // CL_HPP_USE_CL_DEVICE_FISSION
 
 #undef CL_HPP_NOEXCEPT_
 #undef CL_HPP_DEFINE_STATIC_MEMBER_
