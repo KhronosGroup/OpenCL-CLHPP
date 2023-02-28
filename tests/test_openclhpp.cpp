@@ -2533,9 +2533,6 @@ void testCleanupHeaderState()
     clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
 
-#if defined(cl_khr_command_buffer)
-    cl::CommandBufferKhr::unitTestClearDefault();
-#endif
     cl::CommandQueue::unitTestClearDefault();
     cl::Context::unitTestClearDefault();
     cl::Device::unitTestClearDefault();
@@ -3257,24 +3254,6 @@ void testCommandBufferInfoKHRCommandQueues()
     TEST_ASSERT_EQUAL(2, command_queues.size());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
-}
-
-void testSetDefaultCommandBufferKhr()
-{
-    clRetainCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
-    clRetainCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
-    clRetainCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
-    clReleaseCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
-    clReleaseCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
-    clReleaseCommandBufferKHR_ExpectAndReturn(make_command_buffer_khr(1), CL_SUCCESS);
-
-    cl_int error;
-    cl::CommandBufferKhr b(make_command_buffer_khr(1));
-    cl::CommandBufferKhr b2 = cl::CommandBufferKhr::setDefault(b);
-    cl::CommandBufferKhr b3 = cl::CommandBufferKhr::getDefault(&error);
-    TEST_ASSERT_EQUAL(error, CL_SUCCESS);
-    TEST_ASSERT_EQUAL(b(), b2());
-    TEST_ASSERT_EQUAL(b(), b3());
 }
 
 } // extern "C"
