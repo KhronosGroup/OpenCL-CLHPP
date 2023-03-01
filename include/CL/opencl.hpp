@@ -720,6 +720,9 @@ namespace cl {
 namespace cl {
     class Memory;
 
+#define CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(name) \
+    using PFN_##name = name##_fn
+
 #define CL_HPP_INIT_CL_EXT_FCN_PTR_(name) \
     if (!pfn_##name) {    \
     pfn_##name = (PFN_##name) \
@@ -744,8 +747,8 @@ namespace cl {
     class Memory;
     class Buffer;
     class Pipe;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300
-    class SemaphoreKhr;
+#ifdef cl_khr_semaphore
+    class Semaphore;
 #endif
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
@@ -942,12 +945,12 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __SET_PROGRAM_SPECIALIZATION_CONSTANT_ERR   CL_HPP_ERR_STR_(clSetProgramSpecializationConstant)
 #endif
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_semaphore
 #define __GET_SEMAPHORE_KHR_INFO_ERR                    CL_HPP_ERR_STR_(clGetSemaphoreInfoKHR)
 #define __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR      CL_HPP_ERR_STR_(clCreateSemaphoreWithPropertiesKHR)
 #define __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR                CL_HPP_ERR_STR_(clEnqueueWaitSemaphoresKHR)
 #define __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR              CL_HPP_ERR_STR_(clEnqueueSignalSemaphoresKHR)
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+#endif
 
 /**
  * CL 1.2 version that uses device fission.
@@ -996,35 +999,13 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 //! \endcond
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300 
-typedef CL_API_ENTRY cl_semaphore_khr(CL_API_CALL* PFN_clCreateSemaphoreWithPropertiesKHR)(
-    cl_context context,
-    const cl_semaphore_properties_khr* sema_props,
-    cl_int* errcode_ret);
-
-typedef CL_API_ENTRY cl_int(CL_API_CALL* PFN_clReleaseSemaphoreKHR)(cl_semaphore_khr sema_object);
-typedef CL_API_ENTRY cl_int(CL_API_CALL* PFN_clRetainSemaphoreKHR)(cl_semaphore_khr sema_object);
-
-typedef CL_API_ENTRY cl_int(CL_API_CALL* PFN_clEnqueueWaitSemaphoresKHR)(
-    cl_command_queue command_queue, cl_uint num_sema_objects,
-    const cl_semaphore_khr* sema_objects,
-    const cl_semaphore_payload_khr* sema_payload_list,
-    cl_uint num_events_in_wait_list, const cl_event* event_wait_list,
-    cl_event* event);
-
-typedef CL_API_ENTRY cl_int(CL_API_CALL* PFN_clEnqueueSignalSemaphoresKHR)(
-    cl_command_queue command_queue, cl_uint num_sema_objects,
-    const cl_semaphore_khr* sema_objects,
-    const cl_semaphore_payload_khr* sema_payload_list,
-    cl_uint num_events_in_wait_list, const cl_event* event_wait_list,
-    cl_event* event);
-
-typedef CL_API_ENTRY cl_int(CL_API_CALL* PFN_clGetSemaphoreInfoKHR)(
-    cl_semaphore_khr sema_object, 
-    cl_semaphore_info_khr param_name,
-    ::size_t param_value_size,
-    void* param_value,
-    ::size_t* param_value_size_ret);
+#ifdef cl_khr_semaphore
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateSemaphoreWithPropertiesKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clReleaseSemaphoreKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clRetainSemaphoreKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueWaitSemaphoresKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueSignalSemaphoresKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetSemaphoreInfoKHR);
 
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateSemaphoreWithPropertiesKHR pfn_clCreateSemaphoreWithPropertiesKHR  = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clReleaseSemaphoreKHR              pfn_clReleaseSemaphoreKHR               = nullptr;
@@ -1032,7 +1013,7 @@ CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clRetainSemaphoreKHR               pfn_clRetain
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueWaitSemaphoresKHR         pfn_clEnqueueWaitSemaphoresKHR          = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueSignalSemaphoresKHR       pfn_clEnqueueSignalSemaphoresKHR        = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetSemaphoreInfoKHR              pfn_clGetSemaphoreInfoKHR               = nullptr;
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+#endif // cl_khr_semaphore
 
 namespace detail {
 
@@ -1469,6 +1450,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 #define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(F) \
     F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr)
 
+#define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(F) \
+    F(cl_semaphore_info_khr, CL_SEMAPHORE_PROPERTIES_KHR, cl::vector<cl_semaphore_properties_khr>) \
+
 #define CL_HPP_PARAM_NAME_INFO_3_0_(F) \
     F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION, cl_version) \
     F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
@@ -1495,7 +1479,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_mem_info, CL_MEM_PROPERTIES, cl::vector<cl_mem_properties>) \
     F(cl_pipe_info, CL_PIPE_PROPERTIES, cl::vector<cl_pipe_properties>) \
     F(cl_sampler_info, CL_SAMPLER_PROPERTIES, cl::vector<cl_sampler_properties>) \
-    F(cl_semaphore_info_khr, CL_SEMAPHORE_PROPERTIES_KHR, cl::vector<cl_semaphore_properties_khr>)
+    
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -1570,6 +1554,10 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_CL3_SHARED_(CL_HPP_DECLARE_PARAM_TR
 #endif // CL_HPP_TARGET_OPENCL_VERSION < 300
 CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_extended_versioning
+
+#if defined(cl_khr_semaphore)
+CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_semaphore
 
 #if defined(cl_khr_device_uuid)
 using uuid_array = array<cl_uchar, CL_UUID_SIZE_KHR>;
@@ -1855,7 +1843,7 @@ struct ReferenceHandler<cl_event>
     { return ::clReleaseEvent(event); }
 };
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_semaphore
 template <>
 struct ReferenceHandler<cl_semaphore_khr>
 {
@@ -1865,7 +1853,7 @@ struct ReferenceHandler<cl_semaphore_khr>
             return pfn_clRetainSemaphoreKHR(semaphore);
         }
 
-        return CL_INVALID_VALUE;
+        return CL_INVALID_OPERATION;
     }
 
     static cl_int release(cl_semaphore_khr semaphore)
@@ -1874,10 +1862,10 @@ struct ReferenceHandler<cl_semaphore_khr>
             return pfn_clReleaseSemaphoreKHR(semaphore);
         }
 
-        return CL_INVALID_VALUE;
+        return CL_INVALID_OPERATION;
     }
 };
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+#endif // cl_khr_semaphore
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
@@ -8932,53 +8920,63 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         return detail::errHandler(::clFinish(object_), __FINISH_ERR);
     }
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300
-    cl_int enqueueWaitSemaphoresKHR(
-        const vector<SemaphoreKhr>* sema_objects,
-        const vector<cl_semaphore_payload_khr>* sema_payloads = NULL,
+#ifdef cl_khr_semaphore
+    cl_int enqueueWaitSemaphores(
+        const vector<Semaphore> &sema_objects,
+        const vector<cl_semaphore_payload_khr> &sema_payloads = {},
         const vector<Event>* events_wait_list = NULL,
         Event *event = NULL) const
     {
         cl_event tmp;
-        cl_int err = detail::errHandler(
-            pfn_clEnqueueWaitSemaphoresKHR(
-                object_,
-                (cl_uint)sema_objects->size(),
-                (const cl_semaphore_khr *) &sema_objects->front(),
-                (sema_payloads != NULL && sema_payloads->size() > 0) ? &sema_payloads->front() : NULL,
-                (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
-                (events_wait_list != NULL && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : NULL,
-                (event != NULL) ? &tmp : NULL),
-            __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR);
+        cl_int err = CL_INVALID_OPERATION;
+
+        if (pfn_clEnqueueWaitSemaphoresKHR != nullptr) {
+            err = pfn_clEnqueueWaitSemaphoresKHR(
+                    object_,
+                    (cl_uint)sema_objects.size(),
+                    (const cl_semaphore_khr *) &sema_objects.front(),
+                    (sema_payloads.size() > 0) ? &sema_payloads.front() : NULL,
+                    (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
+                    (events_wait_list != NULL && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : NULL,
+                    (event != NULL) ? &tmp : NULL);
+        }
+
+        detail::errHandler(err, __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR);
+
         if (event != NULL && err == CL_SUCCESS)
             *event = tmp;
+
         return err;
     }
 
-    cl_int enqueueSignalSemaphoreKhr(
-        const vector<SemaphoreKhr>* sema_objects,
-        const vector<cl_semaphore_payload_khr>* sema_payloads = NULL,
+    cl_int enqueueSignalSemaphore(
+        const vector<Semaphore> &sema_objects,
+        const vector<cl_semaphore_payload_khr>& sema_payloads = {},
         const vector<Event>* events_wait_list = NULL,
         Event* event = NULL)
     {
         cl_event tmp;
-        cl_int err = detail::errHandler(
-            pfn_clEnqueueSignalSemaphoresKHR(
-                object_,
-                (cl_uint)sema_objects->size(),
-                (const cl_semaphore_khr*) &sema_objects->front(),
-                (sema_payloads != NULL && sema_payloads->size() > 0) ? &sema_payloads->front() : NULL,
-                (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
-                (events_wait_list != NULL && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : NULL,
-                (event != NULL) ? &tmp : NULL),
-            __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR);
+        cl_int err = CL_INVALID_OPERATION;
+
+        if (pfn_clEnqueueSignalSemaphoresKHR != nullptr) {
+            err = pfn_clEnqueueSignalSemaphoresKHR(
+                    object_,
+                    (cl_uint)sema_objects.size(),
+                    (const cl_semaphore_khr*) &sema_objects.front(),
+                    (sema_payloads.size() > 0) ? &sema_payloads.front() : NULL,
+                    (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
+                    (events_wait_list != NULL && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : NULL,
+                    (event != NULL) ? &tmp : NULL);
+        }
+
+        detail::errHandler(err, __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR);
 
         if (event != NULL && err == CL_SUCCESS)
             *event = tmp;
 
         return err;
     }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 300
+#endif // cl_khr_semaphore
 }; // CommandQueue
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandQueue::default_initialized_;
@@ -10373,14 +10371,14 @@ namespace compatibility {
     };
 } // namespace compatibility
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 300
-class SemaphoreKhr : public detail::Wrapper<cl_semaphore_khr>
+#ifdef cl_khr_semaphore
+class Semaphore : public detail::Wrapper<cl_semaphore_khr>
 {
 public:
-    SemaphoreKhr() : detail::Wrapper<cl_type>() {}
-    SemaphoreKhr(
+    Semaphore() : detail::Wrapper<cl_type>() {}
+    Semaphore(
         const cl::Device& device,
-        const cl_semaphore_properties_khr *sema_props,
+        const vector<cl_semaphore_properties_khr>& sema_props,
         cl_int *err = NULL) 
     {
         cl_int error;
@@ -10391,7 +10389,8 @@ public:
 
             if (error == CL_SUCCESS)
             {
-                object_ = pfn_clCreateSemaphoreWithPropertiesKHR(context(), sema_props, &error);
+                object_ = pfn_clCreateSemaphoreWithPropertiesKHR(
+                    context(), sema_props.data(), &error);
             }        
         }
 
@@ -10401,9 +10400,9 @@ public:
             *err = error;
         }
     }
-    explicit SemaphoreKhr(const cl_semaphore_khr& semaphore, bool retainObject = false) :
+    explicit Semaphore(const cl_semaphore_khr& semaphore, bool retainObject = false) :
         detail::Wrapper<cl_type>(semaphore, retainObject) {}
-    SemaphoreKhr& operator = (const cl_semaphore_khr& rhs) {
+    Semaphore& operator = (const cl_semaphore_khr& rhs) {
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
@@ -10412,8 +10411,8 @@ public:
     {
         typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clGetSemaphoreInfoKHR)(
             cl_semaphore_khr sema_object, cl_semaphore_info_khr param_name,
-            size_t param_value_size, void* param_value,
-            size_t* param_value_size_ret);
+            size_type param_value_size, void* param_value,
+            size_type* param_value_size_ret);
 
         return detail::errHandler(
             detail::getInfo(&pfn_clGetSemaphoreInfoKHR, object_, name, param),
@@ -10468,7 +10467,7 @@ private:
         return result;
     }
 };
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+#endif // cl_khr_semaphore
 //----------------------------------------------------------------------------------------------------------------------
 
 #undef CL_HPP_ERR_STR_
