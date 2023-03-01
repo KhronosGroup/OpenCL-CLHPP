@@ -10640,13 +10640,13 @@ public:
         cl_command_buffer_properties_khr properties = 0,
         cl_int* errcode_ret = nullptr)
     {
-        cl_int error = CL_SUCCESS;
         cl_command_buffer_properties_khr command_buffer_properties[] = {
             CL_COMMAND_BUFFER_FLAGS_KHR, properties, 0
         };
 
-        /* initialization of addresses to extension functions */
-        error = initExtensions(queues[0].getInfo<CL_QUEUE_DEVICE>());
+        /* initialization of addresses to extension functions (it is done only once) */
+        std::call_once(ext_init_, initExtensions, queues[0].getInfo<CL_QUEUE_DEVICE>());
+        cl_int error = ext_init_error_;
 
         if (error == CL_SUCCESS)
         {
@@ -10993,7 +10993,10 @@ public:
     }
 
 private:
-    cl_int initExtensions(cl::Device device)
+    static std::once_flag ext_init_;
+    static cl_int ext_init_error_;
+
+    static void initExtensions(cl::Device device)
     {
         cl_int result = CL_SUCCESS;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -11052,12 +11055,13 @@ private:
             (clUpdateMutableCommandsKHR      == nullptr) ||
             (clGetMutableCommandInfoKHR      == nullptr))
         {
-            result = CL_INVALID_OPERATION;
+            ext_init_error_ = CL_INVALID_OPERATION;
         }
-
-        return result;
     }
 }; // CommandBufferKhr
+
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandBufferKhr::ext_init_;
+CL_HPP_DEFINE_STATIC_MEMBER_ cl_int CommandBufferKhr::ext_init_error_ = CL_SUCCESS;
 
 /*! \class MutableCommandKhr
  * \brief MutableCommandKhr interface for cl_mutable_command_khr.
