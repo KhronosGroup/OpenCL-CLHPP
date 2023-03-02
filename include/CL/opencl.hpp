@@ -10998,7 +10998,6 @@ private:
 
     static void initExtensions(cl::Device device)
     {
-        cl_int result = CL_SUCCESS;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateCommandBufferKHR);

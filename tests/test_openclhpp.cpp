@@ -3182,6 +3182,11 @@ void testMoveAssignCommandBufferKhrNull();
 void testMoveConstructCommandBufferKhrNonNull();
 void testMoveConstructCommandBufferKhrNull();
 MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool);
+#else
+void testMoveAssignCommandBufferKhrNonNull() {}
+void testMoveAssignCommandBufferKhrNull() {}
+void testMoveConstructCommandBufferKhrNonNull() {}
+void testMoveConstructCommandBufferKhrNull() {}
 #endif
 
 // Stub for clGetCommandBufferInfoKHR that returns 1
@@ -3230,30 +3235,37 @@ static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
     (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
     TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_QUEUES_KHR, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= 2 * sizeof(cl_command_queue));
+    TEST_ASSERT(param_value == NULL || param_value_size >= 3 * sizeof(cl_command_queue));
     if (param_value_size_ret != NULL)
-        *param_value_size_ret = 2 * sizeof(cl_command_queue);
+        *param_value_size_ret = 3 * sizeof(cl_command_queue);
     if (param_value != NULL)
     {
         cl_command_queue *command_queues = (cl_command_queue *)param_value;
         command_queues[0] = make_command_queue(0);
         command_queues[1] = make_command_queue(1);
+        command_queues[2] = make_command_queue(2);
     }
     return CL_SUCCESS;
 }
 
 void testCommandBufferInfoKHRCommandQueues()
 {
-    cl_command_queue expected[] = {make_command_queue(0), make_command_queue(1)};
-    int refcount = 2;
-
+#if defined(cl_khr_command_buffer)
     clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
-    prepare_commandQueueRefcounts(2, expected, &refcount);
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
+    clRetainCommandQueue_ExpectAndReturn(make_command_queue(2), CL_SUCCESS);
 
     VECTOR_CLASS<cl::CommandQueue> command_queues = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
-    TEST_ASSERT_EQUAL(2, command_queues.size());
+    TEST_ASSERT_EQUAL(3, command_queues.size());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
+
+    command_queues[0]() = nullptr;
+    command_queues[1]() = nullptr;
+    command_queues[2]() = nullptr;
+#endif
 }
 
 } // extern "C"
