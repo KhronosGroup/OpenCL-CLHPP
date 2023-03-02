@@ -1452,11 +1452,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 
 #define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(F) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_PROPERTIES_KHR, cl::vector<cl_semaphore_properties_khr>) \
+    F(cl_platform_info, CL_PLATFORM_SEMAPHORE_TYPES_KHR,  cl::vector<cl_semaphore_type_khr>) \
+    F(cl_device_info, CL_DEVICE_SEMAPHORE_TYPES_KHR,      cl::vector<cl_semaphore_type_khr>) \
 
 #define CL_HPP_PARAM_NAME_INFO_3_0_(F) \
     F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION, cl_version) \
     F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
-    F(cl_platform_info, CL_PLATFORM_SEMAPHORE_TYPES_KHR, cl::vector<cl_semaphore_type_khr>) \
     \
     F(cl_device_info, CL_DEVICE_NUMERIC_VERSION, cl_version) \
     F(cl_device_info, CL_DEVICE_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
@@ -1473,13 +1474,11 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_DEVICE_ENQUEUE_CAPABILITIES, cl_device_device_enqueue_capabilities) \
     F(cl_device_info, CL_DEVICE_PIPE_SUPPORT, cl_bool) \
     F(cl_device_info, CL_DEVICE_LATEST_CONFORMANCE_VERSION_PASSED, string) \
-    F(cl_device_info, CL_DEVICE_SEMAPHORE_TYPES_KHR, cl::vector<cl_semaphore_type_khr>) \
     \
     F(cl_command_queue_info, CL_QUEUE_PROPERTIES_ARRAY, cl::vector<cl_queue_properties>) \
     F(cl_mem_info, CL_MEM_PROPERTIES, cl::vector<cl_mem_properties>) \
     F(cl_pipe_info, CL_PIPE_PROPERTIES, cl::vector<cl_pipe_properties>) \
     F(cl_sampler_info, CL_SAMPLER_PROPERTIES, cl::vector<cl_sampler_properties>) \
-    
 
 template <typename enum_type, cl_int Name>
 struct param_traits {};
@@ -10377,22 +10376,19 @@ class Semaphore : public detail::Wrapper<cl_semaphore_khr>
 public:
     Semaphore() : detail::Wrapper<cl_type>() {}
     Semaphore(
-        const cl::Device& device,
+        const Context &context,
         const vector<cl_semaphore_properties_khr>& sema_props,
         cl_int *err = NULL) 
     {
-        cl_int error;
-        Context context = Context::getDefault(&error);
- 
-        if (error == CL_SUCCESS) {
-            error = initExtensions(device);
+        /* initialization of addresses to extension functions (it is done only once) */
+        std::call_once(ext_init_, initExtensions, context);
 
-            if (error == CL_SUCCESS)
-            {
-                object_ = pfn_clCreateSemaphoreWithPropertiesKHR(
-                    context(), sema_props.data(), &error);
-            }        
-        }
+        cl_int error = ext_init_error_;
+
+        if (error == CL_SUCCESS) {
+            object_ = pfn_clCreateSemaphoreWithPropertiesKHR(
+                context(), sema_props.data(), &error);
+        }        
 
         detail::errHandler(error, __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR);
 
@@ -10400,6 +10396,10 @@ public:
             *err = error;
         }
     }
+    Semaphore(
+        const vector<cl_semaphore_properties_khr>& sema_props,
+        cl_int* err = NULL):Semaphore(Context::getDefault(err), sema_props, err) {}
+    
     explicit Semaphore(const cl_semaphore_khr& semaphore, bool retainObject = false) :
         detail::Wrapper<cl_type>(semaphore, retainObject) {}
     Semaphore& operator = (const cl_semaphore_khr& rhs) {
@@ -10442,10 +10442,13 @@ public:
     }
 
 private:
-    cl_int initExtensions(const cl::Device &device)
-    {
-        cl_int result = CL_SUCCESS;
+    static std::once_flag ext_init_;
+    static cl_int ext_init_error_;
 
+    static void initExtensions(const Context& context)
+    {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+        Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateSemaphoreWithPropertiesKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clReleaseSemaphoreKHR);
@@ -10453,7 +10456,15 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueWaitSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueSignalSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetSemaphoreInfoKHR);
+#else
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSemaphoreWithPropertiesKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clReleaseSemaphoreKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clRetainSemaphoreKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueWaitSemaphoresKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueSignalSemaphoresKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetSemaphoreInfoKHR);
 
+#endif
         if ((pfn_clCreateSemaphoreWithPropertiesKHR == nullptr) ||
             (pfn_clReleaseSemaphoreKHR              == nullptr) ||
             (pfn_clRetainSemaphoreKHR               == nullptr) ||
@@ -10461,12 +10472,15 @@ private:
             (pfn_clEnqueueSignalSemaphoresKHR       == nullptr) ||
             (pfn_clGetSemaphoreInfoKHR              == nullptr))
         {
-           result = CL_INVALID_VALUE;
+            ext_init_error_ = CL_INVALID_VALUE;
         }
-
-        return result;
     }
+
 };
+
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
+CL_HPP_DEFINE_STATIC_MEMBER_ cl_int Semaphore::ext_init_error_ = CL_SUCCESS;
+
 #endif // cl_khr_semaphore
 //----------------------------------------------------------------------------------------------------------------------
 
