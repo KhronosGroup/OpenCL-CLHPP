@@ -950,6 +950,8 @@ static inline cl_int errHandler (cl_int err, const char * errStr = NULL)
 #define __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR      CL_HPP_ERR_STR_(clCreateSemaphoreWithPropertiesKHR)
 #define __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR                CL_HPP_ERR_STR_(clEnqueueWaitSemaphoresKHR)
 #define __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR              CL_HPP_ERR_STR_(clEnqueueSignalSemaphoresKHR)
+#define __RETAIN_SEMAPHORE_KHR_ERR                      CL_HPP_ERR_STR_(clRetainSemaphoreKHR)
+#define __RELEASE_SEMAPHORE_KHR_ERR                     CL_HPP_ERR_STR_(clReleaseSemaphoreKHR)
 #endif
 
 /**
@@ -10409,10 +10411,10 @@ public:
     template <typename T>
     cl_int getInfo(cl_semaphore_info_khr name, T* param) const
     {
-        typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clGetSemaphoreInfoKHR)(
-            cl_semaphore_khr sema_object, cl_semaphore_info_khr param_name,
-            size_type param_value_size, void* param_value,
-            size_type* param_value_size_ret);
+        if (pfn_clGetSemaphoreInfoKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __GET_SEMAPHORE_KHR_INFO_ERR);
+        }
 
         return detail::errHandler(
             detail::getInfo(&pfn_clGetSemaphoreInfoKHR, object_, name, param),
@@ -10433,11 +10435,19 @@ public:
 
     cl_int retain()
     { 
+        if (pfn_clRetainSemaphoreKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __RETAIN_SEMAPHORE_KHR_ERR);
+        }
         return pfn_clRetainSemaphoreKHR(object_);
     }
 
     cl_int release()
     { 
+        if (pfn_clReleaseSemaphoreKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __RELEASE_SEMAPHORE_KHR_ERR);
+        }
         return pfn_clReleaseSemaphoreKHR(object_);
     }
 
