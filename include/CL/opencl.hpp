@@ -6965,15 +6965,14 @@ public:
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 inline Program linkProgram(
-    Program input1,
-    Program input2,
-    const char* options = NULL,
-    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
-    void* data = NULL,
-    cl_int* err = NULL) 
+    const Program& input1,
+    const Program& input2,
+    const char* options = nullptr,
+    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+    void* data = nullptr,
+    cl_int* err = nullptr)
 {
     cl_int error_local = CL_SUCCESS;
-
     cl_program programs[2] = { input1(), input2() };
 
     Context ctx = input1.getInfo<CL_PROGRAM_CONTEXT>(&error_local);
@@ -6984,7 +6983,7 @@ inline Program linkProgram(
     cl_program prog = ::clLinkProgram(
         ctx(),
         0,
-        NULL,
+        nullptr,
         options,
         2,
         programs,
@@ -6993,7 +6992,7 @@ inline Program linkProgram(
         &error_local);
 
     detail::errHandler(error_local,__COMPILE_PROGRAM_ERR);
-    if (err != NULL) {
+    if (err != nullptr) {
         *err = error_local;
     }
 
@@ -7001,44 +7000,39 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
-    vector<Program> inputPrograms,
-    const char* options = NULL,
-    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = NULL,
-    void* data = NULL,
-    cl_int* err = NULL) 
+    vector<Program>& inputPrograms,
+    const char* options = nullptr,
+    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+    void* data = nullptr,
+    cl_int* err = nullptr)
 {
     cl_int error_local = CL_SUCCESS;
-
-    vector<cl_program> programs(inputPrograms.size());
-
-    for (unsigned int i = 0; i < inputPrograms.size(); i++) {
-        programs[i] = inputPrograms[i]();
-    }
-    
     Context ctx;
+
     if(inputPrograms.size() > 0) {
         ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>(&error_local);
         if(error_local!=CL_SUCCESS) {
             detail::errHandler(error_local, __LINK_PROGRAM_ERR);
         }
     }
+
     cl_program prog = ::clLinkProgram(
         ctx(),
         0,
-        NULL,
+        nullptr,
         options,
-        (cl_uint)inputPrograms.size(),
-        programs.data(),
+        static_cast<cl_uint>(inputPrograms.size()),
+        reinterpret_cast<cl_program *>(inputPrograms.data()),
         notifyFptr,
         data,
         &error_local);
 
     detail::errHandler(error_local,__COMPILE_PROGRAM_ERR);
-    if (err != NULL) {
+    if (err != nullptr) {
         *err = error_local;
     }
 
-    return Program(prog, false);
+    return Program(prog);
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
