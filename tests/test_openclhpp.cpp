@@ -3047,14 +3047,13 @@ static  cl_int clGetProgramInfo_testProgramGetContext(cl_program program,
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_program(0), program);
     TEST_ASSERT_EQUAL_HEX(CL_PROGRAM_CONTEXT, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_context));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_context);
-    if (param_value != NULL)
-        *(cl_context *) param_value = make_context(0);
+    if (param_value != nullptr)
+        *static_cast<cl_context *>(param_value) = make_context(0);
     return CL_SUCCESS;
 }
 
@@ -3069,16 +3068,15 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     cl_int *             errcode_ret,
     int                  num_calls)
 {
-    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(context, make_context(0));
     TEST_ASSERT_EQUAL(num_devices, 0);
-    TEST_ASSERT_EQUAL(device_list, NULL);
-    TEST_ASSERT_EQUAL(options, NULL);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(options, nullptr);
     TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
     for (int i=0; i<num_input_programs; i++)
         TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
-    TEST_ASSERT_EQUAL(pfn_notify, NULL);
-    TEST_ASSERT_EQUAL(user_data, NULL);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
 
     *errcode_ret = CL_SUCCESS;
     return make_program(0);
@@ -3098,12 +3096,12 @@ void testLinkProgram()
     clReleaseProgram_ExpectAndReturn(make_program(1), CL_SUCCESS);
 
     cl::Program prog = cl::linkProgram(cl::Program(make_program(0)), cl::Program(make_program(1)),
-        NULL, NULL, NULL, &errcode);
+        nullptr, nullptr, nullptr, &errcode);
 
     TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
 
-    prog() = NULL;
+    prog() = nullptr;
 #endif
 }
 
@@ -3118,19 +3116,22 @@ void testLinkProgramWithVectorProgramInput()
         refcount[i] = 1;
     }
 
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
     clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
-    prepare_programRefcounts(prog_vec.size(), (cl_program *) prog_vec.data(), refcount.data());
+    prepare_programRefcounts(prog_vec.size(), reinterpret_cast<cl_program *>(prog_vec.data()), refcount.data());
 
     clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
 
-    cl::Program prog = linkProgram(prog_vec, NULL, NULL, NULL, &errcode);
+    cl::Program prog = linkProgram(prog_vec, nullptr, nullptr, nullptr, &errcode);
 
     TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
 
-    prog() = NULL;
+    prog() = nullptr;
 #endif
 }
 
