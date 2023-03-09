@@ -3196,16 +3196,15 @@ static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues(
     size_t param_value_size,
     void *param_value,
     size_t *param_value_size_ret,
-    int num_calls)
+    int /*num_calls*/)
 {
-    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
     TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_NUM_QUEUES_KHR, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_uint));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_uint);
-    if (param_value != NULL)
-        *(cl_uint *) param_value = 1;
+    if (param_value != nullptr)
+        *static_cast<cl_uint *> (param_value) = 1;
     return CL_SUCCESS;
 }
 
@@ -3213,8 +3212,6 @@ void testCommandBufferInfoKHRNumQueues()
 {
 #if defined(cl_khr_command_buffer)
     cl_uint expected = 1;
-    int refcount = 1;
-    cl_int error;
 
     clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues);
 
@@ -3230,17 +3227,16 @@ static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
     size_t param_value_size,
     void *param_value,
     size_t *param_value_size_ret,
-    int num_calls)
+    int /*num_calls*/)
 {
-    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
     TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_QUEUES_KHR, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= 3 * sizeof(cl_command_queue));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl_command_queue));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = 3 * sizeof(cl_command_queue);
-    if (param_value != NULL)
+    if (param_value != nullptr)
     {
-        cl_command_queue *command_queues = (cl_command_queue *)param_value;
+        cl_command_queue *command_queues = static_cast<cl_command_queue *> (param_value);
         command_queues[0] = make_command_queue(0);
         command_queues[1] = make_command_queue(1);
         command_queues[2] = make_command_queue(2);

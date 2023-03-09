@@ -10645,7 +10645,7 @@ public:
         };
 
         /* initialization of addresses to extension functions (it is done only once) */
-        std::call_once(ext_init_, initExtensions, queues[0].getInfo<CL_QUEUE_DEVICE>());
+        std::call_once(ext_init_, [&] { initExtensions(queues[0].getInfo<CL_QUEUE_DEVICE>()); });
         cl_int error = ext_init_error_;
 
         if (error == CL_SUCCESS)
@@ -10996,7 +10996,7 @@ private:
     static std::once_flag ext_init_;
     static cl_int ext_init_error_;
 
-    static void initExtensions(cl::Device device)
+    static void initExtensions(const cl::Device& device)
     {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
