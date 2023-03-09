@@ -7000,7 +7000,7 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
-    vector<Program>& inputPrograms,
+    const vector<Program>& inputPrograms,
     const char* options = nullptr,
     void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
     void* data = nullptr,
@@ -7008,6 +7008,9 @@ inline Program linkProgram(
 {
     cl_int error_local = CL_SUCCESS;
     Context ctx;
+
+    static_assert(sizeof(cl::Program) == sizeof(cl_program),
+        "Size of cl::Program must be equal to size of cl_program");
 
     if(inputPrograms.size() > 0) {
         ctx = inputPrograms[0].getInfo<CL_PROGRAM_CONTEXT>(&error_local);
@@ -7022,7 +7025,7 @@ inline Program linkProgram(
         nullptr,
         options,
         static_cast<cl_uint>(inputPrograms.size()),
-        reinterpret_cast<cl_program *>(inputPrograms.data()),
+        reinterpret_cast<const cl_program *>(inputPrograms.data()),
         notifyFptr,
         data,
         &error_local);
