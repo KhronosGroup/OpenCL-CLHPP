@@ -7086,19 +7086,11 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
-<<<<<<< HEAD
     const vector<Program>& inputPrograms,
     const char* options = nullptr,
     void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
     void* data = nullptr,
     cl_int* err = nullptr)
-=======
-    vector<Program> inputPrograms,
-    const char* options = nullptr,
-    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
-    void* data = nullptr,
-    cl_int* err = nullptr) 
->>>>>>> 77ae018 (replace NULL with nullptr)
 {
     cl_int error_local = CL_SUCCESS;
     Context ctx;
