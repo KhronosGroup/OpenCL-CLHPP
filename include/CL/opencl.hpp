@@ -8925,8 +8925,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     cl_int enqueueWaitSemaphores(
         const vector<Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr> &sema_payloads = {},
-        const vector<Event>* events_wait_list = NULL,
-        Event *event = NULL) const
+        const vector<Event>* events_wait_list = nullptr,
+        Event *event = nullptr) const
     {
         cl_event tmp;
         cl_int err = CL_INVALID_OPERATION;
@@ -8936,15 +8936,15 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
                     object_,
                     (cl_uint)sema_objects.size(),
                     (const cl_semaphore_khr *) &sema_objects.front(),
-                    (sema_payloads.size() > 0) ? &sema_payloads.front() : NULL,
-                    (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
-                    (events_wait_list != NULL && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : NULL,
-                    (event != NULL) ? &tmp : NULL);
+                    (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
+                    (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
+                    (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
+                    (event != nullptr) ? &tmp : nullptr);
         }
 
         detail::errHandler(err, __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR);
 
-        if (event != NULL && err == CL_SUCCESS)
+        if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
 
         return err;
@@ -8953,8 +8953,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     cl_int enqueueSignalSemaphore(
         const vector<Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr>& sema_payloads = {},
-        const vector<Event>* events_wait_list = NULL,
-        Event* event = NULL)
+        const vector<Event>* events_wait_list = nullptr,
+        Event* event = nullptr)
     {
         cl_event tmp;
         cl_int err = CL_INVALID_OPERATION;
@@ -8964,15 +8964,15 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
                     object_,
                     (cl_uint)sema_objects.size(),
                     (const cl_semaphore_khr*) &sema_objects.front(),
-                    (sema_payloads.size() > 0) ? &sema_payloads.front() : NULL,
-                    (events_wait_list != NULL) ? (cl_uint) events_wait_list->size() : 0,
-                    (events_wait_list != NULL && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : NULL,
-                    (event != NULL) ? &tmp : NULL);
+                    (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
+                    (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
+                    (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
+                    (event != nullptr) ? &tmp : nullptr);
         }
 
         detail::errHandler(err, __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR);
 
-        if (event != NULL && err == CL_SUCCESS)
+        if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
 
         return err;
@@ -10380,7 +10380,7 @@ public:
     Semaphore(
         const Context &context,
         const vector<cl_semaphore_properties_khr>& sema_props,
-        cl_int *err = NULL) 
+        cl_int *err = nullptr) 
     {
         /* initialization of addresses to extension functions (it is done only once) */
         std::call_once(ext_init_, initExtensions, context);
@@ -10394,13 +10394,13 @@ public:
 
         detail::errHandler(error, __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR);
 
-        if (err != NULL) {
+        if (err != nullptr) {
             *err = error;
         }
     }
     Semaphore(
         const vector<cl_semaphore_properties_khr>& sema_props,
-        cl_int* err = NULL):Semaphore(Context::getDefault(err), sema_props, err) {}
+        cl_int* err = nullptr):Semaphore(Context::getDefault(err), sema_props, err) {}
     
     explicit Semaphore(const cl_semaphore_khr& semaphore, bool retainObject = false) :
         detail::Wrapper<cl_type>(semaphore, retainObject) {}
@@ -10422,12 +10422,12 @@ public:
     }
     template <cl_semaphore_info_khr name> typename
     detail::param_traits<detail::cl_semaphore_info_khr, name>::param_type
-    getInfo(cl_int* err = NULL) const
+    getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
             detail::cl_semaphore_info_khr, name>::param_type param;
         cl_int result = getInfo(name, &param);
-        if (err != NULL) {
+        if (err != nullptr) {
             *err = result;        
         }
         return param;      
