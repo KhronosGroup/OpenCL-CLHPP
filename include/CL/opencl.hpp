@@ -4260,7 +4260,7 @@ public:
         PFN_clCreateFromD3D10BufferKHR pfn_clCreateFromD3D10BufferKHR;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         vector<cl_context_properties> props = context.getInfo<CL_CONTEXT_PROPERTIES>();
-        cl_platform platform = NULL;
+        cl_platform platform = nullptr;
         for( int i = 0; i < props.size(); ++i ) {
             if( props[i] == CL_CONTEXT_PLATFORM ) {
                 platform = props[i+1];
