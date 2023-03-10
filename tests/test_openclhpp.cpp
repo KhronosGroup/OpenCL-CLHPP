@@ -3045,7 +3045,7 @@ static  cl_int clGetProgramInfo_testProgramGetContext(cl_program program,
     size_t param_value_size,
     void *param_value,
     size_t *param_value_size_ret,
-    int num_calls)
+    int /*num_calls*/)
 {
     TEST_ASSERT_EQUAL_PTR(make_program(0), program);
     TEST_ASSERT_EQUAL_HEX(CL_PROGRAM_CONTEXT, param_name);
@@ -3066,7 +3066,7 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     void (CL_CALLBACK *  pfn_notify)(cl_program program, void * user_data),
     void *               user_data,
     cl_int *             errcode_ret,
-    int                  num_calls)
+    int                 /*num_calls*/)
 {
     TEST_ASSERT_EQUAL_PTR(context, make_context(0));
     TEST_ASSERT_EQUAL(num_devices, 0);
@@ -3086,14 +3086,17 @@ void testLinkProgram()
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_int errcode;
+    int refcount[] = {1,1};
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
 
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
     clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
 
     clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
-    clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
-    clReleaseProgram_ExpectAndReturn(make_program(1), CL_SUCCESS);
+    prepare_programRefcounts(2, reinterpret_cast<cl_program *>(programPool), refcount);
 
     cl::Program prog = cl::linkProgram(cl::Program(make_program(0)), cl::Program(make_program(1)),
         nullptr, nullptr, nullptr, &errcode);
