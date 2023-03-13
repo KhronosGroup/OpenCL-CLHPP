@@ -10385,13 +10385,16 @@ public:
         /* initialization of addresses to extension functions (it is done only once) */
         std::call_once(ext_init_, initExtensions, context);
 
-        cl_int error = ext_init_error_;
+        cl_int error = CL_INVALID_OPERATION;
 
-        if (error == CL_SUCCESS) {
+        if (pfn_clCreateSemaphoreWithPropertiesKHR)
+        {
             object_ = pfn_clCreateSemaphoreWithPropertiesKHR(
-                context(), sema_props.data(), &error);
-        }        
-
+                context(),
+                sema_props.data(),
+                &error);
+        }
+          
         detail::errHandler(error, __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR);
 
         if (err != nullptr) {
@@ -10453,7 +10456,6 @@ public:
 
 private:
     static std::once_flag ext_init_;
-    static cl_int ext_init_error_;
 
     static void initExtensions(const Context& context)
     {
@@ -10473,24 +10475,21 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueWaitSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueSignalSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetSemaphoreInfoKHR);
-
 #endif
-        if ((pfn_clCreateSemaphoreWithPropertiesKHR == nullptr) ||
-            (pfn_clReleaseSemaphoreKHR              == nullptr) ||
-            (pfn_clRetainSemaphoreKHR               == nullptr) ||
-            (pfn_clEnqueueWaitSemaphoresKHR         == nullptr) ||
-            (pfn_clEnqueueSignalSemaphoresKHR       == nullptr) ||
+        if ((pfn_clCreateSemaphoreWithPropertiesKHR == nullptr) &&
+            (pfn_clReleaseSemaphoreKHR              == nullptr) &&
+            (pfn_clRetainSemaphoreKHR               == nullptr) &&
+            (pfn_clEnqueueWaitSemaphoresKHR         == nullptr) &&
+            (pfn_clEnqueueSignalSemaphoresKHR       == nullptr) &&
             (pfn_clGetSemaphoreInfoKHR              == nullptr))
         {
-            ext_init_error_ = CL_INVALID_VALUE;
+            detail::errHandler(CL_INVALID_VALUE, __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR);
         }
     }
 
 };
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
-CL_HPP_DEFINE_STATIC_MEMBER_ cl_int Semaphore::ext_init_error_ = CL_SUCCESS;
-
 #endif // cl_khr_semaphore
 //----------------------------------------------------------------------------------------------------------------------
 
