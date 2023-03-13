@@ -3395,6 +3395,9 @@ public:
     static cl_int
     waitForEvents(const vector<Event>& events)
     {
+        static_assert(sizeof(cl::Event) == sizeof(cl_event),
+        "Size of cl::Event must be equal to size of cl_event");
+
         return detail::errHandler(
             ::clWaitForEvents(
                 (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : NULL),
