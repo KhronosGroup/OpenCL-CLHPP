@@ -220,6 +220,24 @@ static cl_int clGetPlatformInfo_version_2_0(
 
 /**
  * A stub for clGetPlatformInfo that will only support querying
+ * CL_PLATFORM_VERSION, and will return version 2.1.
+ */
+static cl_int clGetPlatformInfo_version_2_1(
+    cl_platform_id id,
+    cl_platform_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+    return clGetPlatformInfo_version(
+        id, param_name, param_value_size, param_value,
+        param_value_size_ret, "OpenCL 2.1 Mock");
+}
+
+/**
+ * A stub for clGetPlatformInfo that will only support querying
  * CL_PLATFORM_VERSION, and will return version 3.0.
  */
 static cl_int clGetPlatformInfo_version_3_0(
@@ -1755,6 +1773,106 @@ void testCopyHostToBuffer()
 }
 
 /****************************************************************************
+* Tests for creating Programs
+****************************************************************************/
+
+static cl_program clCreateProgramWithIL_func(
+    cl_context context,
+    const void* il,
+    size_t length,
+    cl_int* errcode_ret)
+{
+    TEST_ASSERT_EQUAL(context, make_context(0));
+    TEST_ASSERT_NOT_EQUAL(il, nullptr);
+    TEST_ASSERT_EQUAL(length, 128);
+    if (errcode_ret != NULL) {
+        *errcode_ret = CL_SUCCESS;
+    }
+    return make_program(0);
+}
+
+static cl_program clCreateProgramWithIL_testCreate(
+    cl_context context,
+    const void* il,
+    size_t length,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    return clCreateProgramWithIL_func(context, il, length, errcode_ret);
+}
+
+void testCreateProgramWithIL21()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+    std::vector<char> il(128);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_1);
+    clCreateProgramWithIL_StubWithCallback(clCreateProgramWithIL_testCreate);
+    clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context context(make_context(0));
+
+    cl_int err = CL_INVALID_OPERATION;
+    cl::Program program(context, il, false, &err);
+
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+#endif
+}
+
+void testCreateProgramWithILTryKHR()
+{
+    std::vector<char> il(128);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#if defined(cl_khr_il_program)
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clCreateProgramWithILKHR", NULL);
+#endif
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context context(make_context(0));
+
+    cl_int err = CL_SUCCESS;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try {
+#endif
+        cl::Program program(context, il, false, &err);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    } catch (cl::Error& e) {
+        TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
+    }
+#else
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
+}
+
+void testCreateProgramWithILUseKHR()
+{
+#if defined(cl_khr_il_program)
+    std::vector<char> il(128);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clCreateProgramWithILKHR", (void*)clCreateProgramWithIL_func);
+    clReleaseProgram_ExpectAndReturn(make_program(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Context context(make_context(0));
+
+    cl_int err = CL_INVALID_OPERATION;
+    cl::Program program(context, il, false, &err);
+
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+#endif
+}
+
+
+/****************************************************************************
 * Tests for building Programs
 ****************************************************************************/
 
@@ -1978,9 +2096,8 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     return image_desc->buffer;
 }
 
-void testCreateImage2DFromBuffer_2_0()
+void testCreateImage2DFromBuffer()
 {
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -2002,7 +2119,6 @@ void testCreateImage2DFromBuffer_2_0()
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
 
     buffer() = NULL;
-#endif
 }
 
 static cl_mem clCreateImage_testCreateImage2D_2_0(
@@ -2340,15 +2456,15 @@ void testCreatePipe()
 #endif
 }
 
-static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
+static cl_int clGetKernelSubGroupInfo_func(
+    cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
     size_t input_value_size,
     const void *input_value,
     size_t param_value_size,
     void *param_value,
-    size_t *param_value_size_ret,
-    int num_calls)
+    size_t *param_value_size_ret)
 {    
     TEST_ASSERT_NOT_NULL(input_value);
     TEST_ASSERT_NOT_NULL(param_value);
@@ -2373,12 +2489,33 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     }
 }
 
-void testSubGroups()
+static cl_int clGetKernelSubGroupInfo_testSubGroups(
+    cl_kernel kernel,
+    cl_device_id device,
+    cl_kernel_sub_group_info param_name,
+    size_t input_value_size,
+    const void *input_value,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int num_calls)
 {
-// TODO support testing cl_khr_subgroups on 2.0
+    return clGetKernelSubGroupInfo_func(
+        kernel,
+        device,
+        param_name,
+        input_value_size,
+        input_value,
+        param_value_size,
+        param_value,
+        param_value_size_ret);
+}
+
+void testGetKernelSubGroupInfo21()
+{
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_1);
     clGetKernelSubGroupInfo_StubWithCallback(clGetKernelSubGroupInfo_testSubGroups);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
@@ -2389,14 +2526,91 @@ void testSubGroups()
     cl::NDRange ndrange(8, 8);
     size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
         d, ndrange, &err);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+
     size_t res2 = 0;
     err = k.getSubGroupInfo(
         d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
 
     TEST_ASSERT_EQUAL(res1, 32);
     TEST_ASSERT_EQUAL(res2, 2);
 #endif
 }
+
+void testGetKernelSubGroupInfoTryKHR()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+#if defined(cl_khr_subgroups)
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clGetKernelSubGroupInfoKHR", NULL);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clGetKernelSubGroupInfoKHR", NULL);
+#endif
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+
+    cl::Kernel k(make_kernel(0));
+    cl::Device d(make_device_id(0));
+    cl::NDRange ndrange(8, 8);
+
+    cl_int err = CL_SUCCESS;
+    size_t res1 = 0;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try {
+#endif
+        res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
+            d, ndrange, &err);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    } catch (cl::Error& e) {
+        TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
+    }
+#else
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
+
+    err = CL_SUCCESS;
+    size_t res2 = 0;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try {
+#endif
+        err = k.getSubGroupInfo(
+            d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    } catch (cl::Error& e) {
+        TEST_ASSERT_NOT_EQUAL(e.err(), CL_SUCCESS);
+    }
+#else
+    TEST_ASSERT_NOT_EQUAL(err, CL_SUCCESS);
+#endif
+}
+
+void testGetKernelSubGroupInfoUseKHR()
+{
+#if defined(cl_khr_subgroups)
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clGetExtensionFunctionAddressForPlatform_ExpectAndReturn(make_platform_id(0), "clGetKernelSubGroupInfoKHR", (void*)clGetKernelSubGroupInfo_func);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+
+    cl::Kernel k(make_kernel(0));
+    cl::Device d(make_device_id(0));
+    cl_int err;
+    cl::NDRange ndrange(8, 8);
+    size_t res1 = k.getSubGroupInfo<CL_KERNEL_MAX_SUB_GROUP_SIZE_FOR_NDRANGE_KHR>(
+        d, ndrange, &err);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+
+    size_t res2 = 0;
+    err = k.getSubGroupInfo(
+        d, CL_KERNEL_SUB_GROUP_COUNT_FOR_NDRANGE_KHR, ndrange, &res2);
+    TEST_ASSERT_EQUAL(err, CL_SUCCESS);
+
+    TEST_ASSERT_EQUAL(res1, 32);
+    TEST_ASSERT_EQUAL(res2, 2);
+#endif
+}
+
 
 /**
 * Stub implementation of clGetDeviceInfo that returns an absense of builtin kernels
@@ -3034,6 +3248,5 @@ void testDevicePCIBusInfo_KHR()
     TEST_ASSERT_EQUAL_HEX(0x44, info.pci_function);
 #endif
 }
-
 
 } // extern "C"
