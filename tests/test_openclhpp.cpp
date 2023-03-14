@@ -65,6 +65,7 @@ static cl::Buffer bufferPool[POOL_MAX];
 static cl::Image2D image2DPool[POOL_MAX];
 static cl::Image3D image3DPool[POOL_MAX];
 static cl::Kernel kernelPool[POOL_MAX];
+static cl::Program programPool[POOL_MAX];
 
 /****************************************************************************
  * Stub functions shared by multiple tests
@@ -313,6 +314,7 @@ public:
         releasefunc ## _StubWithCallback(releasefunc ## _refcount); \
     }
 
+MAKE_REFCOUNT_STUBS(cl_program, clRetainProgram, clReleaseProgram, programRefcounts)
 MAKE_REFCOUNT_STUBS(cl_device_id, clRetainDevice, clReleaseDevice, deviceRefcounts)
 MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcounts)
 MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
@@ -378,8 +380,10 @@ void setUp()
         image2DPool[i]() = make_mem(i);
         image3DPool[i]() = make_mem(i);
         kernelPool[i]() = make_kernel(i);
+        programPool[i]() = make_program(i);
     }
 
+    programRefcounts.reset();
     deviceRefcounts.reset();
     contextRefcounts.reset();
     memRefcounts.reset();
@@ -397,6 +401,7 @@ void tearDown()
         image2DPool[i]() = NULL;
         image3DPool[i]() = NULL;
         kernelPool[i]() = NULL;
+        programPool[i]() = NULL;
     }
 }
 
@@ -3035,5 +3040,102 @@ void testDevicePCIBusInfo_KHR()
 #endif
 }
 
+static  cl_int clGetProgramInfo_testProgramGetContext(cl_program program,
+    cl_program_build_info param_name,
+    size_t param_value_size,
+    void *param_value,
+    size_t *param_value_size_ret,
+    int /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL_PTR(make_program(0), program);
+    TEST_ASSERT_EQUAL_HEX(CL_PROGRAM_CONTEXT, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_context);
+    if (param_value != nullptr)
+        *static_cast<cl_context *>(param_value) = make_context(0);
+    return CL_SUCCESS;
+}
+
+static cl_program clLinkProgram_testLinkProgram(cl_context context,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_programs,
+    const cl_program *   input_programs,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program, void * user_data),
+    void *               user_data,
+    cl_int *             errcode_ret,
+    int                 /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL_PTR(context, make_context(0));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(options, nullptr);
+    TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
+    for (int i=0; i<num_input_programs; i++)
+        TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    *errcode_ret = CL_SUCCESS;
+    return make_program(0);
+}
+
+void testLinkProgram()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int errcode;
+    int refcount[] = {1,1};
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
+    clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
+
+    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    prepare_programRefcounts(2, reinterpret_cast<cl_program *>(programPool), refcount);
+
+    cl::Program prog = cl::linkProgram(cl::Program(make_program(0)), cl::Program(make_program(1)),
+        nullptr, nullptr, nullptr, &errcode);
+
+    TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    prog() = nullptr;
+#endif
+}
+
+void testLinkProgramWithVectorProgramInput()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int errcode;
+    VECTOR_CLASS<cl::Program> prog_vec;
+    std::array<int, ARRAY_SIZE(programPool)> refcount;
+    for (int i=0;i<ARRAY_SIZE(programPool);i++) {
+        prog_vec.push_back(cl::Program(programPool[i]()));
+        refcount[i] = 1;
+    }
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
+    clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
+    prepare_programRefcounts(prog_vec.size(), reinterpret_cast<cl_program *>(prog_vec.data()), refcount.data());
+
+    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    cl::Program prog = linkProgram(prog_vec, nullptr, nullptr, nullptr, &errcode);
+
+    TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    prog() = nullptr;
+#endif
+}
 
 } // extern "C"
