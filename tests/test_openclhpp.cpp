@@ -3247,20 +3247,22 @@ static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
 void testCommandBufferInfoKHRCommandQueues()
 {
 #if defined(cl_khr_command_buffer)
+    // creat expected values for refcounter
+    VECTOR_CLASS<cl_command_queue> expected_queue_vec;
+    std::array<int, 3> refcount;
+    for (int i=0;i<3;i++) {
+        expected_queue_vec.push_back(commandQueuePool[i]());
+        refcount[i] = 1;
+    }
+
     clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
-    clRetainCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
-    clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
-    clRetainCommandQueue_ExpectAndReturn(make_command_queue(2), CL_SUCCESS);
+    prepare_commandQueueRefcounts(expected_queue_vec.size(), expected_queue_vec.data(), refcount.data());
 
     VECTOR_CLASS<cl::CommandQueue> command_queues = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
     TEST_ASSERT_EQUAL(3, command_queues.size());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
-
-    command_queues[0]() = nullptr;
-    command_queues[1]() = nullptr;
-    command_queues[2]() = nullptr;
 #endif
 }
 
