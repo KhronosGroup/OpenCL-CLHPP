@@ -971,6 +971,8 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __COMMAND_NDRANGE_KERNEL_KHR_ERR            CL_HPP_ERR_STR_(clCommandNDRangeKernelKHR)
 #define __UPDATE_MUTABLE_COMMANDS_KHR_ERR           CL_HPP_ERR_STR_(clUpdateMutableCommandsKHR)
 #define __GET_MUTABLE_COMMAND_INFO_KHR_ERR          CL_HPP_ERR_STR_(clGetMutableCommandInfoKHR)
+#define __RETAIN_COMMAND_BUFFER_KHR_ERR             CL_HPP_ERR_STR_(clRetainCommandBufferKHR)
+#define __RELEASE_COMMAND_BUFFER_KHR_ERR            CL_HPP_ERR_STR_(clReleaseCommandBufferKHR)
 #endif // cl_khr_command_buffer
 
 /**
@@ -1950,18 +1952,18 @@ struct ReferenceHandler<cl_command_buffer_khr>
 {
     static cl_int retain(cl_command_buffer_khr cmdBufferKhr)
     {
-        if (pfn_clRetainCommandBufferKHR != nullptr)
-            return pfn_clRetainCommandBufferKHR(cmdBufferKhr);
-
-        return CL_INVALID_OPERATION;
+        if (pfn_clRetainCommandBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION, __RETAIN_COMMAND_BUFFER_KHR_ERR);
+        }
+        return pfn_clRetainCommandBufferKHR(cmdBufferKhr);
     }
 
     static cl_int release(cl_command_buffer_khr cmdBufferKhr)
     {
-        if (pfn_clReleaseCommandBufferKHR != nullptr)
-            return pfn_clReleaseCommandBufferKHR(cmdBufferKhr);
-
-        return CL_INVALID_OPERATION;
+        if (pfn_clReleaseCommandBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION, __RELEASE_COMMAND_BUFFER_KHR_ERR);
+        }
+        return pfn_clReleaseCommandBufferKHR(cmdBufferKhr);
     }
 };
 
@@ -10646,12 +10648,15 @@ public:
 
         /* initialization of addresses to extension functions (it is done only once) */
         std::call_once(ext_init_, [&] { initExtensions(queues[0].getInfo<CL_QUEUE_DEVICE>()); });
-        cl_int error = ext_init_error_;
+        cl_int error = CL_INVALID_OPERATION;
 
-        if (error == CL_SUCCESS)
+        static_assert(sizeof(cl::CommandQueue) == sizeof(cl_command_queue),
+            "Size of cl::CommandQueue must be equal to size of cl_command_queue");
+
+        if (pfn_clCreateCommandBufferKHR)
         {
             object_ = pfn_clCreateCommandBufferKHR((cl_uint) queues.size(),
-                &queues[0](),
+                (cl_command_queue *) &queues.front(),
                 command_buffer_properties,
                 &error);
         }
@@ -10674,6 +10679,10 @@ public:
     template <typename T>
     cl_int getInfo(cl_command_buffer_info_khr name, T* param) const
     {
+        if (pfn_clGetCommandBufferInfoKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __GET_COMMAND_BUFFER_INFO_KHR_ERR);
+        }
         return detail::errHandler(
             detail::getInfo(pfn_clGetCommandBufferInfoKHR, object_, name, param),
                 __GET_COMMAND_BUFFER_INFO_KHR_ERR);
@@ -10701,14 +10710,21 @@ public:
         const vector<Event>* events = nullptr,
         Event* event = nullptr)
     {
-        return detail::errHandler(
-                pfn_clEnqueueCommandBufferKHR((cl_uint) queues.size(),
-                &queues[0](),
+        if (pfn_clEnqueueCommandBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
+        }
+
+         static_assert(sizeof(cl::CommandQueue) == sizeof(cl_command_queue),
+            "Size of cl::CommandQueue must be equal to size of cl_command_queue");
+
+        return detail::errHandler(pfn_clEnqueueCommandBufferKHR((cl_uint) queues.size(),
+                (cl_command_queue *) &queues.front(),
                 object_,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
                 (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
                 (cl_event*) event),
-            __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
+                __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
     }
 
     cl_int commandBarrierWithWaitList(const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
@@ -10716,6 +10732,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandBarrierWithWaitListKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_BARRIER_WITH_WAIT_LIST_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandBarrierWithWaitListKHR(object_,
@@ -10742,6 +10763,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandCopyBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_COPY_BUFFER_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferKHR(object_,
@@ -10777,6 +10803,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandCopyBufferRectKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_COPY_BUFFER_RECT_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferRectKHR(object_,
@@ -10812,6 +10843,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandCopyBufferToImageKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_COPY_BUFFER_TO_IMAGE_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferToImageKHR(object_,
@@ -10843,6 +10879,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandCopyImageKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_COPY_IMAGE_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageKHR(object_,
@@ -10874,6 +10915,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandCopyImageToBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_COPY_IMAGE_TO_BUFFER_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageToBufferKHR(object_,
@@ -10905,6 +10951,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandFillBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_FILL_BUFFER_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandFillBufferKHR(object_,
@@ -10935,6 +10986,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandFillImageKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_FILL_IMAGE_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandFillImageKHR(object_,
@@ -10965,6 +11021,11 @@ public:
         MutableCommandKhr* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
+        if (pfn_clCommandNDRangeKernelKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __COMMAND_NDRANGE_KERNEL_KHR_ERR);
+        }
+
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
             pfn_clCommandNDRangeKernelKHR(object_,
@@ -10989,12 +11050,16 @@ public:
 
     cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
     {
-        return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config), __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+        if (pfn_clUpdateMutableCommandsKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+        }
+        return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
+                        __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
 
 private:
     static std::once_flag ext_init_;
-    static cl_int ext_init_error_;
 
     static void initExtensions(const cl::Device& device)
     {
@@ -11036,31 +11101,30 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetMutableCommandInfoKHR);
 #endif
-        if ((clCreateCommandBufferKHR        == nullptr) ||
-            (clFinalizeCommandBufferKHR      == nullptr) ||
-            (clRetainCommandBufferKHR        == nullptr) ||
-            (clReleaseCommandBufferKHR       == nullptr) ||
-            (clGetCommandBufferInfoKHR       == nullptr) ||
-            (clEnqueueCommandBufferKHR       == nullptr) ||
-            (clCommandBarrierWithWaitListKHR == nullptr) ||
-            (clCommandCopyBufferKHR          == nullptr) ||
-            (clCommandCopyBufferRectKHR      == nullptr) ||
-            (clCommandCopyBufferToImageKHR   == nullptr) ||
-            (clCommandCopyImageKHR           == nullptr) ||
-            (clCommandCopyImageToBufferKHR   == nullptr) ||
-            (clCommandFillBufferKHR          == nullptr) ||
-            (clCommandFillImageKHR           == nullptr) ||
-            (clCommandNDRangeKernelKHR       == nullptr) ||
-            (clUpdateMutableCommandsKHR      == nullptr) ||
-            (clGetMutableCommandInfoKHR      == nullptr))
+        if ((pfn_clCreateCommandBufferKHR        == nullptr) &&
+            (pfn_clFinalizeCommandBufferKHR      == nullptr) &&
+            (pfn_clRetainCommandBufferKHR        == nullptr) &&
+            (pfn_clReleaseCommandBufferKHR       == nullptr) &&
+            (pfn_clGetCommandBufferInfoKHR       == nullptr) &&
+            (pfn_clEnqueueCommandBufferKHR       == nullptr) &&
+            (pfn_clCommandBarrierWithWaitListKHR == nullptr) &&
+            (pfn_clCommandCopyBufferKHR          == nullptr) &&
+            (pfn_clCommandCopyBufferRectKHR      == nullptr) &&
+            (pfn_clCommandCopyBufferToImageKHR   == nullptr) &&
+            (pfn_clCommandCopyImageKHR           == nullptr) &&
+            (pfn_clCommandCopyImageToBufferKHR   == nullptr) &&
+            (pfn_clCommandFillBufferKHR          == nullptr) &&
+            (pfn_clCommandFillImageKHR           == nullptr) &&
+            (pfn_clCommandNDRangeKernelKHR       == nullptr) &&
+            (pfn_clUpdateMutableCommandsKHR      == nullptr) &&
+            (pfn_clGetMutableCommandInfoKHR      == nullptr))
         {
-            ext_init_error_ = CL_INVALID_OPERATION;
+            detail::errHandler(CL_INVALID_VALUE, __CREATE_COMMAND_BUFFER_KHR_ERR);
         }
     }
 }; // CommandBufferKhr
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandBufferKhr::ext_init_;
-CL_HPP_DEFINE_STATIC_MEMBER_ cl_int CommandBufferKhr::ext_init_error_ = CL_SUCCESS;
 
 /*! \class MutableCommandKhr
  * \brief MutableCommandKhr interface for cl_mutable_command_khr.
@@ -11083,6 +11147,10 @@ public:
     template <typename T>
     cl_int getInfo(cl_mutable_command_info_khr name, T* param) const
     {
+        if (pfn_clGetMutableCommandInfoKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __GET_MUTABLE_COMMAND_INFO_KHR_ERR);
+        }
         return detail::errHandler(
             detail::getInfo(pfn_clGetMutableCommandInfoKHR, object_, name, param),
                 __GET_MUTABLE_COMMAND_INFO_KHR_ERR);
@@ -11140,6 +11208,8 @@ public:
 #undef __COMMAND_NDRANGE_KERNEL_KHR_ERR
 #undef __UPDATE_MUTABLE_COMMANDS_KHR_ERR
 #undef __GET_MUTABLE_COMMAND_INFO_KHR_ERR
+#undef __RETAIN_COMMAND_BUFFER_KHR_ERR
+#undef __RELEASE_COMMAND_BUFFER_KHR_ERR
 #undef __GET_SUPPORTED_IMAGE_FORMATS_ERR   
 #undef __SET_CONTEXT_DESCTRUCTOR_CALLBACK_ERR
 #undef __CREATE_BUFFER_ERR                 

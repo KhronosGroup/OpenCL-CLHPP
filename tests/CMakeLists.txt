@@ -40,7 +40,7 @@ endif()
 # End of workaround
 
 add_custom_command(
-    OUTPUT stripped/cl.h
+    OUTPUT stripped/cl.h stripped/cl_ext.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
     COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
