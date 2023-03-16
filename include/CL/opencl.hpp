@@ -8948,57 +8948,13 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         const vector<Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr> &sema_payloads = {},
         const vector<Event>* events_wait_list = nullptr,
-        Event *event = nullptr) const
-    {
-        cl_event tmp;
-        cl_int err = CL_INVALID_OPERATION;
-
-        if (pfn_clEnqueueWaitSemaphoresKHR != nullptr) {
-            err = pfn_clEnqueueWaitSemaphoresKHR(
-                    object_,
-                    (cl_uint)sema_objects.size(),
-                    (const cl_semaphore_khr *) &sema_objects.front(),
-                    (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
-                    (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
-                    (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
-                    (event != nullptr) ? &tmp : nullptr);
-        }
-
-        detail::errHandler(err, __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR);
-
-        if (event != nullptr && err == CL_SUCCESS)
-            *event = tmp;
-
-        return err;
-    }
+        Event *event = nullptr) const;
 
     cl_int enqueueSignalSemaphore(
         const vector<Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr>& sema_payloads = {},
         const vector<Event>* events_wait_list = nullptr,
-        Event* event = nullptr)
-    {
-        cl_event tmp;
-        cl_int err = CL_INVALID_OPERATION;
-
-        if (pfn_clEnqueueSignalSemaphoresKHR != nullptr) {
-            err = pfn_clEnqueueSignalSemaphoresKHR(
-                    object_,
-                    (cl_uint)sema_objects.size(),
-                    (const cl_semaphore_khr*) &sema_objects.front(),
-                    (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
-                    (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
-                    (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
-                    (event != nullptr) ? &tmp : nullptr);
-        }
-
-        detail::errHandler(err, __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR);
-
-        if (event != nullptr && err == CL_SUCCESS)
-            *event = tmp;
-
-        return err;
-    }
+        Event* event = nullptr);
 #endif // cl_khr_semaphore
 }; // CommandQueue
 
@@ -10512,6 +10468,63 @@ private:
 };
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
+
+inline cl_int CommandQueue::enqueueWaitSemaphores(
+    const vector<Semaphore> &sema_objects,
+    const vector<cl_semaphore_payload_khr> &sema_payloads,
+    const vector<Event>* events_wait_list,
+    Event *event) const
+{
+    cl_event tmp;
+    cl_int err = CL_INVALID_OPERATION;
+
+    if (pfn_clEnqueueWaitSemaphoresKHR != nullptr) {
+        err = pfn_clEnqueueWaitSemaphoresKHR(
+                object_,
+                (cl_uint)sema_objects.size(),
+                (const cl_semaphore_khr *) &sema_objects.front(),
+                (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
+                (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
+                (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr);
+    }
+
+    detail::errHandler(err, __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR);
+
+    if (event != nullptr && err == CL_SUCCESS)
+        *event = tmp;
+
+    return err;
+}
+
+inline cl_int CommandQueue::enqueueSignalSemaphore(
+    const vector<Semaphore> &sema_objects,
+    const vector<cl_semaphore_payload_khr>& sema_payloads,
+    const vector<Event>* events_wait_list,
+    Event* event)
+{
+    cl_event tmp;
+    cl_int err = CL_INVALID_OPERATION;
+
+    if (pfn_clEnqueueSignalSemaphoresKHR != nullptr) {
+        err = pfn_clEnqueueSignalSemaphoresKHR(
+                object_,
+                (cl_uint)sema_objects.size(),
+                (const cl_semaphore_khr*) &sema_objects.front(),
+                (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
+                (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
+                (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr);
+    }
+
+    detail::errHandler(err, __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR);
+
+    if (event != nullptr && err == CL_SUCCESS)
+        *event = tmp;
+
+    return err;
+}
+
 #endif // cl_khr_semaphore
 //----------------------------------------------------------------------------------------------------------------------
 
