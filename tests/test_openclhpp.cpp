@@ -86,10 +86,10 @@ static cl_int clGetCommandQueueInfo_context(
 
 
     TEST_ASSERT_EQUAL_HEX(CL_QUEUE_CONTEXT, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_context));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_context);
-    if (param_value != NULL)
+    if (param_value != nullptr)
         *(cl_context *)param_value = make_context(0);
 
     return CL_SUCCESS;
@@ -109,10 +109,10 @@ static cl_int clGetDeviceInfo_platform(
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_PLATFORM, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_platform_id));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_platform_id));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_platform_id);
-    if (param_value != NULL)
+    if (param_value != nullptr)
         *(cl_platform_id *) param_value = make_platform_id(0);
     return CL_SUCCESS;
 }
@@ -131,10 +131,10 @@ static cl_int clGetContextInfo_device(
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_HEX(CL_CONTEXT_DEVICES, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_device_id));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_device_id));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_device_id);
-    if (param_value != NULL)
+    if (param_value != nullptr)
         *(cl_device_id *) param_value = make_device_id(0);
     return CL_SUCCESS;
 }
@@ -157,10 +157,10 @@ static cl_int clGetPlatformInfo_version(
     TEST_ASSERT_NOT_NULL(id);
     TEST_ASSERT_EQUAL_PTR(make_platform_id(0), id);
     TEST_ASSERT_EQUAL_HEX(CL_PLATFORM_VERSION, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= bytes);
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= bytes);
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = bytes;
-    if (param_value != NULL)
+    if (param_value != nullptr)
         strcpy((char *) param_value, version);
     return CL_SUCCESS;
 }
@@ -259,7 +259,7 @@ private:
     }
 
 public:
-    RefcountTable() : n(0), objects(NULL), refcounts(NULL) {}
+    RefcountTable() : n(0), objects(nullptr), refcounts(nullptr) {}
 
     void init(int n, void * const *objects, int *refcounts)
     {
@@ -270,7 +270,7 @@ public:
 
     void reset()
     {
-        init(0, NULL, NULL);
+        init(0, nullptr, nullptr);
     }
 
     cl_int retain(void *object)
@@ -335,7 +335,7 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
     \
     void prefix ## MoveAssign ## type ## Null() \
     { \
-        pool[0]() = NULL; \
+        pool[0]() = nullptr; \
         pool[0] = std::move(pool[1]); \
         TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
         TEST_ASSERT_NULL(pool[1]()); \
@@ -346,7 +346,7 @@ MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
         cl::type tmp(std::move(pool[0])); \
         TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp()); \
         TEST_ASSERT_NULL(pool[0]()); \
-        tmp() = NULL; \
+        tmp() = nullptr; \
     } \
     \
     void prefix ## MoveConstruct ## type ## Null() \
@@ -394,14 +394,14 @@ void tearDown()
     /* Wipe out the internal state to avoid a release call being made */
     for (int i = 0; i < POOL_MAX; i++)
     {
-        platformPool[i]() = NULL;
-        contextPool[i]() = NULL;
-        commandQueuePool[i]() = NULL;
-        bufferPool[i]() = NULL;
-        image2DPool[i]() = NULL;
-        image3DPool[i]() = NULL;
-        kernelPool[i]() = NULL;
-        programPool[i]() = NULL;
+        platformPool[i]() = nullptr;
+        contextPool[i]() = nullptr;
+        commandQueuePool[i]() = nullptr;
+        bufferPool[i]() = nullptr;
+        image2DPool[i]() = nullptr;
+        image3DPool[i]() = nullptr;
+        kernelPool[i]() = nullptr;
+        programPool[i]() = nullptr;
     }
 }
 
@@ -436,10 +436,10 @@ static cl_int clGetContextInfo_testContextGetDevices(
     (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_EQUAL_HEX(CL_CONTEXT_DEVICES, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= 2 * sizeof(cl_device_id));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= 2 * sizeof(cl_device_id));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = 2 * sizeof(cl_device_id);
-    if (param_value != NULL)
+    if (param_value != nullptr)
     {
         cl_device_id *devices = (cl_device_id *) param_value;
         devices[0] = make_device_id(0);
@@ -477,8 +477,8 @@ void testContextGetDevices1_2()
     TEST_ASSERT_EQUAL_PTR(make_device_id(1), devices[1]());
 
     // Prevent release in the destructor
-    devices[0]() = NULL;
-    devices[1]() = NULL;
+    devices[0]() = nullptr;
+    devices[1]() = nullptr;
 }
 
 // This is used to get a list of all platforms, so expect two calls
@@ -633,7 +633,7 @@ static cl_context clCreateContext_testContextNonNullProperties(
     for (int i = 0; i < num_devices; i++) {
         TEST_ASSERT_EQUAL(make_device_id(i), devices[i]);
     }
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_context(0);
 }
@@ -691,10 +691,10 @@ static cl_int clGetCommandQueueInfo_testCommandQueueGetContext(
     (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_HEX(CL_QUEUE_CONTEXT, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_context));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_context);
-    if (param_value != NULL)
+    if (param_value != nullptr)
         *(cl_context *) param_value = make_context(0);
     return CL_SUCCESS;
 }
@@ -711,7 +711,7 @@ void testCommandQueueGetContext()
     TEST_ASSERT_EQUAL_PTR(expected, ctx());
     TEST_ASSERT_EQUAL(2, refcount);
 
-    ctx() = NULL;
+    ctx() = nullptr;
 }
 
 // Stub for clGetCommandQueueInfo that returns device 0
@@ -726,10 +726,10 @@ static cl_int clGetCommandQueueInfo_testCommandQueueGetDevice(
     (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_HEX(CL_QUEUE_DEVICE, param_name);
-    TEST_ASSERT(param_value == NULL || param_value_size >= sizeof(cl_device_id));
-    if (param_value_size_ret != NULL)
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_device_id));
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_device_id);
-    if (param_value != NULL)
+    if (param_value != nullptr)
         *(cl_device_id *) param_value = make_device_id(0);
     return CL_SUCCESS;
 }
@@ -745,7 +745,7 @@ void testCommandQueueGetDevice1_1()
     cl::Device device = commandQueuePool[0].getInfo<CL_QUEUE_DEVICE>();
     TEST_ASSERT_EQUAL_PTR(expected, device());
 
-    device() = NULL;
+    device() = nullptr;
 }
 
 void testCommandQueueGetDevice1_2()
@@ -762,7 +762,7 @@ void testCommandQueueGetDevice1_2()
     TEST_ASSERT_EQUAL_PTR(expected, device());
     TEST_ASSERT_EQUAL(2, refcount);
 
-    device() = NULL;
+    device() = nullptr;
 }
 
 // stub for clCreateCommandQueue - returns queue zero
@@ -777,7 +777,7 @@ static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContex
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT(properties == 0);
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
@@ -796,7 +796,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromS
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT(properties[0] == CL_QUEUE_PROPERTIES);
     TEST_ASSERT(properties[1] == 0);
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
@@ -869,8 +869,8 @@ void testCopyDeviceNonNull1_2()
     d0 = d1;
 
     // Prevent destructor from interfering with the test
-    d0() = NULL;
-    d1() = NULL;
+    d0() = nullptr;
+    d1() = nullptr;
 }
 
 void testCopyDeviceFromNull1_1()
@@ -915,8 +915,8 @@ void testCopyDeviceToNull1_2()
     d0 = d1;
 
     // Prevent destructor from interfering with the test
-    d0() = NULL;
-    d1() = NULL;
+    d0() = nullptr;
+    d1() = nullptr;
 }
 
 void testCopyDeviceSelf()
@@ -932,8 +932,8 @@ void testCopyDeviceSelf()
     d0 = d1;
 
     // Prevent destructor from interfering with the test
-    d0() = NULL;
-    d1() = NULL;
+    d0() = nullptr;
+    d1() = nullptr;
 }
 
 void testAssignDeviceNull()
@@ -944,7 +944,7 @@ void testAssignDeviceNull()
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
 
     cl::Device d(make_device_id(0));
-    d = (cl_device_id) NULL;
+    d = (cl_device_id) nullptr;
 }
 
 // These tests do not use the MAKE_MOVE_TESTS helper because they need to
@@ -966,7 +966,7 @@ void testMoveAssignDeviceNonNull()
     TEST_ASSERT_NULL(src());
 
     // Prevent destructor from interfering with the test
-    trg() = NULL;
+    trg() = nullptr;
 #endif
 }
 
@@ -983,7 +983,7 @@ void testMoveAssignDeviceNull()
     TEST_ASSERT_NULL(src());
 
     // Prevent destructor from interfering with the test
-    trg() = NULL;
+    trg() = nullptr;
 #endif
 }
 
@@ -999,7 +999,7 @@ void testMoveConstructDeviceNonNull()
     TEST_ASSERT_NULL(src());
 
     // Prevent destructor from interfering with the test
-    trg() = NULL;
+    trg() = nullptr;
 #endif
 }
 
@@ -1215,11 +1215,11 @@ cl_int clGetImageInfo_testGetImageInfoBuffer(
     TEST_ASSERT_EQUAL_HEX(CL_IMAGE_BUFFER, param_name);
     TEST_ASSERT_EQUAL(sizeof(cl_mem), param_value_size);
 
-    if (param_value != NULL)
+    if (param_value != nullptr)
     {
         *(cl_mem *) param_value = make_mem(1);
     }
-    if (param_value_size_ret != NULL)
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_mem);
     return CL_SUCCESS;
 }
@@ -1240,12 +1240,12 @@ void testGetImageInfoBuffer()
     TEST_ASSERT_EQUAL(2, refcount);
 
     // prevent destructor from interfering with the test
-    image() = NULL;
+    image() = nullptr;
 #endif
 }
 
 /**
- * Stub for querying CL_IMAGE_BUFFER and returning NULL.
+ * Stub for querying CL_IMAGE_BUFFER and returning nullptr.
  */
 cl_int clGetImageInfo_testGetImageInfoBufferNull(
     cl_mem image, cl_image_info param_name,
@@ -1258,11 +1258,11 @@ cl_int clGetImageInfo_testGetImageInfoBufferNull(
     TEST_ASSERT_EQUAL_HEX(CL_IMAGE_BUFFER, param_name);
     TEST_ASSERT_EQUAL(sizeof(cl_mem), param_value_size);
 
-    if (param_value != NULL)
+    if (param_value != nullptr)
     {
-        *(cl_mem *) param_value = NULL;
+        *(cl_mem *) param_value = nullptr;
     }
-    if (param_value_size_ret != NULL)
+    if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(cl_mem);
     return CL_SUCCESS;
 }
@@ -1277,7 +1277,7 @@ void testGetImageInfoBufferNull()
     TEST_ASSERT_NULL(buffer());
 
     // prevent destructor from interfering with the test
-    image() = NULL;
+    image() = nullptr;
 #endif
 }
 
@@ -1294,8 +1294,8 @@ void testGetImageInfoBufferOverwrite()
     TEST_ASSERT_EQUAL_PTR(make_mem(1), buffer());
 
     // prevent destructor from interfering with the test
-    image() = NULL;
-    buffer() = NULL;
+    image() = nullptr;
+    buffer() = nullptr;
 }
 
 /**
@@ -1315,7 +1315,7 @@ cl_mem clCreateImage_image1dbuffer(
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE1D_BUFFER, image_desc->image_type);
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
 
     // Return the passed buffer as the cl_mem
@@ -1344,7 +1344,7 @@ void testConstructImageFromBuffer()
     // Check that returned buffer matches the original
     TEST_ASSERT_EQUAL_PTR(buffer(), image());
 
-    buffer() = NULL;
+    buffer() = nullptr;
 #endif
 }
 
@@ -1383,7 +1383,7 @@ static cl_mem clCreateImage2D_testCreateImage2D_1_1(
     TEST_ASSERT_EQUAL(256, image_row_pitch);
     TEST_ASSERT_NULL(host_ptr);
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
@@ -1402,13 +1402,13 @@ void testCreateImage2D_1_1()
     context() = make_context(0);
     cl::Image2D image(
         context, CL_MEM_READ_WRITE,
-        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 256, NULL, &err);
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 256, nullptr, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
 
-    context() = NULL;
-    image() = NULL;
+    context() = nullptr;
+    image() = nullptr;
 #endif
 }
 
@@ -1440,7 +1440,7 @@ static cl_mem clCreateImage_testCreateImage2D_1_2(
 
     TEST_ASSERT_NULL(host_ptr);
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
@@ -1457,13 +1457,13 @@ void testCreateImage2D_1_2()
     context() = make_context(0);
     cl::Image2D image(
         context, CL_MEM_READ_WRITE,
-        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 256, NULL, &err);
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 256, nullptr, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
 
-    context() = NULL;
-    image() = NULL;
+    context() = nullptr;
+    image() = nullptr;
 }
 
 /****************************************************************************
@@ -1505,7 +1505,7 @@ static cl_mem clCreateImage3D_testCreateImage3D_1_1(
     TEST_ASSERT_EQUAL(65536, image_slice_pitch);
     TEST_ASSERT_EQUAL_PTR((void *) 0xdeadbeef, host_ptr);
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
@@ -1529,8 +1529,8 @@ void testCreateImage3D_1_1()
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
 
-    context() = NULL;
-    image() = NULL;
+    context() = nullptr;
+    image() = nullptr;
 #endif
 }
 
@@ -1564,7 +1564,7 @@ static cl_mem clCreateImage_testCreateImage3D_1_2(
 
     TEST_ASSERT_EQUAL_PTR((void *) 0xdeadbeef, host_ptr);
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
@@ -1586,8 +1586,8 @@ void testCreateImage3D_1_2()
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
 
-    context() = NULL;
-    image() = NULL;
+    context() = nullptr;
+    image() = nullptr;
 }
 
 /****************************************************************************
@@ -1626,7 +1626,7 @@ void testKernelSetArgMem()
 
 void testKernelSetArgLocal()
 {
-    clSetKernelArg_ExpectAndReturn(make_kernel(0), 2, 123, NULL, CL_SUCCESS);
+    clSetKernelArg_ExpectAndReturn(make_kernel(0), 2, 123, nullptr, CL_SUCCESS);
     kernelPool[0].setArg(2, cl::Local(123));
 }
 
@@ -1680,7 +1680,7 @@ static void * clEnqueueMapBuffer_testCopyHostToBuffer(
 
     // Set the return event
     if (event)
-        *event = NULL;
+        *event = nullptr;
 
     // Set the return error code
     if (errcode_ret)
@@ -1773,8 +1773,8 @@ static cl_int clGetDeviceInfo_testGetBuildInfo(
 {
     TEST_ASSERT_EQUAL(param_name, CL_DEVICE_PLATFORM);
     TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_platform_id));
-    TEST_ASSERT_NOT_EQUAL(param_value, NULL);
-    TEST_ASSERT_EQUAL(param_value_size_ret, NULL);
+    TEST_ASSERT_NOT_EQUAL(param_value, nullptr);
+    TEST_ASSERT_EQUAL(param_value_size_ret, nullptr);
     cl_platform_id temp = make_platform_id(0);
     memcpy(param_value, &temp, sizeof(cl_platform_id));
     return CL_SUCCESS;
@@ -1813,7 +1813,7 @@ static  cl_int clGetProgramBuildInfo_testGetBuildInfo(
 void testGetBuildInfo()
 {
     cl_device_id fakeDevice = make_device_id(0);
-    clGetDeviceInfo_ExpectAndReturn(fakeDevice, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), NULL, NULL, CL_SUCCESS);
+    clGetDeviceInfo_ExpectAndReturn(fakeDevice, CL_DEVICE_PLATFORM, sizeof(cl_platform_id), nullptr, nullptr, CL_SUCCESS);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_testGetBuildInfo);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
@@ -1826,8 +1826,8 @@ void testGetBuildInfo()
     cl_int err;
     std::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
 
-    prog() = NULL;
-    dev() = NULL;
+    prog() = nullptr;
+    dev() = nullptr;
 }
 
 static cl_int clBuildProgram_testBuildProgram(
@@ -1841,10 +1841,10 @@ static cl_int clBuildProgram_testBuildProgram(
 {
     TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_NOT_EQUAL(num_devices, 0);
-    TEST_ASSERT_NOT_EQUAL(device_list, NULL);
-    TEST_ASSERT_EQUAL(options, NULL);
-    TEST_ASSERT_EQUAL(pfn_notify, NULL);
-    TEST_ASSERT_EQUAL(user_data, NULL);
+    TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(options, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
 
     for (cl_uint i = 0; i < num_devices; i++) {
         TEST_ASSERT_EQUAL(device_list[i], make_device_id(i));
@@ -1896,8 +1896,8 @@ static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
 {        
     // Catch failure case that causes error in bugzilla 13355:
     // returns CL_INVALID_VALUE if flags or image_type are not valid, 
-    // or if num_entries is 0 and image_formats is not NULL.
-    if (num_entries == 0 && image_formats != NULL) {
+    // or if num_entries is 0 and image_formats is not nullptr.
+    if (num_entries == 0 && image_formats != nullptr) {
         return CL_INVALID_VALUE;
     }
     if (num_entries == 0)  {
@@ -2006,7 +2006,7 @@ void testCreateImage2DFromBuffer_2_0()
     TEST_ASSERT_EQUAL_PTR(buffer(), imageFromBuffer());
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
 
-    buffer() = NULL;
+    buffer() = nullptr;
 #endif
 }
 
@@ -2038,7 +2038,7 @@ static cl_mem clCreateImage_testCreateImage2D_2_0(
 
     TEST_ASSERT_NULL(host_ptr);
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
@@ -2091,7 +2091,7 @@ void testCreateImage2DFromImage_2_0()
     // As in 1.2 2D image test, needed as source for image-from-image
     cl::Image2D image(
         context, CL_MEM_READ_WRITE,
-        cl::ImageFormat(CL_RGBA, CL_FLOAT), 64, 32, 256, NULL, &err);
+        cl::ImageFormat(CL_RGBA, CL_FLOAT), 64, 32, 256, nullptr, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
@@ -2114,9 +2114,9 @@ void testCreateImage2DFromImage_2_0()
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(image(), imageFromImage());
 
-    //imageFromImage() = NULL;
-    //image() = NULL;
-    //context() = NULL;
+    //imageFromImage() = nullptr;
+    //image() = nullptr;
+    //context() = nullptr;
 #endif
 }
 
@@ -2219,7 +2219,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
     TEST_ASSERT_EQUAL(properties[0], CL_QUEUE_PROPERTIES);
     static cl_command_queue default_ = 0;
 
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
 
     if ((properties[1] & CL_QUEUE_ON_DEVICE_DEFAULT) == 0) {
@@ -2417,8 +2417,8 @@ static cl_int clGetDeviceInfo_builtin(
     // Test to verify case where empty string is returned - so size is 0
     (void)num_calls;
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_BUILT_IN_KERNELS, param_name);
-    if (param_value == NULL) {
-        if (param_value_size_ret != NULL) {
+    if (param_value == nullptr) {
+        if (param_value_size_ret != nullptr) {
             *param_value_size_ret = 0;
         }
     }
@@ -2449,7 +2449,7 @@ static cl_kernel clCloneKernel_simplecopy(
 {
     // Test to verify case where empty string is returned - so size is 0
     (void)num_calls;
-    if (errcode_ret != NULL)
+    if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_kernel(POOL_MAX);
 }
@@ -2468,7 +2468,7 @@ void testEnqueueMapSVM()
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     std::vector<int> vec(7);
-    clEnqueueSVMMap_ExpectAndReturn(commandQueuePool[0].get(), CL_TRUE, CL_MAP_READ|CL_MAP_WRITE, static_cast<void*>(vec.data()), vec.size()*sizeof(int), 0, NULL, NULL, CL_SUCCESS);
+    clEnqueueSVMMap_ExpectAndReturn(commandQueuePool[0].get(), CL_TRUE, CL_MAP_READ|CL_MAP_WRITE, static_cast<void*>(vec.data()), vec.size()*sizeof(int), 0, nullptr, nullptr, CL_SUCCESS);
     TEST_ASSERT_EQUAL(commandQueuePool[0].enqueueMapSVM(vec, CL_TRUE, CL_MAP_READ|CL_MAP_WRITE), CL_SUCCESS);
 #endif
 }
@@ -2478,7 +2478,7 @@ void testMapSVM()
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     std::vector<int> vec(1);
     clRetainCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
-    clEnqueueSVMMap_ExpectAndReturn(make_command_queue(1), CL_TRUE, CL_MAP_READ|CL_MAP_WRITE, static_cast<void*>(vec.data()), vec.size()*sizeof(int), 0, NULL, NULL, CL_SUCCESS);
+    clEnqueueSVMMap_ExpectAndReturn(make_command_queue(1), CL_TRUE, CL_MAP_READ|CL_MAP_WRITE, static_cast<void*>(vec.data()), vec.size()*sizeof(int), 0, nullptr, nullptr, CL_SUCCESS);
     clReleaseCommandQueue_ExpectAndReturn(make_command_queue(1), CL_SUCCESS);
     TEST_ASSERT_EQUAL(cl::mapSVM(vec), CL_SUCCESS);
 #endif
