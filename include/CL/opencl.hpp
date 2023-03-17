@@ -5935,6 +5935,15 @@ public:
         sizes_[2] = size2;
     }
 
+    //! \brief Constructs one-dimensional range.
+    NDRange(array<size_type, 1> a) : NDRange(a[0]){}
+
+    //! \brief Constructs two-dimensional range.
+    NDRange(array<size_type, 2> a) : NDRange(a[0], a[1]){}
+
+    //! \brief Constructs three-dimensional range.
+    NDRange(array<size_type, 3> a) : NDRange(a[0], a[1], a[2]){}
+
     /*! \brief Conversion operator to const size_type *.
      *  
      *  \returns a pointer to the size of the first dimension.
@@ -7858,6 +7867,35 @@ public:
         return err;
     }
 
+    cl_int enqueueReadBufferRect(
+        const Buffer& buffer,
+        cl_bool blocking,
+        const array<size_type, 2>& buffer_offset,
+        const array<size_type, 2>& host_offset,
+        const array<size_type, 2>& region,
+        size_type buffer_row_pitch,
+        size_type buffer_slice_pitch,
+        size_type host_row_pitch,
+        size_type host_slice_pitch,
+        void* ptr,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    { 
+        return enqueueReadBufferRect(
+            buffer,
+            blocking,
+            { buffer_offset[0], buffer_offset[1], 0 },
+            { host_offset[0], host_offset[1], 0 },
+            { region[0], region[1], 1 },
+            buffer_row_pitch,
+            buffer_slice_pitch,
+            host_row_pitch,
+            host_slice_pitch,
+            ptr,
+            events,
+            event);
+    }
+
     cl_int enqueueWriteBufferRect(
         const Buffer& buffer,
         cl_bool blocking,
@@ -7897,6 +7935,35 @@ public:
         return err;
     }
 
+    cl_int enqueueWriteBufferRect(
+        const Buffer& buffer,
+        cl_bool blocking,
+        const array<size_type, 2>& buffer_offset,
+        const array<size_type, 2>& host_offset,
+        const array<size_type, 2>& region,
+        size_type buffer_row_pitch,
+        size_type buffer_slice_pitch,
+        size_type host_row_pitch,
+        size_type host_slice_pitch,
+        const void* ptr,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    {
+        return enqueueWriteBufferRect(
+            buffer, 
+            blocking,
+            { buffer_offset[0], buffer_offset[1], 0 },
+            { host_offset[0], host_offset[1], 0 },
+            { region[0], region[1], 1 },
+            buffer_row_pitch,
+            buffer_slice_pitch,
+            host_row_pitch,
+            host_slice_pitch,
+            ptr,
+            events,
+            event);
+    }
+
     cl_int enqueueCopyBufferRect(
         const Buffer& src,
         const Buffer& dst,
@@ -7933,6 +8000,34 @@ public:
 
         return err;
     }
+
+    cl_int enqueueCopyBufferRect(
+        const Buffer& src,
+        const Buffer& dst,
+        const array<size_type, 2>& src_origin,
+        const array<size_type, 2>& dst_origin,
+        const array<size_type, 2>& region,
+        size_type src_row_pitch,
+        size_type src_slice_pitch,
+        size_type dst_row_pitch,
+        size_type dst_slice_pitch,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    {
+        return enqueueCopyBufferRect(
+            src,
+            dst,
+            { src_origin[0], src_origin[1], 0 },
+            { dst_origin[0], dst_origin[1], 0 },
+            { region[0], region[1], 1 },
+            src_row_pitch,
+            src_slice_pitch,
+            dst_row_pitch,
+            dst_slice_pitch,
+            events,
+            event);
+    }
+
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     /**
@@ -8009,6 +8104,29 @@ public:
         return err;
     }
 
+    cl_int enqueueReadImage(
+        const Image& image,
+        cl_bool blocking,
+        const array<size_type, 2>& origin,
+        const array<size_type, 2>& region,
+        size_type row_pitch,
+        size_type slice_pitch,
+        void* ptr,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    {
+        return enqueueReadImage(
+            image,
+            blocking,
+            { origin[0], origin[1], 0 },
+            { region[0], region[1], 1 },
+            row_pitch,
+            slice_pitch,
+            ptr,
+            events,
+            event);
+    }
+
     cl_int enqueueWriteImage(
         const Image& image,
         cl_bool blocking,
@@ -8042,6 +8160,29 @@ public:
         return err;
     }
 
+    cl_int enqueueWriteImage(
+        const Image& image,
+        cl_bool blocking,
+        const array<size_type, 2>& origin,
+        const array<size_type, 2>& region,
+        size_type row_pitch,
+        size_type slice_pitch,
+        const void* ptr,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    {
+        return enqueueWriteImage(
+            image,
+            blocking,
+            { origin[0], origin[1], 0 },
+            { region[0], region[1], 1 },
+            row_pitch,
+            slice_pitch,
+            ptr,
+            events,
+            event);
+    }
+
     cl_int enqueueCopyImage(
         const Image& src,
         const Image& dst,
@@ -8071,107 +8212,91 @@ public:
         return err;
     }
 
+    cl_int enqueueCopyImage(
+        const Image& src,
+        const Image& dst,
+        const array<size_type, 2>& src_origin,
+        const array<size_type, 2>& dst_origin,
+        const array<size_type, 2>& region,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    {
+        return enqueueCopyImage(
+            src,
+            dst,
+            { src_origin[0], src_origin[1], 0 },
+            { dst_origin[0], dst_origin[1], 0 },
+            { region[0], region[1], 1 },
+            events,
+            event);
+    }
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     /**
      * Enqueue a command to fill an image object with a specified color.
      * \param fillColor is the color to use to fill the image.
-     *     This is a four component RGBA floating-point color value if
-     *     the image channel data type is not an unnormalized signed or
-     *     unsigned data type.
+     *     This is a four component RGBA floating-point, signed integer
+     *     or unsigned integer color value if  the image channel data
+     *     type is an unnormalized signed integer type.   
      */
-    cl_int enqueueFillImage(
-        const Image& image,
-        cl_float4 fillColor,
-        const array<size_type, 3>& origin,
-        const array<size_type, 3>& region,
-        const vector<Event>* events = nullptr,
-        Event* event = nullptr) const
+    template <typename T>
+    typename std::enable_if<std::is_same<T, cl_float4>::value ||
+                            std::is_same<T, cl_int4  >::value ||
+                            std::is_same<T, cl_uint4 >::value,
+                            cl_int>::type 
+     enqueueFillImage(
+         const Image& image, 
+         T fillColor,
+         const array<size_type, 3>& origin,
+         const array<size_type, 3>& region,
+         const vector<Event>* events = nullptr,
+         Event* event = nullptr) const
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
             ::clEnqueueFillImage(
-                object_, 
+                object_,
                 image(),
-                static_cast<void*>(&fillColor), 
+                static_cast<void*>(&fillColor),
                 origin.data(),
                 region.data(),
-                (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
-                (event != nullptr) ? &tmp : nullptr),
-                __ENQUEUE_FILL_IMAGE_ERR);
+                (events != nullptr) ? (cl_uint)events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : NULL,
+                (event != NULL) ? &tmp : nullptr),
+            __ENQUEUE_FILL_IMAGE_ERR);
 
-        if (event != nullptr && err == CL_SUCCESS)
-            *event = tmp;
+        if (event != nullptr && err == CL_SUCCESS) *event = tmp;
 
         return err;
     }
 
-    /**
+   /**
      * Enqueue a command to fill an image object with a specified color.
      * \param fillColor is the color to use to fill the image.
-     *     This is a four component RGBA signed integer color value if
-     *     the image channel data type is an unnormalized signed integer
-     *     type.
+     *     This is a four component RGBA floating-point, signed integer
+     *     or unsigned integer color value if  the image channel data
+     *     type is an unnormalized signed integer type.
      */
-    cl_int enqueueFillImage(
+    template <typename T>
+    typename std::enable_if<std::is_same<T, cl_float4>::value ||
+                            std::is_same<T, cl_int4  >::value ||
+                            std::is_same<T, cl_uint4 >::value, cl_int>::type
+    enqueueFillImage(
         const Image& image,
-        cl_int4 fillColor,
-        const array<size_type, 3>& origin,
-        const array<size_type, 3>& region,
+        T fillColor,
+        const array<size_type, 2>& origin,
+        const array<size_type, 2>& region,
         const vector<Event>* events = nullptr,
         Event* event = nullptr) const
     {
-        cl_event tmp;
-        cl_int err = detail::errHandler(
-            ::clEnqueueFillImage(
-                object_, 
-                image(),
-                static_cast<void*>(&fillColor), 
-                origin.data(),
-                region.data(),
-                (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
-                (event != nullptr) ? &tmp : nullptr),
-                __ENQUEUE_FILL_IMAGE_ERR);
-
-        if (event != nullptr && err == CL_SUCCESS)
-            *event = tmp;
-
-        return err;
-    }
-
-    /**
-     * Enqueue a command to fill an image object with a specified color.
-     * \param fillColor is the color to use to fill the image.
-     *     This is a four component RGBA unsigned integer color value if
-     *     the image channel data type is an unnormalized unsigned integer
-     *     type.
-     */
-    cl_int enqueueFillImage(
-        const Image& image,
-        cl_uint4 fillColor,
-        const array<size_type, 3>& origin,
-        const array<size_type, 3>& region,
-        const vector<Event>* events = nullptr,
-        Event* event = nullptr) const
-    {
-        cl_event tmp;
-        cl_int err = detail::errHandler(
-            ::clEnqueueFillImage(
-                object_, 
-                image(),
-                static_cast<void*>(&fillColor), 
-                origin.data(),
-                region.data(),
-                (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
-                (event != nullptr) ? &tmp : nullptr),
-                __ENQUEUE_FILL_IMAGE_ERR);
-
-        if (event != nullptr && err == CL_SUCCESS)
-            *event = tmp;
-
-        return err;
+        return enqueueFillImage(
+            image,
+            fillColor,
+            { origin[0], origin[1], 0 },
+            { region[0], region[1], 1 },
+            events,
+            event
+            );
     }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
@@ -8204,6 +8329,25 @@ public:
         return err;
     }
 
+    cl_int enqueueCopyImageToBuffer(
+        const Image& src,
+        const Buffer& dst,
+        const array<size_type, 2>& src_origin,
+        const array<size_type, 2>& region,
+        size_type dst_offset,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    { 
+        return enqueueCopyImageToBuffer(
+            src,
+            dst,
+            { src_origin[0], src_origin[1], 0 },
+            { region[0], region[1], 1 },
+            dst_offset,
+            events,
+            event);
+    }
+
     cl_int enqueueCopyBufferToImage(
         const Buffer& src,
         const Image& dst,
@@ -8231,6 +8375,25 @@ public:
             *event = tmp;
 
         return err;
+    }
+
+    cl_int enqueueCopyBufferToImage(
+        const Buffer& src,
+        const Image& dst,
+        size_type src_offset,
+        const array<size_type, 2>& dst_origin,
+        const array<size_type, 2>& region,
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr) const
+    {
+        return enqueueCopyBufferToImage(
+            src,
+            dst, 
+            src_offset,
+            { dst_origin[0], dst_origin[1], 0 },
+            { region[0], region[1], 1 },
+            events,
+            event);
     }
 
     void* enqueueMapBuffer(
@@ -8263,7 +8426,7 @@ public:
     }
 
     void* enqueueMapImage(
-        const Image& buffer,
+        const Image& image,
         cl_bool blocking,
         cl_map_flags flags,
         const array<size_type, 3>& origin,
@@ -8277,7 +8440,7 @@ public:
         cl_event tmp;
         cl_int error;
         void * result = ::clEnqueueMapImage(
-            object_, buffer(), blocking, flags,
+            object_, image(), blocking, flags,
             origin.data(), 
             region.data(),
             row_pitch, slice_pitch,
@@ -8293,6 +8456,24 @@ public:
         if (event != nullptr && error == CL_SUCCESS)
             *event = tmp;
         return result;
+    }
+
+    void* enqueueMapImage(
+         const Image& image,
+         cl_bool blocking,
+         cl_map_flags flags,
+         const array<size_type, 2>& origin,
+         const array<size_type, 2>& region,
+         size_type* row_pitch,
+         size_type* slice_pitch,
+         const vector<Event>* events = nullptr,
+         Event* event = nullptr,
+         cl_int* err = nullptr) const
+    {
+        return enqueueMapImage(image, blocking, flags,
+                               { origin[0], origin[1], 0 },
+                               { region[0], region[1], 1 }, row_pitch,
+                               slice_pitch, events, event, err);
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -9790,6 +9971,35 @@ inline cl_int enqueueReadBufferRect(
         event);
 }
 
+inline cl_int enqueueReadBufferRect(
+    const Buffer& buffer, 
+    cl_bool blocking,
+    const array<size_type, 2>& buffer_offset,
+    const array<size_type, 2>& host_offset, 
+    const array<size_type, 2>& region,
+    size_type buffer_row_pitch,
+    size_type buffer_slice_pitch,
+    size_type host_row_pitch,
+    size_type host_slice_pitch,
+    void* ptr,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueReadBufferRect(
+        buffer,
+        blocking,
+        { buffer_offset[0], buffer_offset[1], 0 },
+        { host_offset[0], host_offset[1], 0 },
+        { region[0], region[1], 1 },
+        buffer_row_pitch,
+        buffer_slice_pitch,
+        host_row_pitch,
+        host_slice_pitch,
+        ptr,
+        events,
+        event);
+}
+
 inline cl_int enqueueWriteBufferRect(
     const Buffer& buffer,
     cl_bool blocking,
@@ -9826,6 +10036,35 @@ inline cl_int enqueueWriteBufferRect(
         event);
 }
 
+inline cl_int enqueueWriteBufferRect(
+    const Buffer& buffer,
+    cl_bool blocking,
+    const array<size_type, 2>& buffer_offset,
+    const array<size_type, 2>& host_offset,
+    const array<size_type, 2>& region,
+    size_type buffer_row_pitch,
+    size_type buffer_slice_pitch,
+    size_type host_row_pitch,
+    size_type host_slice_pitch,
+    const void* ptr,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueWriteBufferRect(
+        buffer, 
+        blocking,
+        { buffer_offset[0], buffer_offset[1], 0 },
+        { host_offset[0], host_offset[1], 0 },
+        { region[0], region[1], 1 }, 
+        buffer_row_pitch,
+        buffer_slice_pitch,
+        host_row_pitch,
+        host_slice_pitch,
+        ptr,
+        events,
+        event);
+}
+
 inline cl_int enqueueCopyBufferRect(
     const Buffer& src,
     const Buffer& dst,
@@ -9857,6 +10096,33 @@ inline cl_int enqueueCopyBufferRect(
         dst_row_pitch,
         dst_slice_pitch,
         events, 
+        event);
+}
+
+inline cl_int enqueueCopyBufferRect(
+    const Buffer& src,
+    const Buffer& dst,
+    const array<size_type, 2>& src_origin,
+    const array<size_type, 2>& dst_origin,
+    const array<size_type, 2>& region,
+    size_type src_row_pitch,
+    size_type src_slice_pitch,
+    size_type dst_row_pitch,
+    size_type dst_slice_pitch,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueCopyBufferRect(
+        src,
+        dst, 
+        { src_origin[0], src_origin[1], 0 },
+        { dst_origin[0], dst_origin[1], 0 },
+        { region[0], region[1], 1 }, 
+        src_row_pitch,
+        src_slice_pitch,
+        dst_row_pitch,
+        dst_slice_pitch,
+        events,
         event);
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
@@ -9891,6 +10157,29 @@ inline cl_int enqueueReadImage(
         event);
 }
 
+inline cl_int enqueueReadImage(
+    const Image& image, 
+    cl_bool blocking,
+    const array<size_type, 2>& origin,
+    const array<size_type, 2>& region,
+    size_type row_pitch,
+    size_type slice_pitch,
+    void* ptr, 
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueReadImage(
+        image,
+        blocking, 
+        { origin[0], origin[1], 0 },
+        { region[0], region[1], 1 },
+        row_pitch,
+        slice_pitch,
+        ptr,
+        events,
+        event);
+}
+
 inline cl_int enqueueWriteImage(
     const Image& image,
     cl_bool blocking,
@@ -9921,6 +10210,29 @@ inline cl_int enqueueWriteImage(
         event);
 }
 
+inline cl_int enqueueWriteImage(
+    const Image& image, 
+    cl_bool blocking,
+    const array<size_type, 2>& origin,
+    const array<size_type, 2>& region,
+    size_type row_pitch, 
+    size_type slice_pitch,
+    const void* ptr,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueWriteImage(
+        image, 
+        blocking, 
+        { origin[0], origin[1], 0 },
+        { region[0], region[1], 1 }, 
+        row_pitch,
+        slice_pitch,
+        ptr,
+        events,
+        event);    
+}
+
 inline cl_int enqueueCopyImage(
     const Image& src,
     const Image& dst,
@@ -9947,6 +10259,25 @@ inline cl_int enqueueCopyImage(
         event);
 }
 
+inline cl_int enqueueCopyImage(
+    const Image& src, 
+    const Image& dst,
+    const array<size_type, 2>& src_origin,
+    const array<size_type, 2>& dst_origin,
+    const array<size_type, 2>& region,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueCopyImage(
+        src, 
+        dst,
+        { src_origin[0], src_origin[1], 0 },
+        { dst_origin[0], dst_origin[1], 0 },
+        { region[0], region[1], 1 },
+        events,
+        event);
+}
+
 inline cl_int enqueueCopyImageToBuffer(
     const Image& src,
     const Buffer& dst,
@@ -9968,6 +10299,25 @@ inline cl_int enqueueCopyImageToBuffer(
         dst,
         src_origin,
         region,
+        dst_offset,
+        events,
+        event);
+}
+
+inline cl_int enqueueCopyImageToBuffer(
+    const Image& src, 
+    const Buffer& dst,
+    const array<size_type, 2>& src_origin,
+    const array<size_type, 2>& region,
+    size_type dst_offset,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    return enqueueCopyImageToBuffer(
+        src,
+        dst,
+        { src_origin[0], src_origin[1], 0 },
+        { region[0], region[1], 1 },
         dst_offset,
         events,
         event);
@@ -9999,6 +10349,31 @@ inline cl_int enqueueCopyBufferToImage(
         event);
 }
 
+inline cl_int enqueueCopyBufferToImage(
+    const Buffer& src,
+    const Image& dst,
+    size_type src_offset,
+    const array<size_type, 2>& dst_origin,
+    const array<size_type, 2>& region,
+    const vector<Event>* events = nullptr,
+    Event* event = nullptr)
+{
+    cl_int error;
+    CommandQueue queue = CommandQueue::getDefault(&error);
+
+    if (error != CL_SUCCESS) {
+        return error;
+    }
+
+    return enqueueCopyBufferToImage(
+        src,
+        dst,
+        src_offset,
+        { dst_origin[0], dst_origin[1], 0 },
+        { region[0], region[1], 1 },
+        events,
+        event);
+}
 
 inline cl_int flush(void)
 {
