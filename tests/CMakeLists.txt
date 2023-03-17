@@ -79,6 +79,8 @@ add_custom_target(
 
 if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_CXX_COMPILER_ID MATCHES "(Apple)?Clang")
     add_compile_options(-Wno-deprecated-declarations)
+elseif(MSVC)
+    add_compile_options(/wd4996)
 endif()
 
 add_definitions(-DCL_TARGET_OPENCL_VERSION=300)
