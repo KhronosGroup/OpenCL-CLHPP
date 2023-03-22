@@ -973,6 +973,10 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __RELEASE_COMMAND_BUFFER_KHR_ERR            CL_HPP_ERR_STR_(clReleaseCommandBufferKHR)
 #endif // cl_khr_command_buffer
 
+#if defined(cl_ext_image_requirements_info)
+#define __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR            CL_HPP_ERR_STR_(clGetImageRequirementsInfoEXT)
+#endif //cl_ext_image_requirements_info
+
 /**
  * CL 1.2 version that uses device fission.
  */
@@ -1090,6 +1094,11 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetMutableCommandInfoKHR);
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clUpdateMutableCommandsKHR pfn_clUpdateMutableCommandsKHR           = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetMutableCommandInfoKHR pfn_clGetMutableCommandInfoKHR           = nullptr;
 #endif /* cl_khr_command_buffer_mutable_dispatch */
+
+#if defined(cl_ext_image_requirements_info)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetImageRequirementsInfoEXT);
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetImageRequirementsInfoEXT pfn_clGetImageRequirementsInfoEXT  = nullptr;
+#endif
 
 namespace detail {
 
@@ -4597,6 +4606,24 @@ public:
     }
 };
 
+#if defined(cl_ext_image_requirements_info)
+enum class ImgReqInfoExt : cl_image_requirements_info_ext
+{
+    ImgReqNone = 0,
+    ImgReqRowPitchAlign = CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT,
+    ImgReqBaseAddAlign = CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT,
+    ImgReqSize = CL_IMAGE_REQUIREMENTS_SIZE_EXT,
+    ImgReqNaxWidth = CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT,
+    ImgReqMaxHeight = CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT,
+    ImgReqMaxDepth = CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT,
+    ImgReqMaxArraySize = CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT,
+#if defined(cl_ext_image_from_buffer)
+    ImgReqSlicePitchAlign = CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT,
+#endif
+};
+
+#endif // cl_ext_image_requirements_info
+
 /*! \brief C++ base class for Image Memory objects.
  *
  *  See Memory for details about copy semantics, etc.
@@ -4653,6 +4680,41 @@ public:
         }
         return param;
     }
+
+#if defined(cl_ext_image_requirements_info)
+    static cl_int getImageRequirementsInfoExt(const Context &context,
+        cl_mem_flags flags,
+        ImgReqInfoExt param_name,
+        size_type param_value_size,
+        void* param_value,
+        size_type* param_value_size_ret,
+        const cl_image_format* image_format = nullptr,
+        const cl_image_desc* image_desc = nullptr,
+        const cl_mem_properties* properties = nullptr)
+    {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+        Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
+        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetImageRequirementsInfoEXT);
+#else
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetImageRequirementsInfoEXT);
+#endif
+        if (pfn_clGetImageRequirementsInfoEXT == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION, __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+        }
+
+        return detail::errHandler(pfn_clGetImageRequirementsInfoEXT(context(),
+                properties,
+                flags,
+                image_format,
+                image_desc,
+                static_cast<cl_image_requirements_info_ext>(param_name),
+                param_value_size,
+                param_value,
+                param_value_size_ret),
+                __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+    }
+#endif // cl_ext_image_requirements_info
 };
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -11539,6 +11601,7 @@ public:
 #undef __GET_DEVICE_AND_HOST_TIMER_ERR
 #undef __GET_SEMAPHORE_KHR_INFO_ERR
 #undef __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR
+#undef __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR
 #undef __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR
 #undef __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR
 #undef __RETAIN_SEMAPHORE_KHR_ERR
