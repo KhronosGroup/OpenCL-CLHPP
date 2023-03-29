@@ -34,6 +34,10 @@ jobs:
         repository: KhronosGroup/OpenCL-ICD-Loader
         path: external/OpenCL-ICD-Loader
 
+    - name: Install gcc if required
+      run: |
+        if [[ ! `which /usr/local/bin/gcc-${{matrix.VER}}` ]]; then brew install gcc@${{matrix.VER}}; fi;
+
     - name: Create Build Environment
       run: |
         cmake -E make_directory $GITHUB_WORKSPACE/build;
