@@ -720,7 +720,7 @@ namespace cl {
             clGetExtensionFunctionAddressForPlatform(platform, #name);  \
     }
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
     enum class ExternalMemoryType : cl_external_memory_handle_type_khr;
 #endif
 
@@ -934,7 +934,7 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __SET_PROGRAM_SPECIALIZATION_CONSTANT_ERR   CL_HPP_ERR_STR_(clSetProgramSpecializationConstant)
 #endif
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
 #define __ENQUEUE_ACQUIRE_EXTERNAL_MEMORY_ERR       CL_HPP_ERR_STR_(clEnqueueAcquireExternalMemObjectsKHR)
 #define __ENQUEUE_RELEASE_EXTERNAL_MEMORY_ERR       CL_HPP_ERR_STR_(clEnqueueReleaseExternalMemObjectsKHR)
 #endif
@@ -995,13 +995,13 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 //! \endcond
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueAcquireExternalMemObjectsKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueReleaseExternalMemObjectsKHR);
 
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueAcquireExternalMemObjectsKHR pfn_clEnqueueAcquireExternalMemObjectsKHR = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueReleaseExternalMemObjectsKHR pfn_clEnqueueReleaseExternalMemObjectsKHR = nullptr;
-#endif // cl_khr_external_memory && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#endif // cl_khr_external_memory
 
 #ifdef cl_khr_semaphore
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateSemaphoreWithPropertiesKHR);
@@ -1566,7 +1566,7 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(CL_HPP_DECLARE_PARAM_TRAIT
 CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_semaphore
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_memory
 
@@ -4077,32 +4077,34 @@ public:
         }
     }
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
     /*! \brief Constructs a Buffer in a specified context and with specified properties.
      *
      *  Wraps clCreateBufferWithProperties().
      *
      *  \param properties Optional list of properties for the buffer object and
-                          their corresponding values. The list must not end with 0.
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0. 
      *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
      *                  specified. Note alignment & exclusivity requirements.
      */
     Buffer(
         const Context& context,
-        vector<cl_mem_properties> properties,
+        const vector<cl_mem_properties>& properties,
         cl_mem_flags flags,
-        size_type size,   
+        size_type size,
         void* host_ptr = nullptr,
         cl_int* err = nullptr)
     {
         cl_int error;
 
-        if (properties.empty())
-            object_ = ::clCreateBufferWithProperties(context(), nullptr, flags, size, host_ptr, &error);
-        else
-        {
-            properties.push_back(static_cast<cl_mem_properties>(CL_DEVICE_HANDLE_LIST_END_KHR));
-            object_ = ::clCreateBufferWithProperties(context(), properties.data(), flags, size, host_ptr, &error);
+        if (properties.empty()) {
+            object_ = ::clCreateBufferWithProperties(context(), nullptr, flags,
+                                                     size, host_ptr, &error);
+        }
+        else {
+            object_ = ::clCreateBufferWithProperties(
+                context(), properties.data(), flags, size, host_ptr, &error);
         }
 
         detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -4127,20 +4129,21 @@ public:
         void* host_ptr = nullptr,
         cl_int* err = nullptr) : Buffer(Context::getDefault(err), flags, size, host_ptr, err) { }
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
     /*! \brief Constructs a Buffer in the default context and with specified properties.
      *
      *  Wraps clCreateBufferWithProperties().
      *
      *  \param properties Optional list of properties for the buffer object and
-                          their corresponding values. The list must not end with 0.
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0. 
      *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
      *                  specified. Note alignment & exclusivity requirements.
      * 
      *  \see Context::getDefault()
      */
     Buffer(
-        vector<cl_mem_properties> properties,
+        const vector<cl_mem_properties>& properties,
         cl_mem_flags flags,
         size_type size,
         void* host_ptr = nullptr,
@@ -7283,21 +7286,22 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 
 }
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
 enum class ExternalMemoryType : cl_external_memory_handle_type_khr
 {
     None = 0,
-    DmaBuffer = CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR,
+
+    OpaqueFd = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
+    OpaqueWin32 = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR,
+    OpaqueWin32Kmt = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR,
 
     D3D11Texture = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR,
-    D3D11TextureKMT = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR,
+    D3D11TextureKmt = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR,
 
     D3D12Heap = CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR,
     D3D12Resource = CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR,
 
-    Opaque = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
-    OpaqueWin32 = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR,
-    OpaqueWin32_KMT = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR
+    DmaBuf = CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR,
 };
 #endif
 
@@ -7369,7 +7373,7 @@ private:
         default_ = c;
     }
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
     static std::once_flag ext_memory_initialized_;
 
     static void initMemoryExtension(const cl::Device& device) 
@@ -9231,10 +9235,10 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         return detail::errHandler(::clFinish(object_), __FINISH_ERR);
     }
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
-    cl_int EnqueueAcquireExternalMemObjects(
-        const vector<Memory>& mem_objects = {},
-        const vector<Event>& events_wait = {},
+#ifdef cl_khr_external_memory
+    cl_int enqueueAcquireExternalMemObjects(
+        const vector<Memory>& mem_objects,
+        const vector<Event>* events_wait = nullptr,
         Event *event = nullptr)
     {
         cl_int err = CL_INVALID_OPERATION;
@@ -9248,8 +9252,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
                 object_,
                 static_cast<cl_uint>(mem_objects.size()),
                 (mem_objects.size() > 0) ? reinterpret_cast<const cl_mem *>(mem_objects.data()) : nullptr,
-                static_cast<cl_uint>(events_wait.size()),
-                (events_wait.size() > 0) ? reinterpret_cast<const cl_event *>(events_wait.data()) : nullptr,
+                (events_wait != nullptr) ? static_cast<cl_uint>(events_wait->size()) : 0,
+                (events_wait != nullptr && events_wait->size() > 0) ? reinterpret_cast<const cl_event*>(events_wait->data()) : nullptr,
                 &tmp);
         }
 
@@ -9261,9 +9265,9 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         return err;
     }
 
-    cl_int EnqueueReleaseExternalMemObjects(
-        const vector<Memory>& mem_objects = {},
-        const vector<Event>& events_wait = {},
+    cl_int enqueueReleaseExternalMemObjects(
+        const vector<Memory>& mem_objects,
+        const vector<Event>* events_wait = nullptr,
         Event *event = nullptr)
     {
         cl_int err = CL_INVALID_OPERATION;
@@ -9277,8 +9281,8 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
                 object_,
                 static_cast<cl_uint>(mem_objects.size()),
                 (mem_objects.size() > 0) ? reinterpret_cast<const cl_mem *>(mem_objects.data()) : nullptr,
-                static_cast<cl_uint>(events_wait.size()),
-                (events_wait.size() > 0) ? reinterpret_cast<const cl_event *>(events_wait.data()) : nullptr,
+                (events_wait != nullptr) ? static_cast<cl_uint>(events_wait->size()) : 0,
+                (events_wait != nullptr && events_wait->size() > 0) ? reinterpret_cast<const cl_event*>(events_wait->data()) : nullptr,
                 &tmp);
         }
 
@@ -9306,7 +9310,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
 #endif // cl_khr_semaphore
 }; // CommandQueue
 
-#if defined(cl_khr_external_memory) && CL_HPP_TARGET_OPENCL_VERSION >= 300
+#ifdef cl_khr_external_memory
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandQueue::ext_memory_initialized_;
 #endif
 
