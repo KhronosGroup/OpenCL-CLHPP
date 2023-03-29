@@ -1520,7 +1520,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr)
 
 #define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(F) \
+    F(cl_semaphore_info_khr, CL_SEMAPHORE_CONTEXT_KHR, cl::Context) \
+    F(cl_semaphore_info_khr, CL_SEMAPHORE_REFERENCE_COUNT_KHR, cl_uint) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_PROPERTIES_KHR, cl::vector<cl_semaphore_properties_khr>) \
+    F(cl_semaphore_info_khr, CL_SEMAPHORE_TYPE_KHR, cl_semaphore_type_khr) \
+    F(cl_semaphore_info_khr, CL_SEMAPHORE_PAYLOAD_KHR, cl_semaphore_payload_khr) \
+    F(cl_semaphore_info_khr, CL_DEVICE_HANDLE_LIST_KHR, cl::vector<cl::Device>) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_TYPES_KHR,  cl::vector<cl_semaphore_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_TYPES_KHR,      cl::vector<cl_semaphore_type_khr>) \
 
@@ -10447,7 +10452,7 @@ public:
         }
 
         return detail::errHandler(
-            detail::getInfo(&pfn_clGetSemaphoreInfoKHR, object_, name, param),
+            detail::getInfo(pfn_clGetSemaphoreInfoKHR, object_, name, param),
             __GET_SEMAPHORE_KHR_INFO_ERR);
     }
     template <cl_semaphore_info_khr name> typename

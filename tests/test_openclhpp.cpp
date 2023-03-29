@@ -59,6 +59,18 @@ static inline cl_command_buffer_khr make_command_buffer_khr(int index)
     return (cl_command_buffer_khr)(size_t)(0x8f8f8f8f + index);
 }
 
+static inline cl_event make_event(int index)
+{
+    return (cl_event)(size_t)(0xd0d0d0d0 + index);
+}
+
+#if defined(cl_khr_semaphore)
+static inline cl_semaphore_khr make_semaphore_khr(int index)
+{
+    return (cl_semaphore_khr)(size_t)(0xa0b0c0e0 + index);
+}
+#endif
+
 /* Pools of pre-allocated wrapped objects for tests. There is no device pool,
  * because there is no way to know whether the test wants the device to be
  * reference countable or not.
@@ -74,6 +86,9 @@ static cl::Kernel kernelPool[POOL_MAX];
 static cl::Program programPool[POOL_MAX];
 #if defined(cl_khr_command_buffer)
 static cl::CommandBufferKhr commandBufferKhrPool[POOL_MAX];
+#endif
+#if defined(cl_khr_semaphore)
+static cl::Semaphore semaphorePool[POOL_MAX];
 #endif
 
 /****************************************************************************
@@ -393,6 +408,14 @@ void setUp()
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
 #endif
+#if defined(cl_khr_semaphore)
+    cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
+    cl::pfn_clReleaseSemaphoreKHR = ::clReleaseSemaphoreKHR;
+    cl::pfn_clRetainSemaphoreKHR = ::clRetainSemaphoreKHR;
+    cl::pfn_clEnqueueWaitSemaphoresKHR = ::clEnqueueWaitSemaphoresKHR;
+    cl::pfn_clEnqueueSignalSemaphoresKHR = ::clEnqueueSignalSemaphoresKHR;
+    cl::pfn_clGetSemaphoreInfoKHR = ::clGetSemaphoreInfoKHR;
+#endif
 
     /* We reach directly into the objects rather than using assignment to
      * avoid the reference counting functions from being called.
@@ -409,6 +432,9 @@ void setUp()
         programPool[i]() = make_program(i);
 #if defined(cl_khr_command_buffer)
         commandBufferKhrPool[i]() = make_command_buffer_khr(i);
+#endif
+#if defined(cl_khr_semaphore)
+        semaphorePool[i]() = make_semaphore_khr(i);
 #endif
     }
 
@@ -434,6 +460,9 @@ void tearDown()
 #if defined(cl_khr_command_buffer)
         commandBufferKhrPool[i]() = nullptr;
 #endif
+#if defined(cl_khr_semaphore)
+        semaphorePool[i]() = nullptr;
+#endif
     }
 
 #if defined(cl_khr_command_buffer)
@@ -442,6 +471,14 @@ void tearDown()
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+#endif
+#if defined(cl_khr_semaphore)
+    cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
+    cl::pfn_clReleaseSemaphoreKHR = nullptr;
+    cl::pfn_clRetainSemaphoreKHR = nullptr;
+    cl::pfn_clEnqueueWaitSemaphoresKHR = nullptr;
+    cl::pfn_clEnqueueSignalSemaphoresKHR = nullptr;
+    cl::pfn_clGetSemaphoreInfoKHR = nullptr;
 #endif
 }
 
@@ -3375,6 +3412,397 @@ void testCommandBufferInfoKHRCommandQueues()
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
+#endif
+}
+
+/****************************************************************************
+ * Tests for cl::Semaphore
+ ****************************************************************************/
+#if defined(cl_khr_semaphore)
+void testMoveAssignSemaphoreNonNull();
+void testMoveAssignSemaphoreNull();
+void testMoveConstructSemaphoreNonNull();
+void testMoveConstructSemaphoreNull();
+MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
+#else
+void testMoveAssignSemaphoreNonNull() {}
+void testMoveAssignSemaphoreNull() {}
+void testMoveConstructSemaphoreNonNull() {}
+void testMoveConstructSemaphoreNull() {}
+#endif
+
+static cl_int clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores(
+    cl_command_queue command_queue,
+    cl_uint num_sema_objects,
+    const cl_semaphore_khr* sema_objects,
+    const cl_semaphore_payload_khr* sema_payload_list,
+    cl_uint num_events_in_wait_list,
+    const cl_event* event_wait_list,
+    cl_event* event,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(commandQueuePool[1](), command_queue);
+    TEST_ASSERT_EQUAL(1, num_sema_objects);
+    TEST_ASSERT_NOT_NULL(sema_objects);
+    TEST_ASSERT_EQUAL(make_semaphore_khr(1), *sema_objects);
+    TEST_ASSERT_NOT_NULL(sema_payload_list);
+    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
+    TEST_ASSERT_NULL(event_wait_list);
+
+    if (event != nullptr)
+    {
+        *event = make_event(1);
+    }
+
+    return CL_SUCCESS;
+}
+
+void testEnqueueWaitSemaphores()
+{
+#if defined(cl_khr_semaphore)
+    clEnqueueWaitSemaphoresKHR_StubWithCallback(clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores);
+
+    VECTOR_CLASS<cl::Semaphore> sema_objects;
+    sema_objects.emplace_back(make_semaphore_khr(1));
+    VECTOR_CLASS<cl_semaphore_payload_khr> sema_payloads(1);
+    cl::Event event;
+
+    cl_int status = commandQueuePool[1].enqueueWaitSemaphores(sema_objects, sema_payloads, nullptr, &event);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, status);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+
+    // prevent destructor from interfering with the test
+    event() = nullptr;
+    sema_objects[0]() = nullptr;
+#endif
+}
+
+static cl_int clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores(
+    cl_command_queue command_queue,
+    cl_uint num_sema_objects,
+    const cl_semaphore_khr* sema_objects,
+    const cl_semaphore_payload_khr* sema_payload_list,
+    cl_uint num_events_in_wait_list,
+    const cl_event* event_wait_list,
+    cl_event* event,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(commandQueuePool[1](), command_queue);
+    TEST_ASSERT_EQUAL(1, num_sema_objects);
+    TEST_ASSERT_NOT_NULL(sema_objects);
+    TEST_ASSERT_EQUAL(make_semaphore_khr(2), *sema_objects);
+    TEST_ASSERT_NOT_NULL(sema_payload_list);
+    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
+    TEST_ASSERT_NULL(event_wait_list);
+
+    if (event != nullptr)
+    {
+        *event = make_event(2);
+    }
+
+    return CL_SUCCESS;
+}
+
+void testEnqueueSignalSemaphores()
+{
+#if defined(cl_khr_semaphore)
+    clEnqueueSignalSemaphoresKHR_StubWithCallback(clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores);
+
+    VECTOR_CLASS<cl::Semaphore> sema_objects;
+    sema_objects.emplace_back(make_semaphore_khr(2));
+    VECTOR_CLASS<cl_semaphore_payload_khr> sema_payloads(1);
+    cl::Event event;
+
+    cl_int status = commandQueuePool[1].enqueueSignalSemaphores(sema_objects, sema_payloads, nullptr, &event);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, status);
+    TEST_ASSERT_EQUAL_PTR(make_event(2), event());
+
+    // prevent destructor from interfering with the test
+    event() = nullptr;
+    sema_objects[0]() = nullptr;
+#endif
+}
+
+cl_semaphore_khr clCreateSemaphoreWithProperties_testSemaphoreWithProperties(
+    cl_context context,
+    const cl_semaphore_properties_khr* sema_props,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, num_calls);
+    TEST_ASSERT_EQUAL_PTR(context, contextPool[0]());
+    TEST_ASSERT_NOT_NULL(sema_props);
+    TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_KHR, *sema_props);
+    TEST_ASSERT_NOT_NULL(errcode_ret);
+    *errcode_ret = CL_SUCCESS;
+    return make_semaphore_khr(1);
+}
+
+void testSemaphoreWithProperties()
+{
+#if defined(cl_khr_semaphore)
+    cl_device_id expected_device = make_device_id(0);
+    int device_refcount = 1;
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+    prepare_deviceRefcounts(1, &expected_device, &device_refcount);
+
+    clCreateSemaphoreWithPropertiesKHR_StubWithCallback(clCreateSemaphoreWithProperties_testSemaphoreWithProperties);
+
+    VECTOR_CLASS<cl_semaphore_properties_khr> sema_props{CL_SEMAPHORE_TYPE_KHR};
+    cl_int err = CL_INVALID_OPERATION;
+    cl::Semaphore sem(contextPool[0], sema_props, &err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_PTR(make_semaphore_khr(1), sem());
+
+    // prevent destructor from interfering with the test
+    sem() = nullptr;
+#endif
+}
+
+static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetContext(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_info_khr param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_CONTEXT_KHR, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_context);
+    if (param_value != nullptr)
+        *static_cast<cl_context *>(param_value) = make_context(0);
+
+    return CL_SUCCESS;
+}
+
+void testSemaphoreGetInfoContext()
+{
+#if defined(cl_khr_semaphore)
+    cl_context expected_context = make_context(0);
+    int context_refcount = 1;
+    clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetContext);
+    prepare_contextRefcounts(1, &expected_context, &context_refcount);
+
+    cl_int err = CL_INVALID_OPERATION;
+
+    cl::Context ctx = semaphorePool[0].getInfo<CL_SEMAPHORE_CONTEXT_KHR>(&err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), ctx());
+#endif
+}
+
+static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_info_khr param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_REFERENCE_COUNT_KHR, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_uint);
+    if (param_value != nullptr)
+        *static_cast<cl_uint *>(param_value) = 1;
+
+    return CL_SUCCESS;
+}
+
+void testSemaphoreGetInfoReferenceCount()
+{
+#if defined(cl_khr_semaphore)
+    clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount);
+
+    cl_int err = CL_INVALID_OPERATION;
+
+    cl_uint ret = semaphorePool[0].getInfo<CL_SEMAPHORE_REFERENCE_COUNT_KHR>(&err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(1, ret);
+#endif
+}
+
+static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetProperties(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_info_khr param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    static const cl_semaphore_properties_khr test_properties[] =
+        {CL_SEMAPHORE_TYPE_KHR,
+         CL_SEMAPHORE_TYPE_BINARY_KHR};
+    TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_PROPERTIES_KHR, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(test_properties));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(test_properties);
+    if (param_value != nullptr) {
+        static_cast<cl_semaphore_properties_khr *>(param_value)[0] = test_properties[0];
+        static_cast<cl_semaphore_properties_khr *>(param_value)[1] = test_properties[1];
+    }
+
+    return CL_SUCCESS;
+}
+
+void testSemaphoreGetInfoProperties()
+{
+#if defined(cl_khr_semaphore)
+    clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetProperties);
+
+    cl_int err = CL_INVALID_OPERATION;
+
+    VECTOR_CLASS<cl_semaphore_properties_khr> ret = semaphorePool[0].getInfo<CL_SEMAPHORE_PROPERTIES_KHR>(&err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(2, ret.size());
+    TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_KHR, ret[0]);
+    TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_BINARY_KHR, ret[1]);
+#endif
+}
+
+static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetType(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_info_khr param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_TYPE_KHR, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_semaphore_type_khr));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_semaphore_type_khr);
+    if (param_value != nullptr)
+        *static_cast<cl_semaphore_type_khr *>(param_value) = CL_SEMAPHORE_TYPE_BINARY_KHR;
+
+    return CL_SUCCESS;
+}
+
+void testSemaphoreGetInfoType()
+{
+#if defined(cl_khr_semaphore)
+    clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetType);
+
+    cl_int err = CL_INVALID_OPERATION;
+
+    cl_semaphore_type_khr ret = semaphorePool[0].getInfo<CL_SEMAPHORE_TYPE_KHR>(&err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_BINARY_KHR, ret);
+#endif
+}
+
+static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetPayload(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_info_khr param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_PAYLOAD_KHR, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_semaphore_payload_khr));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_semaphore_payload_khr);
+    if (param_value != nullptr)
+        *static_cast<cl_semaphore_payload_khr *>(param_value) = 1;
+
+    return CL_SUCCESS;
+}
+
+void testSemaphoreGetInfoPayload()
+{
+#if defined(cl_khr_semaphore)
+    clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetPayload);
+
+    cl_int err = CL_INVALID_OPERATION;
+
+    cl_semaphore_payload_khr ret = semaphorePool[0].getInfo<CL_SEMAPHORE_PAYLOAD_KHR>(&err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(1, ret);
+#endif
+}
+
+static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
+    cl_semaphore_khr sema_object,
+    cl_semaphore_info_khr param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    static const cl_device_id test_devices[] =
+        {make_device_id(0), make_device_id(1)};
+    TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_HANDLE_LIST_KHR, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(test_devices));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(test_devices);
+    if (param_value != nullptr) {
+        static_cast<cl_device_id *>(param_value)[0] = test_devices[0];
+        static_cast<cl_device_id *>(param_value)[1] = test_devices[1];
+    }
+
+    return CL_SUCCESS;
+}
+
+void testSemaphoreGetInfoDevicesList()
+{
+#if defined(cl_khr_semaphore)
+    cl_device_id expected_devices[] = {make_device_id(0), make_device_id(1)};
+    int device_refcounts[] = {1, 1};
+
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+    prepare_deviceRefcounts(ARRAY_SIZE(expected_devices), expected_devices, device_refcounts);
+
+    clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetDevices);
+
+    cl_int err = CL_INVALID_OPERATION;
+
+    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_DEVICE_HANDLE_LIST_KHR>(&err);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(2, ret.size());
+    TEST_ASSERT_EQUAL(make_device_id(0), ret[0]());
+    TEST_ASSERT_EQUAL(make_device_id(1), ret[1]());
+#endif
+}
+
+void testSemaphoreRetain()
+{
+#if defined(cl_khr_semaphore)
+    clRetainSemaphoreKHR_ExpectAndReturn(semaphorePool[0](), CL_SUCCESS);
+
+    cl_int status = semaphorePool[0].retain();
+    TEST_ASSERT_EQUAL(CL_SUCCESS, status);
+#endif
+}
+
+void testSemaphoreRelease()
+{
+#if defined(cl_khr_semaphore)
+    clReleaseSemaphoreKHR_ExpectAndReturn(semaphorePool[0](), CL_SUCCESS);
+
+    cl_int status = semaphorePool[0].release();
+    TEST_ASSERT_EQUAL(CL_SUCCESS, status);
 #endif
 }
 
