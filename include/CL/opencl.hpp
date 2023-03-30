@@ -4607,18 +4607,18 @@ public:
 };
 
 #if defined(cl_ext_image_requirements_info)
-enum class ImgReqInfoExt : cl_image_requirements_info_ext
+enum class ImageRequirementsInfoExt : cl_image_requirements_info_ext
 {
-    ImgReqNone = 0,
-    ImgReqRowPitchAlign = CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT,
-    ImgReqBaseAddAlign = CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT,
-    ImgReqSize = CL_IMAGE_REQUIREMENTS_SIZE_EXT,
-    ImgReqNaxWidth = CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT,
-    ImgReqMaxHeight = CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT,
-    ImgReqMaxDepth = CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT,
-    ImgReqMaxArraySize = CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT,
+    ExtNone = 0,
+    ExtRowPitchAlign = CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT,
+    ExtBaseAddAlign = CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT,
+    ExtSize = CL_IMAGE_REQUIREMENTS_SIZE_EXT,
+    ExtNaxWidth = CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT,
+    ExtMaxHeight = CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT,
+    ExtMaxDepth = CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT,
+    ExtMaxArraySize = CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT,
 #if defined(cl_ext_image_from_buffer)
-    ImgReqSlicePitchAlign = CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT,
+    ExtSlicePitchAlign = CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT,
 #endif
 };
 
@@ -4682,15 +4682,15 @@ public:
     }
 
 #if defined(cl_ext_image_requirements_info)
-    static cl_int getImageRequirementsInfoExt(const Context &context,
+    static cl_int getRequirementsInfoExt(const Context &context,
         cl_mem_flags flags,
-        ImgReqInfoExt param_name,
+        ImageRequirementsInfoExt param_name,
         size_type param_value_size,
         void* param_value,
         size_type* param_value_size_ret,
-        const cl_image_format* image_format = nullptr,
-        const cl_image_desc* image_desc = nullptr,
-        const cl_mem_properties* properties = nullptr)
+        const cl_mem_properties* properties = nullptr,
+        const ImageFormat* image_format = nullptr,
+        const cl_image_desc* image_desc = nullptr)
     {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
@@ -4705,6 +4705,38 @@ public:
 
         return detail::errHandler(pfn_clGetImageRequirementsInfoEXT(context(),
                 properties,
+                flags,
+                image_format,
+                image_desc,
+                static_cast<cl_image_requirements_info_ext>(param_name),
+                param_value_size,
+                param_value,
+                param_value_size_ret),
+                __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+    }
+
+static cl_int getRequirementsInfoExt(const Context &context,
+        cl_mem_flags flags,
+        ImageRequirementsInfoExt param_name,
+        size_type param_value_size,
+        void* param_value,
+        size_type* param_value_size_ret,
+        const ImageFormat* image_format = nullptr,
+        const cl_image_desc* image_desc = nullptr)
+    {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+        Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
+        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetImageRequirementsInfoEXT);
+#else
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetImageRequirementsInfoEXT);
+#endif
+        if (pfn_clGetImageRequirementsInfoEXT == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION, __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+        }
+
+        return detail::errHandler(pfn_clGetImageRequirementsInfoEXT(context(),
+                nullptr,
                 flags,
                 image_format,
                 image_desc,
