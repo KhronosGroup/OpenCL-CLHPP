@@ -324,8 +324,8 @@ jobs:
 
     - name: Test pkg-config
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/install/include"
 
     - name: Test pkg-config dependency
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/external/OpenCL-Headers/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/include"
