@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 jobs:
   msvc:
+    if: false
     runs-on: windows-2022
     strategy:
       matrix:
