@@ -178,7 +178,7 @@ jobs:
       CMAKE_URL: https://github.com/Kitware/CMake/releases/download/v${{ matrix.CMAKE }}/cmake-${{ matrix.CMAKE }}-Linux-x86_64.tar.gz
       CMAKE_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cmake
       CTEST_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/ctest
-      OPENCL_PKGCONFIG_PATHS: /home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/install/share/pkgconfig:/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/pkgconfig:/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/lib/pkgconfig
+      OPENCL_PKGCONFIG_PATHS: /home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/install/share/pkgconfig:/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/pkgconfig:/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/lib/pkgconfig
 
 
     steps:
