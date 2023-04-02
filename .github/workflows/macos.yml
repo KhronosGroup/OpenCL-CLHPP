@@ -39,11 +39,12 @@ jobs:
         cmake -E make_directory $GITHUB_WORKSPACE/build;
         cmake -E make_directory $GITHUB_WORKSPACE/install;
         if [[ "${{matrix.GEN}}" == "Ninja Multi-Config" && ! `which ninja` ]]; then brew install ninja; fi;
-        # Install Ninja only if it's the selected generator and it's not available.
+        if [[ ! `which /usr/local/bin/gcc-${{matrix.VER}}` ]]; then brew install gcc@${{matrix.VER}}; fi;
 
     - name: Build & install OpenCL-Headers
       run: cmake
         -G "${{matrix.GEN}}"
+        -D BUILD_TESTING=OFF
         -D CMAKE_C_FLAGS="-w"
         -D CMAKE_C_COMPILER=/usr/local/bin/gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
@@ -63,6 +64,7 @@ jobs:
     - name: Build & install OpenCL-ICD-Loader
       run: cmake
         -G "${{matrix.GEN}}"
+        -D BUILD_TESTING=OFF
         -D CMAKE_C_FLAGS="-w -m64"
         -D CMAKE_C_COMPILER=/usr/local/bin/gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
