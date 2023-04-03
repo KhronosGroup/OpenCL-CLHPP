@@ -2,6 +2,9 @@ name: Linux
 
 on: [push, pull_request]
 
+env:
+  OPENCL_PKGCONFIG_PATHS: ${{ github.workspace }}/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-Headers/install/share/pkgconfig:${{ github.workspace }}/external/OpenCL-ICD-Loader/install/lib/pkgconfig
+
 jobs:
   cmake-minimum:
     runs-on: ${{ matrix.OS }}
@@ -19,6 +22,7 @@ jobs:
     env:
       CMAKE_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cmake
       CTEST_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/ctest
+      # Workaround for https://github.com/actions/runner/issues/2058
       OPENCL_PKGCONFIG_PATHS: /__w/OpenCL-CLHPP/OpenCL-CLHPP/install/share/pkgconfig:/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/pkgconfig:/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/lib/pkgconfig
 
 
@@ -135,7 +139,7 @@ jobs:
     - name: "Consume (SDK): Configure/Build/Test"
       shell: bash
       run: $CMAKE_EXE -E make_directory $GITHUB_WORKSPACE/install/share/cmake/OpenCL ;
-        echo -e 'include("/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake")\ninclude("/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake")\ninclude("${CMAKE_CURRENT_LIST_DIR}/../OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake")' > $GITHUB_WORKSPACE/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
+        echo -e "include(\"$GITHUB_WORKSPACE/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake\")\ninclude(\"$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake\")\ninclude(\"\${CMAKE_CURRENT_LIST_DIR}/../OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake\")" > $GITHUB_WORKSPACE/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
@@ -178,7 +182,6 @@ jobs:
       CMAKE_URL: https://github.com/Kitware/CMake/releases/download/v${{ matrix.CMAKE }}/cmake-${{ matrix.CMAKE }}-Linux-x86_64.tar.gz
       CMAKE_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cmake
       CTEST_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/ctest
-      OPENCL_PKGCONFIG_PATHS: /home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/install/share/pkgconfig:/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/pkgconfig:/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/lib/pkgconfig
 
 
     steps:
@@ -306,7 +309,7 @@ jobs:
     - name: "Consume (SDK): Configure/Build/Test"
       shell: bash
       run: $CMAKE_EXE -E make_directory $GITHUB_WORKSPACE/install/share/cmake/OpenCL ;
-        echo -e 'include("/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake")\ninclude("/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake")\ninclude("${CMAKE_CURRENT_LIST_DIR}/../OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake")' > /home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
+        echo -e "include(\"$GITHUB_WORKSPACE/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake\")\ninclude(\"$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake\")\ninclude(\"\${CMAKE_CURRENT_LIST_DIR}/../OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake\")" > $GITHUB_WORKSPACE/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
@@ -324,8 +327,8 @@ jobs:
 
     - name: Test pkg-config
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/install/include"
 
     - name: Test pkg-config dependency
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/home/runner/work/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/external/OpenCL-Headers/install/include"
