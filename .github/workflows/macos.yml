@@ -7,7 +7,6 @@ env:
 
 jobs:
   macos-gcc:
-    if: false
     #runs-on: macos-latest
     runs-on: macos-11 # temporary, macos-latest only supports gcc-12
     strategy:
@@ -53,6 +52,7 @@ jobs:
         -D CMAKE_C_COMPILER=/usr/local/bin/gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
+        -D BUILD_TESTING=OFF
         -S $GITHUB_WORKSPACE/external/OpenCL-Headers
         -B $GITHUB_WORKSPACE/external/OpenCL-Headers/build &&
         cmake
@@ -73,6 +73,7 @@ jobs:
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
+        -D BUILD_TESTING=OFF
         -S $GITHUB_WORKSPACE/external/OpenCL-ICD-Loader
         -B $GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/build &&
         cmake
