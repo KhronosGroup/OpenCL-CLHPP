@@ -1829,6 +1829,58 @@ void testKernelSetExecInfo(void)
 #endif
 }
 
+
+cl_int clSetKernelExecInfo_setSVMPointers(cl_kernel kernel,
+                                cl_kernel_exec_info param_name,
+                                size_t param_value_size,
+                                const void *param_value, int cmock_num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_kernel(0), kernel);
+    TEST_ASSERT_EQUAL_HEX(CL_KERNEL_EXEC_INFO_SVM_PTRS, param_name);
+    TEST_ASSERT(param_value_size == 2 * sizeof(void *));
+   
+    int** arr = (int **)param_value;
+    TEST_ASSERT_EQUAL_PTR(arr[0], 0xaabbccdd);
+    TEST_ASSERT_EQUAL_PTR(arr[1], 0xddccbbaa);
+
+    return CL_SUCCESS;
+}
+
+void testKernelSetSVMPointers()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_setSVMPointers);
+  
+    cl::vector<void *> vec = { (void *)0xaabbccdd, (void *)0xddccbbaa };
+    cl_int ret = kernelPool[0].setSVMPointers(vec);
+
+    cl_int expected = CL_SUCCESS;
+    TEST_ASSERT_EQUAL_HEX(expected, ret);
+#endif
+}
+cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
+                                 cl_kernel_exec_info param_name,
+                                 size_t param_value_size,
+                                 const void *param_value, int cmock_num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_kernel(0), kernel);
+    TEST_ASSERT_EQUAL_HEX(*(cl_bool*)param_value, CL_FALSE);
+    TEST_ASSERT_EQUAL_HEX(CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,param_name);
+    TEST_ASSERT(param_value_size == sizeof(cl_bool));
+
+    return CL_SUCCESS;
+}
+void testKernelEnableFineGrainedSystemSVM()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_EnableFineGrainedSystemSVM);
+    bool svmEnabled = false;
+    cl_int ret = kernelPool[0].enableFineGrainedSystemSVM(svmEnabled);
+    cl_int expected = CL_SUCCESS;
+    TEST_ASSERT_EQUAL_HEX(expected, ret);
+#endif
+}
+
 /****************************************************************************
  * Tests for cl::copy
  ****************************************************************************/
