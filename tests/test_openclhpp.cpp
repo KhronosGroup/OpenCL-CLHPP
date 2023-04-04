@@ -2722,7 +2722,7 @@ void testSetProgramSpecializationConstantPointer()
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 220
     cl_program program = make_program(0);
-    int scArray[5];
+    int scArray[5] = {};
 
     clSetProgramSpecializationConstant_ExpectAndReturn(program, 0, sizeof(scArray), &scArray, CL_SUCCESS);
     clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
