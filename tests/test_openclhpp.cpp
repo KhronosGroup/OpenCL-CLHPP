@@ -811,6 +811,7 @@ void testCommandQueueGetDevice1_2()
     device() = nullptr;
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION < 200
 // stub for clCreateCommandQueue - returns queue zero
 static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContext(
     cl_context context,
@@ -827,8 +828,7 @@ static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContex
         *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
-
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#else
 // stub for clCreateCommandQueueWithProperties - returns queue zero
 static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext(
     cl_context context,
@@ -846,7 +846,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromS
         *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION < 200
 
 void testCommandQueueFromSpecifiedContext()
 {
