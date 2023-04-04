@@ -230,6 +230,7 @@ static cl_int clGetPlatformInfo_version_2_0(
         param_value_size_ret, "OpenCL 2.0 Mock");
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 /**
  * A stub for clGetPlatformInfo that will only support querying
  * CL_PLATFORM_VERSION, and will return version 3.0.
@@ -247,6 +248,7 @@ static cl_int clGetPlatformInfo_version_3_0(
         id, param_name, param_value_size, param_value,
         param_value_size_ret, "OpenCL 3.0 Mock");
 }
+#endif
 
 /* Simulated reference counts. The table points to memory held by the caller.
  * This makes things simpler in the common case of only one object to be
@@ -2043,6 +2045,7 @@ void testGetContextInfoDevices()
     // TODO
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     cl_context context,
     cl_mem_flags flags,
@@ -2067,6 +2070,7 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     }
     return image_desc->buffer;
 }
+#endif
 
 void testCreateImage2DFromBuffer_2_0()
 {
@@ -2095,6 +2099,7 @@ void testCreateImage2DFromBuffer_2_0()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreateImage_testCreateImage2D_2_0(
     cl_context context,
     cl_mem_flags flags,
@@ -2127,7 +2132,9 @@ static cl_mem clCreateImage_testCreateImage2D_2_0(
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreateImage_testCreateImage2DFromImage_2_0(
     cl_context context,
     cl_mem_flags flags,
@@ -2152,7 +2159,9 @@ static cl_mem clCreateImage_testCreateImage2DFromImage_2_0(
     }
     return image_desc->buffer;
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_int clGetImageInfo_testCreateImage2DFromImage_2_0(
     cl_mem image,
     cl_image_info param_name,
@@ -2170,6 +2179,7 @@ static cl_int clGetImageInfo_testCreateImage2DFromImage_2_0(
     TEST_ASSERT_INT_WITHIN(6, 0, num_calls);
     return CL_SUCCESS;
 }
+#endif
 
 void testCreateImage2DFromImage_2_0()
 {
@@ -2301,6 +2311,7 @@ void testSetDefaultDevice()
     TEST_ASSERT_EQUAL(d(), d3());
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevice(
     cl_context context,
     cl_device_id device,
@@ -2337,6 +2348,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
         return default_;
     }
 }
+#endif
 
 void testCreateDeviceCommandQueue()
 {
@@ -2367,6 +2379,7 @@ void testCreateDeviceCommandQueue()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreatePipe_testCreatePipe(
     cl_context context,
     cl_mem_flags flags,
@@ -2391,7 +2404,9 @@ static cl_mem clCreatePipe_testCreatePipe(
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_int clGetPipeInfo_testCreatePipe(
     cl_mem pipe,
     cl_pipe_info param_name,
@@ -2423,6 +2438,7 @@ static cl_int clGetPipeInfo_testCreatePipe(
         return CL_INVALID_VALUE;
     }
 }
+#endif
 
 void testCreatePipe()
 {    
@@ -2448,6 +2464,7 @@ void testCreatePipe()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
@@ -2486,6 +2503,7 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
         return CL_INVALID_OPERATION;
     }
 }
+#endif
 
 void testSubGroups()
 {
@@ -2551,6 +2569,7 @@ void testBuiltInKernels()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
 /**
  * Stub implementation of clCloneKernel that returns a new kernel object
  */
@@ -2567,6 +2586,7 @@ static cl_kernel clCloneKernel_simplecopy(
         *errcode_ret = CL_SUCCESS;
     return make_kernel(POOL_MAX);
 }
+#endif
 
 void testCloneKernel()
 {
@@ -2620,12 +2640,15 @@ void testCleanupHeaderState()
 
 // OpenCL 2.2 APIs:
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
 static void CL_CALLBACK test_program_release_callback(
     cl_program,
     void*)
 {
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
 static cl_int clSetProgramReleaseCallback_set(
     cl_program program,
     void (CL_CALLBACK * pfn_notify)(cl_program program, void * user_data),
@@ -2640,6 +2663,7 @@ static cl_int clSetProgramReleaseCallback_set(
 
     return CL_SUCCESS;
 }
+#endif
 
 void testSetProgramReleaseCallback()
 {
@@ -2671,6 +2695,7 @@ void testSetProgramSpecializationConstantScalar()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
 /// Stub for testing boolean specialization constants
 static cl_int clSetProgramSpecializationConstant_testBool(
     cl_program program,
@@ -2696,6 +2721,7 @@ static cl_int clSetProgramSpecializationConstant_testBool(
     }
     return CL_SUCCESS;
 }
+#endif
 
 void testSetProgramSpecializationConstantBool()
 {
