@@ -4536,7 +4536,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE1D;
         desc.image_width = width;
 
@@ -4596,7 +4596,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
         desc.image_width = width;
         desc.buffer = buffer();
@@ -4655,7 +4655,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
         desc.image_width = width;
         desc.image_array_size = arraySize;
@@ -4740,7 +4740,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         if (useCreateImage)
         {
-            cl_image_desc desc = {0};
+            cl_image_desc desc = {};
             desc.image_type = CL_MEM_OBJECT_IMAGE2D;
             desc.image_width = width;
             desc.image_height = height;
@@ -4794,7 +4794,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE2D;
         desc.image_width = width;
         desc.image_height = height;
@@ -4855,7 +4855,7 @@ public:
         // Channel format inherited from source.
         sourceFormat.image_channel_order = order;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE2D;
         desc.image_width = sourceWidth;
         desc.image_height = sourceHeight;
@@ -4999,7 +4999,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
         desc.image_width = width;
         desc.image_height = height;
@@ -5084,7 +5084,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         if (useCreateImage)
         {
-            cl_image_desc desc = {0};
+            cl_image_desc desc = {};
             desc.image_type = CL_MEM_OBJECT_IMAGE3D;
             desc.image_width = width;
             desc.image_height = height;
