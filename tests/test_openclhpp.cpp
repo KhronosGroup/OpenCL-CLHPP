@@ -676,7 +676,7 @@ static cl_context clCreateContext_testContextNonNullProperties(
 
     TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_GREATER_THAN(0, num_devices);
-    for (int i = 0; i < num_devices; i++) {
+    for (int i = 0; i < (int)num_devices; i++) {
         TEST_ASSERT_EQUAL(make_device_id(i), devices[i]);
     }
     if (errcode_ret != nullptr)
@@ -3195,7 +3195,7 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     TEST_ASSERT_EQUAL(device_list, nullptr);
     TEST_ASSERT_EQUAL(options, nullptr);
     TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
-    for (int i=0; i<num_input_programs; i++)
+    for (int i=0; i<(int)num_input_programs; i++)
         TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
     TEST_ASSERT_EQUAL(pfn_notify, nullptr);
     TEST_ASSERT_EQUAL(user_data, nullptr);
@@ -3236,7 +3236,7 @@ void testLinkProgramWithVectorProgramInput()
     cl_int errcode;
     VECTOR_CLASS<cl::Program> prog_vec;
     std::array<int, ARRAY_SIZE(programPool)> refcount;
-    for (int i=0;i<ARRAY_SIZE(programPool);i++) {
+    for (int i=0;i<(int)ARRAY_SIZE(programPool);i++) {
         prog_vec.push_back(cl::Program(programPool[i]()));
         refcount[i] = 1;
     }
