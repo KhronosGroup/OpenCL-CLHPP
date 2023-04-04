@@ -34,6 +34,10 @@ jobs:
         repository: KhronosGroup/OpenCL-ICD-Loader
         path: external/OpenCL-ICD-Loader
 
+    - name: Install gcc if required
+      run: |
+        if [[ ! `which /usr/local/bin/gcc-${{matrix.VER}}` ]]; then brew install gcc@${{matrix.VER}}; fi;
+
     - name: Create Build Environment
       run: |
         cmake -E make_directory $GITHUB_WORKSPACE/build;
@@ -48,6 +52,7 @@ jobs:
         -D CMAKE_C_COMPILER=/usr/local/bin/gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
+        -D BUILD_TESTING=OFF
         -S $GITHUB_WORKSPACE/external/OpenCL-Headers
         -B $GITHUB_WORKSPACE/external/OpenCL-Headers/build &&
         cmake
@@ -68,6 +73,7 @@ jobs:
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
+        -D BUILD_TESTING=OFF
         -S $GITHUB_WORKSPACE/external/OpenCL-ICD-Loader
         -B $GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/build &&
         cmake
