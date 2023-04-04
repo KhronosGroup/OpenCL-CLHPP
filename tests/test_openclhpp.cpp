@@ -1935,7 +1935,6 @@ void testBuildProgramSingleDevice()
 {
     cl_program program = make_program(0);
     cl_device_id device_id = make_device_id(0);
-    int sc = 0;
 
     // Creating a device queries the platform version:
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
