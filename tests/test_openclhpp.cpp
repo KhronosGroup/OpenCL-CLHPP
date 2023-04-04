@@ -90,7 +90,8 @@ static cl_int clGetCommandQueueInfo_context(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
 
 
     TEST_ASSERT_EQUAL_HEX(CL_QUEUE_CONTEXT, param_name);
@@ -114,6 +115,7 @@ static cl_int clGetDeviceInfo_platform(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) id;
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_PLATFORM, param_name);
@@ -136,6 +138,7 @@ static cl_int clGetContextInfo_device(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) id;
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_HEX(CL_CONTEXT_DEVICES, param_name);
@@ -604,6 +607,10 @@ static cl_context clCreateContextFromType_testContextFromType(
     cl_int  *errcode_ret,
     int num_calls)
 {
+    (void) pfn_notify;
+    (void) user_data;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
 #if !defined(__APPLE__) && !defined(__MACOS)
     TEST_ASSERT_NOT_NULL(properties);
@@ -663,6 +670,10 @@ static cl_context clCreateContext_testContextNonNullProperties(
     cl_int  *errcode_ret,
     int num_calls)
 {
+    (void) pfn_notify;
+    (void) user_data;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_GREATER_THAN(0, num_devices);
     for (int i = 0; i < num_devices; i++) {
@@ -1074,6 +1085,9 @@ static cl_int clGetDeviceIDs_PlatformWithZeroDevices(
     cl_uint  *num_devices,
     int num_calls)
 {
+    (void) num_entries;
+    (void) devices;
+
     if (num_calls == 0)
     {
         TEST_ASSERT_EQUAL_PTR(make_platform_id(0), platform);
@@ -1121,6 +1135,8 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_BITS(CL_MEM_COPY_HOST_PTR, flags, !CL_MEM_COPY_HOST_PTR);
     TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
@@ -1346,6 +1362,11 @@ cl_mem clCreateImage_image1dbuffer(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) host_ptr;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE1D_BUFFER, image_desc->image_type);
@@ -1705,6 +1726,11 @@ static void * clEnqueueMapBuffer_testCopyHostToBuffer(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) offset;
+    (void) num_events_in_wait_list;
+    (void) event_wait_list;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer);
     TEST_ASSERT_EQUAL(CL_TRUE, blocking_map);
@@ -1733,6 +1759,10 @@ static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
     cl_event  *event,
     int num_calls)
 {
+    (void) num_events_in_wait_list;
+    (void) event_wait_list;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), memobj);
     TEST_ASSERT_EQUAL_PTR(some_host_memory, mapped_ptr);
@@ -1745,6 +1775,8 @@ static cl_int clWaitForEvents_testCopyHostToBuffer(
     const cl_event *event_list,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(event_list);
     TEST_ASSERT_EQUAL(1, num_events);
     return CL_SUCCESS;
@@ -1754,6 +1786,8 @@ static cl_int clReleaseEvent_testCopyHostToBuffer(
     cl_event event,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(event);
     return CL_SUCCESS;
 }
@@ -1806,6 +1840,9 @@ static cl_int clGetDeviceInfo_testGetBuildInfo(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) device;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(param_name, CL_DEVICE_PLATFORM);
     TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_platform_id));
     TEST_ASSERT_NOT_EQUAL(param_value, nullptr);
@@ -1825,6 +1862,10 @@ static  cl_int clGetProgramBuildInfo_testGetBuildInfo(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) program;
+    (void) device;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_BUILD_LOG);
 
     const char returnString[] = 
@@ -1874,6 +1915,8 @@ static cl_int clBuildProgram_testBuildProgram(
     void *               user_data,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_NOT_EQUAL(num_devices, 0);
     TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
@@ -1928,7 +1971,11 @@ static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
     cl_image_format *image_formats,
     cl_uint *num_image_formats,
     int num_calls)
-{        
+{
+    (void) context;
+    (void) flags;
+    (void) image_type;
+
     // Catch failure case that causes error in bugzilla 13355:
     // returns CL_INVALID_VALUE if flags or image_type are not valid, 
     // or if num_entries is 0 and image_formats is not nullptr.
@@ -2006,6 +2053,10 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_NULL(host_ptr);
@@ -2087,6 +2138,10 @@ static cl_mem clCreateImage_testCreateImage2DFromImage_2_0(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_NULL(host_ptr);
@@ -2107,6 +2162,12 @@ static cl_int clGetImageInfo_testCreateImage2DFromImage_2_0(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) image;
+    (void) param_name;
+    (void) param_value_size;
+    (void) param_value;
+    (void) param_value_size_ret;
+
     TEST_ASSERT_INT_WITHIN(6, 0, num_calls);
     return CL_SUCCESS;
 }
@@ -2316,6 +2377,11 @@ static cl_mem clCreatePipe_testCreatePipe(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) packet_size;
+    (void) num_packets;
+    (void) num_calls;
+
     if (flags == 0) {
         flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
     }
@@ -2335,6 +2401,9 @@ static cl_int clGetPipeInfo_testCreatePipe(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) pipe;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(param_value);
     if (param_name == CL_PIPE_PACKET_SIZE) {
         *static_cast<cl_uint*>(param_value) = 16;
@@ -2389,7 +2458,13 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     void *param_value,
     size_t *param_value_size_ret,
     int num_calls)
-{    
+{
+    (void) kernel;
+    (void) device;
+    (void) input_value_size;
+    (void) param_value_size;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(input_value);
     TEST_ASSERT_NOT_NULL(param_value);
 
@@ -2449,6 +2524,9 @@ static cl_int clGetDeviceInfo_builtin(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) id;
+    (void) param_value_size;
+
     // Test to verify case where empty string is returned - so size is 0
     (void)num_calls;
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_BUILT_IN_KERNELS, param_name);
@@ -2482,8 +2560,10 @@ static cl_kernel clCloneKernel_simplecopy(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) k;
+    (void) num_calls;
+
     // Test to verify case where empty string is returned - so size is 0
-    (void)num_calls;
     if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_kernel(POOL_MAX);
@@ -2553,6 +2633,7 @@ static cl_int clSetProgramReleaseCallback_set(
     void *user_data,
     int num_calls)
 {
+    (void) user_data;
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_PTR(make_program(0), program);
@@ -2685,7 +2766,9 @@ static cl_int clGetPlatformInfo_extended_versioning(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
+
     switch (param_name) {
     case CL_PLATFORM_NUMERIC_VERSION:
     {
@@ -2763,7 +2846,9 @@ static cl_int clGetDeviceInfo_extended_versioning(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
+
     switch (param_name) {
     case CL_DEVICE_NUMERIC_VERSION:
     {
@@ -2946,7 +3031,9 @@ static cl_int clGetDeviceInfo_uuid_pci_bus_info(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
+
     switch (param_name) {
 #if defined(cl_khr_device_uuid)
     case CL_DEVICE_UUID_KHR:
