@@ -723,7 +723,7 @@ void testMoveAssignCommandQueueNonNull();
 void testMoveAssignCommandQueueNull();
 void testMoveConstructCommandQueueNonNull();
 void testMoveConstructCommandQueueNull();
-MAKE_MOVE_TESTS(CommandQueue, make_command_queue, clReleaseCommandQueue, commandQueuePool);
+MAKE_MOVE_TESTS(CommandQueue, make_command_queue, clReleaseCommandQueue, commandQueuePool)
 
 // Stub for clGetCommandQueueInfo that returns context 0
 static cl_int clGetCommandQueueInfo_testCommandQueueGetContext(
@@ -1122,7 +1122,7 @@ void testMoveAssignBufferNonNull();
 void testMoveAssignBufferNull();
 void testMoveConstructBufferNonNull();
 void testMoveConstructBufferNull();
-MAKE_MOVE_TESTS(Buffer, make_mem, clReleaseMemObject, bufferPool);
+MAKE_MOVE_TESTS(Buffer, make_mem, clReleaseMemObject, bufferPool)
 
 // Stub of clCreateBuffer for testBufferConstructorContextInterator
 // - return the first memory location
@@ -1412,7 +1412,7 @@ void testMoveAssignImage2DNonNull();
 void testMoveAssignImage2DNull();
 void testMoveConstructImage2DNonNull();
 void testMoveConstructImage2DNull();
-MAKE_MOVE_TESTS(Image2D, make_mem, clReleaseMemObject, image2DPool);
+MAKE_MOVE_TESTS(Image2D, make_mem, clReleaseMemObject, image2DPool)
 
 #ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
 static cl_mem clCreateImage2D_testCreateImage2D_1_1(
@@ -1530,7 +1530,7 @@ void testMoveAssignImage3DNonNull();
 void testMoveAssignImage3DNull();
 void testMoveConstructImage3DNonNull();
 void testMoveConstructImage3DNull();
-MAKE_MOVE_TESTS(Image3D, make_mem, clReleaseMemObject, image3DPool);
+MAKE_MOVE_TESTS(Image3D, make_mem, clReleaseMemObject, image3DPool)
 
 #ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
 static cl_mem clCreateImage3D_testCreateImage3D_1_1(
@@ -1653,7 +1653,7 @@ void testMoveAssignKernelNonNull();
 void testMoveAssignKernelNull();
 void testMoveConstructKernelNonNull();
 void testMoveConstructKernelNull();
-MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool);
+MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool)
 
 static cl_int scalarArg;
 static cl_int3 vectorArg;
@@ -3267,7 +3267,7 @@ void testMoveAssignCommandBufferKhrNonNull();
 void testMoveAssignCommandBufferKhrNull();
 void testMoveConstructCommandBufferKhrNonNull();
 void testMoveConstructCommandBufferKhrNull();
-MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool);
+MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
 #else
 void testMoveAssignCommandBufferKhrNonNull() {}
 void testMoveAssignCommandBufferKhrNull() {}
