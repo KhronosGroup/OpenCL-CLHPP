@@ -8665,7 +8665,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         const vector<Event>* events_wait_list = nullptr,
         Event *event = nullptr) const;
 
-    cl_int enqueueSignalSemaphore(
+    cl_int enqueueSignalSemaphores(
         const vector<Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr>& sema_payloads = {},
         const vector<Event>* events_wait_list = nullptr,
@@ -10378,7 +10378,7 @@ inline cl_int CommandQueue::enqueueWaitSemaphores(
     return err;
 }
 
-inline cl_int CommandQueue::enqueueSignalSemaphore(
+inline cl_int CommandQueue::enqueueSignalSemaphores(
     const vector<Semaphore> &sema_objects,
     const vector<cl_semaphore_payload_khr>& sema_payloads,
     const vector<Event>* events_wait_list,
