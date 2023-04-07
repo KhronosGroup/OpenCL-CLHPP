@@ -944,6 +944,11 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __RETAIN_SEMAPHORE_KHR_ERR                  CL_HPP_ERR_STR_(clRetainSemaphoreKHR)
 #define __RELEASE_SEMAPHORE_KHR_ERR                 CL_HPP_ERR_STR_(clReleaseSemaphoreKHR)
 #endif
+
+#ifdef cl_khr_external_semaphore
+#define __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR         CL_HPP_ERR_STR_(clGetSemaphoreHandleForTypeKHR)
+#endif // cl_khr_external_semaphore
+
 #if defined(cl_khr_command_buffer)
 #define __CREATE_COMMAND_BUFFER_KHR_ERR             CL_HPP_ERR_STR_(clCreateCommandBufferKHR)
 #define __GET_COMMAND_BUFFER_INFO_KHR_ERR           CL_HPP_ERR_STR_(clGetCommandBufferInfoKHR)
@@ -1034,6 +1039,11 @@ CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueWaitSemaphoresKHR         pfn_clEnqueu
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueSignalSemaphoresKHR       pfn_clEnqueueSignalSemaphoresKHR        = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetSemaphoreInfoKHR              pfn_clGetSemaphoreInfoKHR               = nullptr;
 #endif // cl_khr_semaphore
+
+#ifdef cl_khr_external_semaphore
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetSemaphoreHandleForTypeKHR);
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetSemaphoreHandleForTypeKHR     pfn_clGetSemaphoreHandleForTypeKHR      = nullptr;
+#endif // cl_khr_external_semaphore
 
 #if defined(cl_khr_command_buffer)
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateCommandBufferKHR);
@@ -1526,6 +1536,13 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>) \
     F(cl_platform_info, CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>)
 
+#define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(F) \
+    F(cl_platform_info, CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR,  cl::vector<cl_external_semaphore_handle_type_khr>) \
+    F(cl_platform_info, CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,  cl::vector<cl_external_semaphore_handle_type_khr>) \
+    F(cl_device_info, CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
+    F(cl_device_info, CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
+    F(cl_semaphore_info_khr, CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
+
 #define CL_HPP_PARAM_NAME_INFO_3_0_(F) \
     F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION, cl_version) \
     F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
@@ -1632,6 +1649,10 @@ CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #ifdef cl_khr_external_memory
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_memory
+
+#if defined(cl_khr_external_semaphore)
+CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_semaphore
 
 #if defined(cl_khr_device_uuid)
 using uuid_array = array<cl_uchar, CL_UUID_SIZE_KHR>;
@@ -10415,6 +10436,27 @@ namespace compatibility {
 } // namespace compatibility
 
 #ifdef cl_khr_semaphore
+
+#ifdef cl_khr_external_semaphore
+enum class ExtSemaphoreHandleTypeKhr : cl_external_semaphore_handle_type_khr
+{
+    TypeNone = 0,
+#ifdef cl_khr_external_semaphore_dx_fence
+    TypeD3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
+#endif
+#ifdef cl_khr_external_semaphore_opaque_fd
+    TypeOpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+#endif
+#ifdef cl_khr_external_semaphore_sync_fd
+    TypeSyncFd = CL_SEMAPHORE_HANDLE_SYNC_FD_KHR,
+#endif
+#ifdef cl_khr_external_semaphore_win32
+    TypeOpaqueWin32 = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR,
+    TypeOpaqueWin32Kmt = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR,
+#endif // cl_khr_external_semaphore_win32
+};
+#endif // cl_khr_external_semaphore
+
 class Semaphore : public detail::Wrapper<cl_semaphore_khr>
 {
 public:
@@ -10478,6 +10520,28 @@ public:
         return param;      
     }
 
+#ifdef cl_khr_external_semaphore
+    cl_int getSemaphoreHandleForTypeKHR (Device device,
+        ExtSemaphoreHandleTypeKhr handle_type,
+        size_type handle_size,
+        void* handle_ptr,
+        size_type* handle_size_ret)
+    {
+        if (pfn_clGetSemaphoreHandleForTypeKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                    __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+        }
+
+        return detail::errHandler(pfn_clGetSemaphoreHandleForTypeKHR(object_,
+            device(),
+            static_cast<cl_external_semaphore_handle_type_khr>(handle_type),
+            handle_size,
+            handle_ptr,
+            handle_size_ret),
+             __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+    }
+#endif // cl_khr_external_semaphore
+
     cl_int retain()
     { 
         if (pfn_clRetainSemaphoreKHR == nullptr) {
@@ -10510,6 +10574,10 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueWaitSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueSignalSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetSemaphoreInfoKHR);
+#ifdef cl_khr_external_semaphore
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetSemaphoreHandleForTypeKHR);
+#endif // cl_khr_external_semaphore
+
 #else
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSemaphoreWithPropertiesKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clReleaseSemaphoreKHR);
@@ -10517,12 +10585,19 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueWaitSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueSignalSemaphoresKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetSemaphoreInfoKHR);
+#ifdef cl_khr_external_semaphore
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetSemaphoreHandleForTypeKHR);
+#endif // cl_khr_external_semaphore
+
 #endif
         if ((pfn_clCreateSemaphoreWithPropertiesKHR == nullptr) &&
             (pfn_clReleaseSemaphoreKHR              == nullptr) &&
             (pfn_clRetainSemaphoreKHR               == nullptr) &&
             (pfn_clEnqueueWaitSemaphoresKHR         == nullptr) &&
             (pfn_clEnqueueSignalSemaphoresKHR       == nullptr) &&
+#ifdef cl_khr_external_semaphore
+            (pfn_clGetSemaphoreHandleForTypeKHR     == nullptr) &&
+#endif // cl_khr_external_semaphore
             (pfn_clGetSemaphoreInfoKHR              == nullptr))
         {
             detail::errHandler(CL_INVALID_VALUE, __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR);
@@ -11266,6 +11341,9 @@ public:
 #undef __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR
 #undef __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR
 #undef __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR
+#undef __RETAIN_SEMAPHORE_KHR_ERR
+#undef __RELEASE_SEMAPHORE_KHR_ERR
+#undef __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR
 
 #endif //CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 
