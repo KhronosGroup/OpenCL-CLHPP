@@ -90,7 +90,8 @@ static cl_int clGetCommandQueueInfo_context(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
 
 
     TEST_ASSERT_EQUAL_HEX(CL_QUEUE_CONTEXT, param_name);
@@ -114,6 +115,7 @@ static cl_int clGetDeviceInfo_platform(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) id;
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_PLATFORM, param_name);
@@ -136,6 +138,7 @@ static cl_int clGetContextInfo_device(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) id;
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_HEX(CL_CONTEXT_DEVICES, param_name);
@@ -227,6 +230,7 @@ static cl_int clGetPlatformInfo_version_2_0(
         param_value_size_ret, "OpenCL 2.0 Mock");
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 /**
  * A stub for clGetPlatformInfo that will only support querying
  * CL_PLATFORM_VERSION, and will return version 3.0.
@@ -244,6 +248,7 @@ static cl_int clGetPlatformInfo_version_3_0(
         id, param_name, param_value_size, param_value,
         param_value_size_ret, "OpenCL 3.0 Mock");
 }
+#endif
 
 /* Simulated reference counts. The table points to memory held by the caller.
  * This makes things simpler in the common case of only one object to be
@@ -604,6 +609,10 @@ static cl_context clCreateContextFromType_testContextFromType(
     cl_int  *errcode_ret,
     int num_calls)
 {
+    (void) pfn_notify;
+    (void) user_data;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(CL_DEVICE_TYPE_GPU, device_type);
 #if !defined(__APPLE__) && !defined(__MACOS)
     TEST_ASSERT_NOT_NULL(properties);
@@ -663,9 +672,13 @@ static cl_context clCreateContext_testContextNonNullProperties(
     cl_int  *errcode_ret,
     int num_calls)
 {
+    (void) pfn_notify;
+    (void) user_data;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_GREATER_THAN(0, num_devices);
-    for (int i = 0; i < num_devices; i++) {
+    for (int i = 0; i < (int)num_devices; i++) {
         TEST_ASSERT_EQUAL(make_device_id(i), devices[i]);
     }
     if (errcode_ret != nullptr)
@@ -712,7 +725,7 @@ void testMoveAssignCommandQueueNonNull();
 void testMoveAssignCommandQueueNull();
 void testMoveConstructCommandQueueNonNull();
 void testMoveConstructCommandQueueNull();
-MAKE_MOVE_TESTS(CommandQueue, make_command_queue, clReleaseCommandQueue, commandQueuePool);
+MAKE_MOVE_TESTS(CommandQueue, make_command_queue, clReleaseCommandQueue, commandQueuePool)
 
 // Stub for clGetCommandQueueInfo that returns context 0
 static cl_int clGetCommandQueueInfo_testCommandQueueGetContext(
@@ -800,6 +813,7 @@ void testCommandQueueGetDevice1_2()
     device() = nullptr;
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION < 200
 // stub for clCreateCommandQueue - returns queue zero
 static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContext(
     cl_context context,
@@ -816,8 +830,7 @@ static cl_command_queue clCreateCommandQueue_testCommandQueueFromSpecifiedContex
         *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
-
-#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#else
 // stub for clCreateCommandQueueWithProperties - returns queue zero
 static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromSpecifiedContext(
     cl_context context,
@@ -835,7 +848,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueFromS
         *errcode_ret = CL_SUCCESS;
     return make_command_queue(0);
 }
-#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION < 200
 
 void testCommandQueueFromSpecifiedContext()
 {
@@ -1074,6 +1087,9 @@ static cl_int clGetDeviceIDs_PlatformWithZeroDevices(
     cl_uint  *num_devices,
     int num_calls)
 {
+    (void) num_entries;
+    (void) devices;
+
     if (num_calls == 0)
     {
         TEST_ASSERT_EQUAL_PTR(make_platform_id(0), platform);
@@ -1108,7 +1124,7 @@ void testMoveAssignBufferNonNull();
 void testMoveAssignBufferNull();
 void testMoveConstructBufferNonNull();
 void testMoveConstructBufferNull();
-MAKE_MOVE_TESTS(Buffer, make_mem, clReleaseMemObject, bufferPool);
+MAKE_MOVE_TESTS(Buffer, make_mem, clReleaseMemObject, bufferPool)
 
 // Stub of clCreateBuffer for testBufferConstructorContextInterator
 // - return the first memory location
@@ -1121,6 +1137,8 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_BITS(CL_MEM_COPY_HOST_PTR, flags, !CL_MEM_COPY_HOST_PTR);
     TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
@@ -1346,6 +1364,11 @@ cl_mem clCreateImage_image1dbuffer(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) host_ptr;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_EQUAL_HEX(CL_MEM_OBJECT_IMAGE1D_BUFFER, image_desc->image_type);
@@ -1391,7 +1414,7 @@ void testMoveAssignImage2DNonNull();
 void testMoveAssignImage2DNull();
 void testMoveConstructImage2DNonNull();
 void testMoveConstructImage2DNull();
-MAKE_MOVE_TESTS(Image2D, make_mem, clReleaseMemObject, image2DPool);
+MAKE_MOVE_TESTS(Image2D, make_mem, clReleaseMemObject, image2DPool)
 
 #ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
 static cl_mem clCreateImage2D_testCreateImage2D_1_1(
@@ -1509,7 +1532,7 @@ void testMoveAssignImage3DNonNull();
 void testMoveAssignImage3DNull();
 void testMoveConstructImage3DNonNull();
 void testMoveConstructImage3DNull();
-MAKE_MOVE_TESTS(Image3D, make_mem, clReleaseMemObject, image3DPool);
+MAKE_MOVE_TESTS(Image3D, make_mem, clReleaseMemObject, image3DPool)
 
 #ifdef CL_USE_DEPRECATED_OPENCL_1_1_APIS
 static cl_mem clCreateImage3D_testCreateImage3D_1_1(
@@ -1632,7 +1655,7 @@ void testMoveAssignKernelNonNull();
 void testMoveAssignKernelNull();
 void testMoveConstructKernelNonNull();
 void testMoveConstructKernelNull();
-MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool);
+MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool)
 
 static cl_int scalarArg;
 static cl_int3 vectorArg;
@@ -1705,6 +1728,11 @@ static void * clEnqueueMapBuffer_testCopyHostToBuffer(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) offset;
+    (void) num_events_in_wait_list;
+    (void) event_wait_list;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer);
     TEST_ASSERT_EQUAL(CL_TRUE, blocking_map);
@@ -1733,6 +1761,10 @@ static cl_int clEnqueueUnmapMemObject_testCopyHostToBuffer(
     cl_event  *event,
     int num_calls)
 {
+    (void) num_events_in_wait_list;
+    (void) event_wait_list;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), memobj);
     TEST_ASSERT_EQUAL_PTR(some_host_memory, mapped_ptr);
@@ -1745,6 +1777,8 @@ static cl_int clWaitForEvents_testCopyHostToBuffer(
     const cl_event *event_list,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(event_list);
     TEST_ASSERT_EQUAL(1, num_events);
     return CL_SUCCESS;
@@ -1754,6 +1788,8 @@ static cl_int clReleaseEvent_testCopyHostToBuffer(
     cl_event event,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(event);
     return CL_SUCCESS;
 }
@@ -1806,6 +1842,9 @@ static cl_int clGetDeviceInfo_testGetBuildInfo(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) device;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(param_name, CL_DEVICE_PLATFORM);
     TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_platform_id));
     TEST_ASSERT_NOT_EQUAL(param_value, nullptr);
@@ -1825,6 +1864,10 @@ static  cl_int clGetProgramBuildInfo_testGetBuildInfo(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) program;
+    (void) device;
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_BUILD_LOG);
 
     const char returnString[] = 
@@ -1874,6 +1917,8 @@ static cl_int clBuildProgram_testBuildProgram(
     void *               user_data,
     int num_calls)
 {
+    (void) num_calls;
+
     TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_NOT_EQUAL(num_devices, 0);
     TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
@@ -1892,7 +1937,6 @@ void testBuildProgramSingleDevice()
 {
     cl_program program = make_program(0);
     cl_device_id device_id = make_device_id(0);
-    int sc = 0;
 
     // Creating a device queries the platform version:
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
@@ -1928,7 +1972,11 @@ static cl_int clGetSupportedImageFormats_testGetSupportedImageFormats(
     cl_image_format *image_formats,
     cl_uint *num_image_formats,
     int num_calls)
-{        
+{
+    (void) context;
+    (void) flags;
+    (void) image_type;
+
     // Catch failure case that causes error in bugzilla 13355:
     // returns CL_INVALID_VALUE if flags or image_type are not valid, 
     // or if num_entries is 0 and image_formats is not nullptr.
@@ -1997,6 +2045,7 @@ void testGetContextInfoDevices()
     // TODO
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     cl_context context,
     cl_mem_flags flags,
@@ -2006,6 +2055,10 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_NULL(host_ptr);
@@ -2017,6 +2070,7 @@ static cl_mem clCreateImage_testCreateImage2DFromBuffer_2_0(
     }
     return image_desc->buffer;
 }
+#endif
 
 void testCreateImage2DFromBuffer_2_0()
 {
@@ -2045,6 +2099,7 @@ void testCreateImage2DFromBuffer_2_0()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreateImage_testCreateImage2D_2_0(
     cl_context context,
     cl_mem_flags flags,
@@ -2077,7 +2132,9 @@ static cl_mem clCreateImage_testCreateImage2D_2_0(
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreateImage_testCreateImage2DFromImage_2_0(
     cl_context context,
     cl_mem_flags flags,
@@ -2087,6 +2144,10 @@ static cl_mem clCreateImage_testCreateImage2DFromImage_2_0(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(image_format);
     TEST_ASSERT_NOT_NULL(image_desc);
     TEST_ASSERT_NULL(host_ptr);
@@ -2098,7 +2159,9 @@ static cl_mem clCreateImage_testCreateImage2DFromImage_2_0(
     }
     return image_desc->buffer;
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_int clGetImageInfo_testCreateImage2DFromImage_2_0(
     cl_mem image,
     cl_image_info param_name,
@@ -2107,9 +2170,16 @@ static cl_int clGetImageInfo_testCreateImage2DFromImage_2_0(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) image;
+    (void) param_name;
+    (void) param_value_size;
+    (void) param_value;
+    (void) param_value_size_ret;
+
     TEST_ASSERT_INT_WITHIN(6, 0, num_calls);
     return CL_SUCCESS;
 }
+#endif
 
 void testCreateImage2DFromImage_2_0()
 {
@@ -2241,6 +2311,7 @@ void testSetDefaultDevice()
     TEST_ASSERT_EQUAL(d(), d3());
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevice(
     cl_context context,
     cl_device_id device,
@@ -2277,6 +2348,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
         return default_;
     }
 }
+#endif
 
 void testCreateDeviceCommandQueue()
 {
@@ -2307,6 +2379,7 @@ void testCreateDeviceCommandQueue()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_mem clCreatePipe_testCreatePipe(
     cl_context context,
     cl_mem_flags flags,
@@ -2316,6 +2389,11 @@ static cl_mem clCreatePipe_testCreatePipe(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) context;
+    (void) packet_size;
+    (void) num_packets;
+    (void) num_calls;
+
     if (flags == 0) {
         flags = CL_MEM_READ_WRITE | CL_MEM_HOST_NO_ACCESS;
     }
@@ -2326,7 +2404,9 @@ static cl_mem clCreatePipe_testCreatePipe(
         *errcode_ret = CL_SUCCESS;
     return make_mem(0);
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 static cl_int clGetPipeInfo_testCreatePipe(
     cl_mem pipe,
     cl_pipe_info param_name,
@@ -2335,6 +2415,9 @@ static cl_int clGetPipeInfo_testCreatePipe(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) pipe;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(param_value);
     if (param_name == CL_PIPE_PACKET_SIZE) {
         *static_cast<cl_uint*>(param_value) = 16;
@@ -2355,6 +2438,7 @@ static cl_int clGetPipeInfo_testCreatePipe(
         return CL_INVALID_VALUE;
     }
 }
+#endif
 
 void testCreatePipe()
 {    
@@ -2380,6 +2464,7 @@ void testCreatePipe()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     cl_device_id device,
     cl_kernel_sub_group_info param_name,
@@ -2389,7 +2474,13 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     void *param_value,
     size_t *param_value_size_ret,
     int num_calls)
-{    
+{
+    (void) kernel;
+    (void) device;
+    (void) input_value_size;
+    (void) param_value_size;
+    (void) num_calls;
+
     TEST_ASSERT_NOT_NULL(input_value);
     TEST_ASSERT_NOT_NULL(param_value);
 
@@ -2412,6 +2503,7 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
         return CL_INVALID_OPERATION;
     }
 }
+#endif
 
 void testSubGroups()
 {
@@ -2449,6 +2541,9 @@ static cl_int clGetDeviceInfo_builtin(
     size_t *param_value_size_ret,
     int num_calls)
 {
+    (void) id;
+    (void) param_value_size;
+
     // Test to verify case where empty string is returned - so size is 0
     (void)num_calls;
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_BUILT_IN_KERNELS, param_name);
@@ -2474,6 +2569,7 @@ void testBuiltInKernels()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
 /**
  * Stub implementation of clCloneKernel that returns a new kernel object
  */
@@ -2482,12 +2578,15 @@ static cl_kernel clCloneKernel_simplecopy(
     cl_int *errcode_ret,
     int num_calls)
 {
+    (void) k;
+    (void) num_calls;
+
     // Test to verify case where empty string is returned - so size is 0
-    (void)num_calls;
     if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
     return make_kernel(POOL_MAX);
 }
+#endif
 
 void testCloneKernel()
 {
@@ -2541,18 +2640,22 @@ void testCleanupHeaderState()
 
 // OpenCL 2.2 APIs:
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
 static void CL_CALLBACK test_program_release_callback(
     cl_program,
     void*)
 {
 }
+#endif
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
 static cl_int clSetProgramReleaseCallback_set(
     cl_program program,
     void (CL_CALLBACK * pfn_notify)(cl_program program, void * user_data),
     void *user_data,
     int num_calls)
 {
+    (void) user_data;
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_PTR(make_program(0), program);
@@ -2560,6 +2663,7 @@ static cl_int clSetProgramReleaseCallback_set(
 
     return CL_SUCCESS;
 }
+#endif
 
 void testSetProgramReleaseCallback()
 {
@@ -2591,6 +2695,7 @@ void testSetProgramSpecializationConstantScalar()
 #endif
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 220
 /// Stub for testing boolean specialization constants
 static cl_int clSetProgramSpecializationConstant_testBool(
     cl_program program,
@@ -2616,6 +2721,7 @@ static cl_int clSetProgramSpecializationConstant_testBool(
     }
     return CL_SUCCESS;
 }
+#endif
 
 void testSetProgramSpecializationConstantBool()
 {
@@ -2641,7 +2747,7 @@ void testSetProgramSpecializationConstantPointer()
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 220
     cl_program program = make_program(0);
-    int scArray[5];
+    int scArray[5] = {};
 
     clSetProgramSpecializationConstant_ExpectAndReturn(program, 0, sizeof(scArray), &scArray, CL_SUCCESS);
     clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
@@ -2685,7 +2791,9 @@ static cl_int clGetPlatformInfo_extended_versioning(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
+
     switch (param_name) {
     case CL_PLATFORM_NUMERIC_VERSION:
     {
@@ -2763,7 +2871,9 @@ static cl_int clGetDeviceInfo_extended_versioning(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
+
     switch (param_name) {
     case CL_DEVICE_NUMERIC_VERSION:
     {
@@ -2946,7 +3056,9 @@ static cl_int clGetDeviceInfo_uuid_pci_bus_info(
     size_t *param_value_size_ret,
     int num_calls)
 {
-    (void)num_calls;
+    (void) id;
+    (void) num_calls;
+
     switch (param_name) {
 #if defined(cl_khr_device_uuid)
     case CL_DEVICE_UUID_KHR:
@@ -3108,7 +3220,7 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     TEST_ASSERT_EQUAL(device_list, nullptr);
     TEST_ASSERT_EQUAL(options, nullptr);
     TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
-    for (int i=0; i<num_input_programs; i++)
+    for (int i=0; i<(int)num_input_programs; i++)
         TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
     TEST_ASSERT_EQUAL(pfn_notify, nullptr);
     TEST_ASSERT_EQUAL(user_data, nullptr);
@@ -3149,7 +3261,7 @@ void testLinkProgramWithVectorProgramInput()
     cl_int errcode;
     VECTOR_CLASS<cl::Program> prog_vec;
     std::array<int, ARRAY_SIZE(programPool)> refcount;
-    for (int i=0;i<ARRAY_SIZE(programPool);i++) {
+    for (int i=0;i<(int)ARRAY_SIZE(programPool);i++) {
         prog_vec.push_back(cl::Program(programPool[i]()));
         refcount[i] = 1;
     }
@@ -3181,7 +3293,7 @@ void testMoveAssignCommandBufferKhrNonNull();
 void testMoveAssignCommandBufferKhrNull();
 void testMoveConstructCommandBufferKhrNonNull();
 void testMoveConstructCommandBufferKhrNull();
-MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool);
+MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
 #else
 void testMoveAssignCommandBufferKhrNonNull() {}
 void testMoveAssignCommandBufferKhrNull() {}
