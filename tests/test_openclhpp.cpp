@@ -257,13 +257,13 @@ static cl_int clGetPlatformInfo_version_3_0(
 class RefcountTable
 {
 private:
-    int n; // number of objects
+    size_t n; // number of objects
     void * const *objects; // object IDs
     int *refcounts;        // current refcounts
 
-    int find(void *object)
+    size_t find(void *object)
     {
-        int idx = 0;
+        size_t idx = 0;
         while (idx < n && objects[idx] != object)
             idx++;
         TEST_ASSERT(idx < n);
@@ -274,7 +274,7 @@ private:
 public:
     RefcountTable() : n(0), objects(nullptr), refcounts(nullptr) {}
 
-    void init(int n, void * const *objects, int *refcounts)
+    void init(size_t n, void * const *objects, int *refcounts)
     {
         this->n = n;
         this->objects = objects;
@@ -288,14 +288,14 @@ public:
 
     cl_int retain(void *object)
     {
-        int idx = find(object);
+        size_t idx = find(object);
         ++refcounts[idx];
         return CL_SUCCESS;
     }
 
     cl_int release(void *object)
     {
-        int idx = find(object);
+        size_t idx = find(object);
         --refcounts[idx];
         return CL_SUCCESS;
     }
@@ -320,7 +320,7 @@ public:
         (void) num_calls; \
         return table.release(object); \
     } \
-    static void prepare_ ## table(int n, cl_type const *objects, int *refcounts) \
+    static void prepare_ ## table(size_t n, cl_type const *objects, int *refcounts) \
     { \
         table.init(n, (void * const *) objects, refcounts); \
         retainfunc ## _StubWithCallback(retainfunc ## _refcount); \
