@@ -521,6 +521,7 @@ void testContextGetDevices1_2(void)
     devices[1]() = nullptr;
 }
 
+#if !defined(__APPLE__) && !defined(__MACOS)
 // This is used to get a list of all platforms, so expect two calls
 // First, return to say we have two platforms
 // Then return the two platform id_s
@@ -551,7 +552,9 @@ static cl_int clGetPlatformIDs_testContextFromType(
         return CL_INVALID_VALUE;
     }
 }
+#endif
 
+#if !defined(__APPLE__) && !defined(__MACOS)
 // Expect three calls to this
 // 1. Platform 1, we have no GPUs
 // 2. Platform 2, we have two GPUs
@@ -595,6 +598,7 @@ static cl_int clGetDeviceIDs_testContextFromType(
         return CL_INVALID_VALUE;
     }
 }
+#endif
 
 // Stub for clCreateContextFromType
 // - expect platform 1 with GPUs and non-null properties
@@ -618,6 +622,8 @@ static cl_context clCreateContextFromType_testContextFromType(
     TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_EQUAL(CL_CONTEXT_PLATFORM, properties[0]);
     TEST_ASSERT_EQUAL(make_platform_id(1), properties[1]);
+#else
+    (void) properties;
 #endif
     if (errcode_ret)
         *errcode_ret = CL_SUCCESS;
