@@ -1567,7 +1567,7 @@ static cl_mem clCreateImage3D_testCreateImage3D_1_1(
     TEST_ASSERT_EQUAL(16, image_depth);
     TEST_ASSERT_EQUAL(256, image_row_pitch);
     TEST_ASSERT_EQUAL(65536, image_slice_pitch);
-    TEST_ASSERT_EQUAL_PTR((void *) 0xdeadbeef, host_ptr);
+    TEST_ASSERT_EQUAL_PTR((void *)(size_t)0xdeadbeef, host_ptr);
 
     if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
@@ -1588,7 +1588,7 @@ void testCreateImage3D_1_1(void)
     context() = make_context(0);
     cl::Image3D image(
         context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 16, 256, 65536, (void *) 0xdeadbeef, &err);
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 16, 256, 65536, (void *)(size_t)0xdeadbeef, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
@@ -1626,7 +1626,7 @@ static cl_mem clCreateImage_testCreateImage3D_1_2(
     TEST_ASSERT_EQUAL(0, image_desc->num_samples);
     TEST_ASSERT_NULL(image_desc->buffer);
 
-    TEST_ASSERT_EQUAL_PTR((void *) 0xdeadbeef, host_ptr);
+    TEST_ASSERT_EQUAL_PTR((void *)(size_t)0xdeadbeef, host_ptr);
 
     if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
@@ -1645,7 +1645,7 @@ void testCreateImage3D_1_2(void)
     context() = make_context(0);
     cl::Image3D image(
         context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
-        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 16, 256, 65536, (void *) 0xdeadbeef, &err);
+        cl::ImageFormat(CL_R, CL_FLOAT), 64, 32, 16, 256, 65536, (void *)(size_t)0xdeadbeef, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
