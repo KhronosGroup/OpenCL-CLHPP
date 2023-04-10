@@ -5,6 +5,7 @@
   :enforce_strict_ordering: :true
   :c_calling_conventions: 
     - CL_API_CALL
+    - CL_CALLBACK
   :plugins:
     - :callback
   :treat_as:
