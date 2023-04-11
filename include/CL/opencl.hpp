@@ -1042,8 +1042,6 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyImageToBufferKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandFillBufferKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandFillImageKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandNDRangeKernelKHR);
-CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clUpdateMutableCommandsKHR);
-CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetMutableCommandInfoKHR);
 
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateCommandBufferKHR pfn_clCreateCommandBufferKHR               = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clFinalizeCommandBufferKHR pfn_clFinalizeCommandBufferKHR           = nullptr;
@@ -1060,10 +1058,15 @@ CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandCopyImageToBufferKHR pfn_clCommandCopy
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandFillBufferKHR pfn_clCommandFillBufferKHR                   = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandFillImageKHR pfn_clCommandFillImageKHR                     = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandNDRangeKernelKHR pfn_clCommandNDRangeKernelKHR             = nullptr;
-CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clUpdateMutableCommandsKHR pfn_clUpdateMutableCommandsKHR           = nullptr;
-CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetMutableCommandInfoKHR pfn_clGetMutableCommandInfoKHR           = nullptr;
 #endif /* cl_khr_command_buffer */
 
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clUpdateMutableCommandsKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetMutableCommandInfoKHR);
+
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clUpdateMutableCommandsKHR pfn_clUpdateMutableCommandsKHR           = nullptr;
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetMutableCommandInfoKHR pfn_clGetMutableCommandInfoKHR           = nullptr;
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 
 namespace detail {
 
@@ -1742,6 +1745,9 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_NUM_Q
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_STATE_KHR, cl_command_buffer_state_khr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR, cl::vector<cl_command_buffer_properties_khr>)
+#endif /* cl_khr_command_buffer */
+
+#if defined(cl_khr_command_buffer_mutable_dispatch)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBufferKhr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
@@ -1751,7 +1757,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_DI
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR, cl::vector<size_type>)
-#endif
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 
 // Convenience functions
 
@@ -10828,6 +10834,7 @@ public:
         return error;
     }
 
+#if defined(cl_khr_command_buffer_mutable_dispatch)
     cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
     {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
@@ -10837,6 +10844,7 @@ public:
         return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
                         __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 
 private:
     static std::once_flag ext_init_;
@@ -10860,8 +10868,10 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandFillBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandFillImageKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandNDRangeKernelKHR);
+#if defined(cl_khr_command_buffer_mutable_dispatch)
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetMutableCommandInfoKHR);
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 110
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateCommandBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clFinalizeCommandBufferKHR);
@@ -10878,8 +10888,10 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCommandFillBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCommandFillImageKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCommandNDRangeKernelKHR);
+#if defined(cl_khr_command_buffer_mutable_dispatch)
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetMutableCommandInfoKHR);
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 #endif
         if ((pfn_clCreateCommandBufferKHR        == nullptr) &&
             (pfn_clFinalizeCommandBufferKHR      == nullptr) &&
@@ -10895,9 +10907,12 @@ private:
             (pfn_clCommandCopyImageToBufferKHR   == nullptr) &&
             (pfn_clCommandFillBufferKHR          == nullptr) &&
             (pfn_clCommandFillImageKHR           == nullptr) &&
-            (pfn_clCommandNDRangeKernelKHR       == nullptr) &&
-            (pfn_clUpdateMutableCommandsKHR      == nullptr) &&
-            (pfn_clGetMutableCommandInfoKHR      == nullptr))
+            (pfn_clCommandNDRangeKernelKHR       == nullptr)
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+            && (pfn_clUpdateMutableCommandsKHR      == nullptr)
+            && (pfn_clGetMutableCommandInfoKHR      == nullptr)
+#endif /* cl_khr_command_buffer_mutable_dispatch */
+            )
         {
             detail::errHandler(CL_INVALID_VALUE, __CREATE_COMMAND_BUFFER_KHR_ERR);
         }
@@ -10906,6 +10921,7 @@ private:
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandBufferKhr::ext_init_;
 
+#if defined(cl_khr_command_buffer_mutable_dispatch)
 /*! \class MutableCommandKhr
  * \brief MutableCommandKhr interface for cl_mutable_command_khr.
  */
@@ -10949,6 +10965,8 @@ public:
         return param;
     }
 }; // MutableCommandKhr
+#endif /* cl_khr_command_buffer_mutable_dispatch */
+
 #endif // cl_khr_command_buffer
 //----------------------------------------------------------------------------------------------------------------------
 
