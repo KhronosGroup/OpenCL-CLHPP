@@ -733,7 +733,7 @@ static cl_context clCreateContext_testContextNonNullProperties(
 
     TEST_ASSERT_NOT_NULL(properties);
     TEST_ASSERT_GREATER_THAN(0, num_devices);
-    for (int i = 0; i < (int)num_devices; i++) {
+    for (unsigned int i = 0; i < num_devices; i++) {
         TEST_ASSERT_EQUAL(make_device_id(i), devices[i]);
     }
     if (errcode_ret != nullptr)
@@ -3341,7 +3341,7 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     TEST_ASSERT_EQUAL(device_list, nullptr);
     TEST_ASSERT_EQUAL(options, nullptr);
     TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
-    for (int i=0; i<(int)num_input_programs; i++)
+    for (unsigned int i=0; i<num_input_programs; i++)
         TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
     TEST_ASSERT_EQUAL(pfn_notify, nullptr);
     TEST_ASSERT_EQUAL(user_data, nullptr);
@@ -3392,7 +3392,7 @@ void testLinkProgramWithVectorProgramInput(void)
 
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
     clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
-    prepare_programRefcounts(prog_vec.size(), reinterpret_cast<cl_program *>(prog_vec.data()), refcount.data());
+    prepare_programRefcounts(static_cast<int>(prog_vec.size()), reinterpret_cast<cl_program *>(prog_vec.data()), refcount.data());
 
     clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
     clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
@@ -3489,7 +3489,7 @@ void testCommandBufferInfoKHRCommandQueues(void)
     }
 
     clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
-    prepare_commandQueueRefcounts(expected_queue_vec.size(), expected_queue_vec.data(), refcount.data());
+    prepare_commandQueueRefcounts(static_cast<int>(expected_queue_vec.size()), expected_queue_vec.data(), refcount.data());
 
     VECTOR_CLASS<cl::CommandQueue> command_queues = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
     TEST_ASSERT_EQUAL(3, command_queues.size());
