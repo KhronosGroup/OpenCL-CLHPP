@@ -332,6 +332,7 @@ MAKE_REFCOUNT_STUBS(cl_command_queue, clRetainCommandQueue, clReleaseCommandQueu
 MAKE_REFCOUNT_STUBS(cl_device_id, clRetainDevice, clReleaseDevice, deviceRefcounts)
 MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcounts)
 MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
+// Deactivated because unused for now.
 #if defined(cl_khr_command_buffer) && 0
 MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCommandBufferKHR, commandBufferKhrRefcounts)
 #endif
