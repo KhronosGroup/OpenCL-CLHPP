@@ -3419,16 +3419,16 @@ void testCommandBufferInfoKHRCommandQueues()
  * Tests for cl::Semaphore
  ****************************************************************************/
 #if defined(cl_khr_semaphore)
-void testMoveAssignSemaphoreNonNull();
-void testMoveAssignSemaphoreNull();
-void testMoveConstructSemaphoreNonNull();
-void testMoveConstructSemaphoreNull();
+void testMoveAssignSemaphoreNonNull(void);
+void testMoveAssignSemaphoreNull(void);
+void testMoveConstructSemaphoreNonNull(void);
+void testMoveConstructSemaphoreNull(void);
 MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
 #else
-void testMoveAssignSemaphoreNonNull() {}
-void testMoveAssignSemaphoreNull() {}
-void testMoveConstructSemaphoreNonNull() {}
-void testMoveConstructSemaphoreNull() {}
+void testMoveAssignSemaphoreNonNull(void) {}
+void testMoveAssignSemaphoreNull(void) {}
+void testMoveConstructSemaphoreNonNull(void) {}
+void testMoveConstructSemaphoreNull(void) {}
 #endif
 
 static cl_int clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores(
@@ -3458,7 +3458,7 @@ static cl_int clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores(
     return CL_SUCCESS;
 }
 
-void testEnqueueWaitSemaphores()
+void testEnqueueWaitSemaphores(void)
 {
 #if defined(cl_khr_semaphore)
     clEnqueueWaitSemaphoresKHR_StubWithCallback(clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores);
@@ -3505,7 +3505,7 @@ static cl_int clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores(
     return CL_SUCCESS;
 }
 
-void testEnqueueSignalSemaphores()
+void testEnqueueSignalSemaphores(void)
 {
 #if defined(cl_khr_semaphore)
     clEnqueueSignalSemaphoresKHR_StubWithCallback(clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores);
@@ -3540,7 +3540,7 @@ cl_semaphore_khr clCreateSemaphoreWithProperties_testSemaphoreWithProperties(
     return make_semaphore_khr(1);
 }
 
-void testSemaphoreWithProperties()
+void testSemaphoreWithProperties(void)
 {
 #if defined(cl_khr_semaphore)
     cl_device_id expected_device = make_device_id(0);
@@ -3548,7 +3548,7 @@ void testSemaphoreWithProperties()
 
     clGetContextInfo_StubWithCallback(clGetContextInfo_device);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
     prepare_deviceRefcounts(1, &expected_device, &device_refcount);
 
     clCreateSemaphoreWithPropertiesKHR_StubWithCallback(clCreateSemaphoreWithProperties_testSemaphoreWithProperties);
@@ -3584,7 +3584,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetContext(
     return CL_SUCCESS;
 }
 
-void testSemaphoreGetInfoContext()
+void testSemaphoreGetInfoContext(void)
 {
 #if defined(cl_khr_semaphore)
     cl_context expected_context = make_context(0);
@@ -3620,7 +3620,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount(
     return CL_SUCCESS;
 }
 
-void testSemaphoreGetInfoReferenceCount()
+void testSemaphoreGetInfoReferenceCount(void)
 {
 #if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount);
@@ -3658,7 +3658,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetProperties(
     return CL_SUCCESS;
 }
 
-void testSemaphoreGetInfoProperties()
+void testSemaphoreGetInfoProperties(void)
 {
 #if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetProperties);
@@ -3693,7 +3693,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetType(
     return CL_SUCCESS;
 }
 
-void testSemaphoreGetInfoType()
+void testSemaphoreGetInfoType(void)
 {
 #if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetType);
@@ -3726,7 +3726,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetPayload(
     return CL_SUCCESS;
 }
 
-void testSemaphoreGetInfoPayload()
+void testSemaphoreGetInfoPayload(void)
 {
 #if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetPayload);
@@ -3763,14 +3763,14 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     return CL_SUCCESS;
 }
 
-void testSemaphoreGetInfoDevicesList()
+void testSemaphoreGetInfoDevicesList(void)
 {
 #if defined(cl_khr_semaphore)
     cl_device_id expected_devices[] = {make_device_id(0), make_device_id(1)};
     int device_refcounts[] = {1, 1};
 
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
     prepare_deviceRefcounts(ARRAY_SIZE(expected_devices), expected_devices, device_refcounts);
 
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetDevices);
@@ -3786,7 +3786,7 @@ void testSemaphoreGetInfoDevicesList()
 #endif
 }
 
-void testSemaphoreRetain()
+void testSemaphoreRetain(void)
 {
 #if defined(cl_khr_semaphore)
     clRetainSemaphoreKHR_ExpectAndReturn(semaphorePool[0](), CL_SUCCESS);
@@ -3796,7 +3796,7 @@ void testSemaphoreRetain()
 #endif
 }
 
-void testSemaphoreRelease()
+void testSemaphoreRelease(void)
 {
 #if defined(cl_khr_semaphore)
     clReleaseSemaphoreKHR_ExpectAndReturn(semaphorePool[0](), CL_SUCCESS);
