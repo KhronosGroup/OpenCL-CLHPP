@@ -75,9 +75,9 @@ int main(void)
     std::vector<int> inputA(numElements, 1);
     std::vector<int> inputB(numElements, 2);
     std::vector<int> output(numElements, 0xdeadbeef);
-    cl::Buffer inputABuffer(begin(inputA), end(inputA), true);
-    cl::Buffer inputBBuffer(begin(inputB), end(inputB), true);
-    cl::Buffer outputBuffer(begin(output), end(output), false);
+    cl::Buffer inputABuffer(inputA.begin(), inputA.end(), true);
+    cl::Buffer inputBBuffer(inputB.begin(), inputB.end(), true);
+    cl::Buffer outputBuffer(output.begin(), output.end(), false);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
     // Unfortunately, there is no way to check for a default or know if a kernel needs one
     // so the user has to create one
@@ -112,7 +112,7 @@ int main(void)
     cl::size_t<3> WGSizeResult = vectorAddKernel.getKernel().getWorkGroupInfo<CL_KERNEL_COMPILE_WORK_GROUP_SIZE>(cl::Device::getDefault());
     std::cout << "Size_t return: " << WGSizeResult[0] << ", " << WGSizeResult[1] << ", " << WGSizeResult[2] << "\n";
 
-    cl::copy(outputBuffer, begin(output), end(output));
+    cl::copy(outputBuffer, output.begin(), output.end());
 
     cl::Device d = cl::Device::getDefault();
     std::cout << "Max pipe args: " << d.getInfo<CL_DEVICE_MAX_PIPE_ARGS>() << "\n";

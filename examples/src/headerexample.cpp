@@ -115,7 +115,7 @@ int main(void)
     // Traditional cl_mem allocations
 
     std::vector<int> output(numElements, 0xdeadbeef);
-    cl::Buffer outputBuffer(begin(output), end(output), false);
+    cl::Buffer outputBuffer(output.begin(), output.end(), false);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
 
     // Default command queue, also passed in as a parameter
@@ -152,7 +152,7 @@ int main(void)
         error
         );
 
-    cl::copy(outputBuffer, begin(output), end(output));
+    cl::copy(outputBuffer, output.begin(), output.end());
 
     cl::Device d = cl::Device::getDefault();
 
