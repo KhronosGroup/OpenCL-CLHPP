@@ -10438,21 +10438,21 @@ namespace compatibility {
 #ifdef cl_khr_semaphore
 
 #ifdef cl_khr_external_semaphore
-enum class ExtSemaphoreHandleTypeKhr : cl_external_semaphore_handle_type_khr
+enum class ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 {
-    TypeNone = 0,
+    None = 0,
 #ifdef cl_khr_external_semaphore_dx_fence
-    TypeD3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
+    D3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
 #endif
 #ifdef cl_khr_external_semaphore_opaque_fd
-    TypeOpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
+    OpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
 #endif
 #ifdef cl_khr_external_semaphore_sync_fd
-    TypeSyncFd = CL_SEMAPHORE_HANDLE_SYNC_FD_KHR,
+    SyncFd = CL_SEMAPHORE_HANDLE_SYNC_FD_KHR,
 #endif
 #ifdef cl_khr_external_semaphore_win32
-    TypeOpaqueWin32 = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR,
-    TypeOpaqueWin32Kmt = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR,
+    OpaqueWin32 = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR,
+    OpaqueWin32Kmt = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR,
 #endif // cl_khr_external_semaphore_win32
 };
 #endif // cl_khr_external_semaphore
@@ -10521,8 +10521,8 @@ public:
     }
 
 #ifdef cl_khr_external_semaphore
-    cl_int getSemaphoreHandleForTypeKHR (Device device,
-        ExtSemaphoreHandleTypeKhr handle_type,
+    cl_int getHandleForTypeKHR (const Device &device,
+        ExternalSemaphoreType handle_type,
         size_type handle_size,
         void* handle_ptr,
         size_type* handle_size_ret)
@@ -10536,6 +10536,35 @@ public:
             device(),
             static_cast<cl_external_semaphore_handle_type_khr>(handle_type),
             handle_size,
+            handle_ptr,
+            handle_size_ret),
+             __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+    }
+
+    template<ExternalSemaphoreType handle_type>
+        cl_int getHandleForTypeKHR (const Device &device,
+            size_type handle_size = 0,
+            void* handle_ptr = nullptr,
+            size_type* handle_size_ret = nullptr)
+    {
+         return detail::errHandler(getHandleForTypeKHR(
+            device,
+            handle_type,
+            handle_size,
+            handle_ptr,
+            handle_size_ret),
+             __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+    }
+
+    template<ExternalSemaphoreType handle_type, typename T>
+        cl_int getHandleForTypeKHR (const Device &device,
+            T* handle_ptr,
+            size_type* handle_size_ret = nullptr)
+    {
+         return detail::errHandler(getHandleForTypeKHR(
+            device,
+            handle_type,
+            sizeof(T),
             handle_ptr,
             handle_size_ret),
              __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
