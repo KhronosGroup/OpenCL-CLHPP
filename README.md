@@ -21,10 +21,10 @@ Components:
 
   * `tests`:
     A (very small, incomplete) set of regression tests. Building the tests
-    requires Python, Ruby, Unity and CMock. For the last two we use
-    [Unity 2.1.0](https://github.com/ThrowTheSwitch/Unity/releases/tag/v2.1.0)
-    and [CMock top-of-tree from Github](https://github.com/ThrowTheSwitch/CMock)
-    (the version 2.0.204 on Sourceforge does not work).
+    requires Python, Ruby, and CMock. For the last one we use
+    [CMock top-of-tree from Github](https://github.com/ThrowTheSwitch/CMock),
+    as the latest (at the time this was written) released CMock version,
+    v2.5.3, has some issues.
 
   * `CMakeLists.txt`:
     Build system for the examples and tests and logic for the bindings
@@ -44,7 +44,7 @@ The C++ Headers require:
   - It is recommended to install the ICD loader via CMake, however a convenience shorthand is provided. Providing `OPENCL_CLHPP_LOADER_DIR` to CMake, one may specify the location of the OpenCL ICD loader. By default, the C++ headers will look for OpenCL ICD loader under `${OPENCL_DIST_DIR}/lib`.
 - The C++ Headers uses CMake for its build system.
 If CMake is not provided by your build system or OS package manager, please consult the [CMake website](https://cmake.org).
-- The unit tests require [CMock](https://github.com/ThrowTheSwitch/CMock) and [Unity](https://github.com/ThrowTheSwitch/Unity). To get these external dependencies, use `--recursive` when cloning
+- The unit tests require [CMock](https://github.com/ThrowTheSwitch/CMock). To get this external dependency, use `--recursive` when cloning
 the repository, or run `git submodule update --init --recursive`.
 - Generating the mock input requires [Ruby](https://www.ruby-lang.org/en/).
 - Generating the docs requires Doxygen. When it is available, you can generate HTML documentation by building the `docs` target.
