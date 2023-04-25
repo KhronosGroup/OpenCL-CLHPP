@@ -3431,6 +3431,7 @@ void testMoveConstructSemaphoreNonNull(void) {}
 void testMoveConstructSemaphoreNull(void) {}
 #endif
 
+#if defined(cl_khr_semaphore)
 static cl_int clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores(
     cl_command_queue command_queue,
     cl_uint num_sema_objects,
@@ -3460,7 +3461,6 @@ static cl_int clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores(
 
 void testEnqueueWaitSemaphores(void)
 {
-#if defined(cl_khr_semaphore)
     clEnqueueWaitSemaphoresKHR_StubWithCallback(clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores);
 
     VECTOR_CLASS<cl::Semaphore> sema_objects;
@@ -3475,7 +3475,6 @@ void testEnqueueWaitSemaphores(void)
     // prevent destructor from interfering with the test
     event() = nullptr;
     sema_objects[0]() = nullptr;
-#endif
 }
 
 static cl_int clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores(
@@ -3507,7 +3506,6 @@ static cl_int clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores(
 
 void testEnqueueSignalSemaphores(void)
 {
-#if defined(cl_khr_semaphore)
     clEnqueueSignalSemaphoresKHR_StubWithCallback(clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores);
 
     VECTOR_CLASS<cl::Semaphore> sema_objects;
@@ -3522,7 +3520,6 @@ void testEnqueueSignalSemaphores(void)
     // prevent destructor from interfering with the test
     event() = nullptr;
     sema_objects[0]() = nullptr;
-#endif
 }
 
 cl_semaphore_khr clCreateSemaphoreWithProperties_testSemaphoreWithProperties(
@@ -3542,7 +3539,6 @@ cl_semaphore_khr clCreateSemaphoreWithProperties_testSemaphoreWithProperties(
 
 void testSemaphoreWithProperties(void)
 {
-#if defined(cl_khr_semaphore)
     cl_device_id expected_device = make_device_id(0);
     int device_refcount = 1;
 
@@ -3562,7 +3558,6 @@ void testSemaphoreWithProperties(void)
 
     // prevent destructor from interfering with the test
     sem() = nullptr;
-#endif
 }
 
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetContext(
@@ -3586,7 +3581,6 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetContext(
 
 void testSemaphoreGetInfoContext(void)
 {
-#if defined(cl_khr_semaphore)
     cl_context expected_context = make_context(0);
     int context_refcount = 1;
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetContext);
@@ -3598,7 +3592,6 @@ void testSemaphoreGetInfoContext(void)
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_context(0), ctx());
-#endif
 }
 
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount(
@@ -3622,7 +3615,6 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount(
 
 void testSemaphoreGetInfoReferenceCount(void)
 {
-#if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount);
 
     cl_int err = CL_INVALID_OPERATION;
@@ -3631,7 +3623,6 @@ void testSemaphoreGetInfoReferenceCount(void)
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(1, ret);
-#endif
 }
 
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetProperties(
@@ -3660,7 +3651,6 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetProperties(
 
 void testSemaphoreGetInfoProperties(void)
 {
-#if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetProperties);
 
     cl_int err = CL_INVALID_OPERATION;
@@ -3671,7 +3661,6 @@ void testSemaphoreGetInfoProperties(void)
     TEST_ASSERT_EQUAL(2, ret.size());
     TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_KHR, ret[0]);
     TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_BINARY_KHR, ret[1]);
-#endif
 }
 
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetType(
@@ -3695,7 +3684,6 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetType(
 
 void testSemaphoreGetInfoType(void)
 {
-#if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetType);
 
     cl_int err = CL_INVALID_OPERATION;
@@ -3704,7 +3692,6 @@ void testSemaphoreGetInfoType(void)
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(CL_SEMAPHORE_TYPE_BINARY_KHR, ret);
-#endif
 }
 
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetPayload(
@@ -3728,7 +3715,6 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetPayload(
 
 void testSemaphoreGetInfoPayload(void)
 {
-#if defined(cl_khr_semaphore)
     clGetSemaphoreInfoKHR_StubWithCallback(clGetSemaphoreInfoKHR_testSemaphoreGetPayload);
 
     cl_int err = CL_INVALID_OPERATION;
@@ -3737,7 +3723,6 @@ void testSemaphoreGetInfoPayload(void)
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(1, ret);
-#endif
 }
 
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
@@ -3765,7 +3750,6 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
 
 void testSemaphoreGetInfoDevicesList(void)
 {
-#if defined(cl_khr_semaphore)
     cl_device_id expected_devices[] = {make_device_id(0), make_device_id(1)};
     int device_refcounts[] = {1, 1};
 
@@ -3783,27 +3767,36 @@ void testSemaphoreGetInfoDevicesList(void)
     TEST_ASSERT_EQUAL(2, ret.size());
     TEST_ASSERT_EQUAL(make_device_id(0), ret[0]());
     TEST_ASSERT_EQUAL(make_device_id(1), ret[1]());
-#endif
 }
 
 void testSemaphoreRetain(void)
 {
-#if defined(cl_khr_semaphore)
     clRetainSemaphoreKHR_ExpectAndReturn(semaphorePool[0](), CL_SUCCESS);
 
     cl_int status = semaphorePool[0].retain();
     TEST_ASSERT_EQUAL(CL_SUCCESS, status);
-#endif
 }
 
 void testSemaphoreRelease(void)
 {
-#if defined(cl_khr_semaphore)
     clReleaseSemaphoreKHR_ExpectAndReturn(semaphorePool[0](), CL_SUCCESS);
 
     cl_int status = semaphorePool[0].release();
     TEST_ASSERT_EQUAL(CL_SUCCESS, status);
-#endif
 }
+
+#else
+void testEnqueueWaitSemaphores(void) {}
+void testEnqueueSignalSemaphores(void) {}
+void testSemaphoreWithProperties(void) {}
+void testSemaphoreGetInfoContext(void) {}
+void testSemaphoreGetInfoReferenceCount(void) {}
+void testSemaphoreGetInfoProperties(void) {}
+void testSemaphoreGetInfoType(void) {}
+void testSemaphoreGetInfoPayload(void) {}
+void testSemaphoreGetInfoDevicesList(void) {}
+void testSemaphoreRetain(void) {}
+void testSemaphoreRelease(void) {}
+#endif // cl_khr_semaphore
 
 } // extern "C"
