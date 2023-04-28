@@ -1543,6 +1543,19 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
 
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(F) \
+    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR, void*) \
+
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(F) \
+    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR, int) \
+
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_SYNC_FD_EXT(F) \
+    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_SYNC_FD_KHR, int) \
+
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_WIN32_EXT(F) \
+    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR, void*) \
+    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR, void*) \
+
 #define CL_HPP_PARAM_NAME_INFO_3_0_(F) \
     F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION, cl_version) \
     F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
@@ -1653,6 +1666,19 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #if defined(cl_khr_external_semaphore)
 CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore
+
+#if defined(cl_khr_external_semaphore_dx_fence)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_semaphore_dx_fence
+#if defined(cl_khr_external_semaphore_opaque_fd)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_semaphore_opaque_fd
+#if defined(cl_khr_external_semaphore_sync_fd)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_SYNC_FD_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_semaphore_sync_fd
+#if defined(cl_khr_external_semaphore_win32)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_WIN32_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_semaphore_win32
 
 #if defined(cl_khr_device_uuid)
 using uuid_array = array<cl_uchar, CL_UUID_SIZE_KHR>;
@@ -10521,53 +10547,27 @@ public:
     }
 
 #ifdef cl_khr_external_semaphore
-    cl_int getHandleForTypeKHR (const Device &device,
-        ExternalSemaphoreType handle_type,
-        size_type handle_size,
-        void* handle_ptr,
-        size_type* handle_size_ret)
+    template <typename T>
+    cl_int getHandleForTypeKHR(
+        const Device& device, cl_external_semaphore_handle_type_khr name, T* param) const
     {
-        if (pfn_clGetSemaphoreHandleForTypeKHR == nullptr) {
-            return detail::errHandler(CL_INVALID_OPERATION,
-                    __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+        return detail::errHandler(
+            detail::getInfo(
+                pfn_clGetSemaphoreHandleForTypeKHR, object_, device(), name, param),
+                __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+    }
+
+    template <cl_external_semaphore_handle_type_khr type> typename
+    detail::param_traits<detail::cl_external_semaphore_handle_type_khr, type>::param_type
+        getHandleForTypeKHR(const Device& device, cl_int* err = nullptr) const
+    {
+        typename detail::param_traits<
+        detail::cl_external_semaphore_handle_type_khr, type>::param_type param;
+        cl_int result = getHandleForTypeKHR(device, type, &param);
+        if (err != nullptr) {
+            *err = result;
         }
-
-        return detail::errHandler(pfn_clGetSemaphoreHandleForTypeKHR(object_,
-            device(),
-            static_cast<cl_external_semaphore_handle_type_khr>(handle_type),
-            handle_size,
-            handle_ptr,
-            handle_size_ret),
-             __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
-    }
-
-    template<ExternalSemaphoreType handle_type>
-        cl_int getHandleForTypeKHR (const Device &device,
-            size_type handle_size = 0,
-            void* handle_ptr = nullptr,
-            size_type* handle_size_ret = nullptr)
-    {
-         return detail::errHandler(getHandleForTypeKHR(
-            device,
-            handle_type,
-            handle_size,
-            handle_ptr,
-            handle_size_ret),
-             __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
-    }
-
-    template<ExternalSemaphoreType handle_type, typename T>
-        cl_int getHandleForTypeKHR (const Device &device,
-            T* handle_ptr,
-            size_type* handle_size_ret = nullptr)
-    {
-         return detail::errHandler(getHandleForTypeKHR(
-            device,
-            handle_type,
-            sizeof(T),
-            handle_ptr,
-            handle_size_ret),
-             __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+        return param;
     }
 #endif // cl_khr_external_semaphore
 
