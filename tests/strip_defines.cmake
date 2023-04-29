@@ -7,7 +7,7 @@ endif()
 file(READ "${INPUT}" INPUT_STRING)
 
 string(REGEX REPLACE
-  [[CL_(API_ENTRY|API_SUFFIX|EXT|CALLBACK)[A-Za-z0-9_]*]]
+  [[CL_(API_ENTRY|API_SUFFIX|EXT)[A-Za-z0-9_]*]]
   ""
   TMP_STRING
   "${INPUT_STRING}"

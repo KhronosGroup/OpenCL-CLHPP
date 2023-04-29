@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2020 The Khronos Group Inc.
+// Copyright (c) 2008-2023 The Khronos Group Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -705,7 +705,6 @@ namespace cl {
  *
  */
 namespace cl {
-    class Memory;
 
 #define CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(name) \
     using PFN_##name = name##_fn
@@ -721,6 +720,11 @@ namespace cl {
             clGetExtensionFunctionAddressForPlatform(platform, #name);  \
     }
 
+#ifdef cl_khr_external_memory
+    enum class ExternalMemoryType : cl_external_memory_handle_type_khr;
+#endif
+
+    class Memory;
     class Program;
     class Device;
     class Context;
@@ -919,7 +923,6 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __CREATE_PIPE_ERR             CL_HPP_ERR_STR_(clCreatePipe)
 #define __GET_PIPE_INFO_ERR           CL_HPP_ERR_STR_(clGetPipeInfo)
 
-
 #define __RETAIN_ERR                        CL_HPP_ERR_STR_(Retain Object)
 #define __RELEASE_ERR                       CL_HPP_ERR_STR_(Release Object)
 #define __FLUSH_ERR                         CL_HPP_ERR_STR_(clFlush)
@@ -935,13 +938,18 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __SET_PROGRAM_SPECIALIZATION_CONSTANT_ERR   CL_HPP_ERR_STR_(clSetProgramSpecializationConstant)
 #endif
 
+#ifdef cl_khr_external_memory
+#define __ENQUEUE_ACQUIRE_EXTERNAL_MEMORY_ERR       CL_HPP_ERR_STR_(clEnqueueAcquireExternalMemObjectsKHR)
+#define __ENQUEUE_RELEASE_EXTERNAL_MEMORY_ERR       CL_HPP_ERR_STR_(clEnqueueReleaseExternalMemObjectsKHR)
+#endif
+
 #ifdef cl_khr_semaphore
-#define __GET_SEMAPHORE_KHR_INFO_ERR                    CL_HPP_ERR_STR_(clGetSemaphoreInfoKHR)
-#define __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR      CL_HPP_ERR_STR_(clCreateSemaphoreWithPropertiesKHR)
-#define __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR                CL_HPP_ERR_STR_(clEnqueueWaitSemaphoresKHR)
-#define __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR              CL_HPP_ERR_STR_(clEnqueueSignalSemaphoresKHR)
-#define __RETAIN_SEMAPHORE_KHR_ERR                      CL_HPP_ERR_STR_(clRetainSemaphoreKHR)
-#define __RELEASE_SEMAPHORE_KHR_ERR                     CL_HPP_ERR_STR_(clReleaseSemaphoreKHR)
+#define __GET_SEMAPHORE_KHR_INFO_ERR                CL_HPP_ERR_STR_(clGetSemaphoreInfoKHR)
+#define __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR  CL_HPP_ERR_STR_(clCreateSemaphoreWithPropertiesKHR)
+#define __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR            CL_HPP_ERR_STR_(clEnqueueWaitSemaphoresKHR)
+#define __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR          CL_HPP_ERR_STR_(clEnqueueSignalSemaphoresKHR)
+#define __RETAIN_SEMAPHORE_KHR_ERR                  CL_HPP_ERR_STR_(clRetainSemaphoreKHR)
+#define __RELEASE_SEMAPHORE_KHR_ERR                 CL_HPP_ERR_STR_(clReleaseSemaphoreKHR)
 #endif
 #if defined(cl_khr_command_buffer)
 #define __CREATE_COMMAND_BUFFER_KHR_ERR             CL_HPP_ERR_STR_(clCreateCommandBufferKHR)
@@ -1010,6 +1018,14 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #endif // CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 //! \endcond
 
+#ifdef cl_khr_external_memory
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueAcquireExternalMemObjectsKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clEnqueueReleaseExternalMemObjectsKHR);
+
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueAcquireExternalMemObjectsKHR pfn_clEnqueueAcquireExternalMemObjectsKHR = nullptr;
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clEnqueueReleaseExternalMemObjectsKHR pfn_clEnqueueReleaseExternalMemObjectsKHR = nullptr;
+#endif // cl_khr_external_memory
+
 #ifdef cl_khr_semaphore
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateSemaphoreWithPropertiesKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clReleaseSemaphoreKHR);
@@ -1042,8 +1058,6 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandCopyImageToBufferKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandFillBufferKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandFillImageKHR);
 CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCommandNDRangeKernelKHR);
-CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clUpdateMutableCommandsKHR);
-CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetMutableCommandInfoKHR);
 
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateCommandBufferKHR pfn_clCreateCommandBufferKHR               = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clFinalizeCommandBufferKHR pfn_clFinalizeCommandBufferKHR           = nullptr;
@@ -1060,10 +1074,15 @@ CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandCopyImageToBufferKHR pfn_clCommandCopy
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandFillBufferKHR pfn_clCommandFillBufferKHR                   = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandFillImageKHR pfn_clCommandFillImageKHR                     = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCommandNDRangeKernelKHR pfn_clCommandNDRangeKernelKHR             = nullptr;
-CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clUpdateMutableCommandsKHR pfn_clUpdateMutableCommandsKHR           = nullptr;
-CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetMutableCommandInfoKHR pfn_clGetMutableCommandInfoKHR           = nullptr;
 #endif /* cl_khr_command_buffer */
 
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clUpdateMutableCommandsKHR);
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetMutableCommandInfoKHR);
+
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clUpdateMutableCommandsKHR pfn_clUpdateMutableCommandsKHR           = nullptr;
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetMutableCommandInfoKHR pfn_clGetMutableCommandInfoKHR           = nullptr;
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 
 namespace detail {
 
@@ -1505,6 +1524,10 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_TYPES_KHR,  cl::vector<cl_semaphore_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_TYPES_KHR,      cl::vector<cl_semaphore_type_khr>) \
 
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(F) \
+    F(cl_device_info, CL_DEVICE_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>) \
+    F(cl_platform_info, CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>)
+
 #define CL_HPP_PARAM_NAME_INFO_3_0_(F) \
     F(cl_platform_info, CL_PLATFORM_NUMERIC_VERSION, cl_version) \
     F(cl_platform_info, CL_PLATFORM_EXTENSIONS_WITH_VERSION, cl::vector<cl_name_version>) \
@@ -1594,7 +1617,7 @@ CL_HPP_PARAM_NAME_INFO_1_2_DEPRECATED_IN_2_0_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 200
 
 #if defined(cl_ext_device_fission)
-CL_HPP_PARAM_NAME_DEVICE_FISSION_EXT_(CL_HPP_DECLARE_PARAM_TRAITS_);
+CL_HPP_PARAM_NAME_DEVICE_FISSION_EXT_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_ext_device_fission
 
 #if defined(cl_khr_extended_versioning)
@@ -1607,6 +1630,10 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(CL_HPP_DECLARE_PARAM_TRAIT
 #if defined(cl_khr_semaphore)
 CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_semaphore
+
+#ifdef cl_khr_external_memory
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_memory
 
 #if defined(cl_khr_device_uuid)
 using uuid_array = array<cl_uchar, CL_UUID_SIZE_KHR>;
@@ -1742,6 +1769,9 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_NUM_Q
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_STATE_KHR, cl_command_buffer_state_khr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPERTIES_ARRAY_KHR, cl::vector<cl_command_buffer_properties_khr>)
+#endif /* cl_khr_command_buffer */
+
+#if defined(cl_khr_command_buffer_mutable_dispatch)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBufferKhr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
@@ -1751,7 +1781,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_DI
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR, cl::vector<size_type>)
-#endif
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 
 // Convenience functions
 
@@ -4083,6 +4113,43 @@ public:
         }
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Buffer in a specified context and with specified properties.
+     *
+     *  Wraps clCreateBufferWithProperties().
+     *
+     *  \param properties Optional list of properties for the buffer object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0. 
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Buffer(
+        const Context& context,
+        const vector<cl_mem_properties>& properties,
+        cl_mem_flags flags,
+        size_type size,
+        void* host_ptr = nullptr,
+        cl_int* err = nullptr)
+    {
+        cl_int error;
+
+        if (properties.empty()) {
+            object_ = ::clCreateBufferWithProperties(context(), nullptr, flags,
+                                                     size, host_ptr, &error);
+        }
+        else {
+            object_ = ::clCreateBufferWithProperties(
+                context(), properties.data(), flags, size, host_ptr, &error);
+        }
+
+        detail::errHandler(error, __CREATE_BUFFER_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
+    }
+#endif
+
     /*! \brief Constructs a Buffer in the default context.
      *
      *  Wraps clCreateBuffer().
@@ -4093,22 +4160,31 @@ public:
      *  \see Context::getDefault()
      */
     Buffer(
-         cl_mem_flags flags,
+        cl_mem_flags flags,
         size_type size,
         void* host_ptr = nullptr,
-        cl_int* err = nullptr)
-    {
-        cl_int error;
+        cl_int* err = nullptr) : Buffer(Context::getDefault(err), flags, size, host_ptr, err) { }
 
-        Context context = Context::getDefault(err);
-
-        object_ = ::clCreateBuffer(context(), flags, size, host_ptr, &error);
-
-        detail::errHandler(error, __CREATE_BUFFER_ERR);
-        if (err != nullptr) {
-            *err = error;
-        }
-    }
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Buffer in the default context and with specified properties.
+     *
+     *  Wraps clCreateBufferWithProperties().
+     *
+     *  \param properties Optional list of properties for the buffer object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0. 
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     * 
+     *  \see Context::getDefault()
+     */
+    Buffer(
+        const vector<cl_mem_properties>& properties,
+        cl_mem_flags flags,
+        size_type size,
+        void* host_ptr = nullptr,
+        cl_int* err = nullptr) : Buffer(Context::getDefault(err), properties, flags, size, host_ptr, err) { }
+#endif
 
     /*!
      * \brief Construct a Buffer from a host container via iterators.
@@ -4536,7 +4612,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE1D;
         desc.image_width = width;
 
@@ -4596,7 +4672,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
         desc.image_width = width;
         desc.buffer = buffer();
@@ -4655,7 +4731,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
         desc.image_width = width;
         desc.image_array_size = arraySize;
@@ -4740,7 +4816,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         if (useCreateImage)
         {
-            cl_image_desc desc = {0};
+            cl_image_desc desc = {};
             desc.image_type = CL_MEM_OBJECT_IMAGE2D;
             desc.image_width = width;
             desc.image_height = height;
@@ -4794,7 +4870,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE2D;
         desc.image_width = width;
         desc.image_height = height;
@@ -4855,7 +4931,7 @@ public:
         // Channel format inherited from source.
         sourceFormat.image_channel_order = order;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE2D;
         desc.image_width = sourceWidth;
         desc.image_height = sourceHeight;
@@ -4999,7 +5075,7 @@ public:
     {
         cl_int error;
 
-        cl_image_desc desc = {0};
+        cl_image_desc desc = {};
         desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
         desc.image_width = width;
         desc.image_height = height;
@@ -5084,7 +5160,7 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         if (useCreateImage)
         {
-            cl_image_desc desc = {0};
+            cl_image_desc desc = {};
             desc.image_type = CL_MEM_OBJECT_IMAGE3D;
             desc.image_width = width;
             desc.image_height = height;
@@ -6765,6 +6841,25 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 
 }
 
+#ifdef cl_khr_external_memory
+enum class ExternalMemoryType : cl_external_memory_handle_type_khr
+{
+    None = 0,
+
+    OpaqueFd = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
+    OpaqueWin32 = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR,
+    OpaqueWin32Kmt = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR,
+
+    D3D11Texture = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR,
+    D3D11TextureKmt = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR,
+
+    D3D12Heap = CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR,
+    D3D12Resource = CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR,
+
+    DmaBuf = CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR,
+};
+#endif
+
 enum class QueueProperties : cl_command_queue_properties
 {
     None = 0,
@@ -6832,6 +6927,24 @@ private:
     static void makeDefaultProvided(const CommandQueue &c) {
         default_ = c;
     }
+
+#ifdef cl_khr_external_memory
+    static std::once_flag ext_memory_initialized_;
+
+    static void initMemoryExtension(const cl::Device& device) 
+    {
+        auto platform = device.getInfo<CL_DEVICE_PLATFORM>();
+
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireExternalMemObjectsKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseExternalMemObjectsKHR);
+
+        if ((pfn_clEnqueueAcquireExternalMemObjectsKHR == nullptr)
+            && (pfn_clEnqueueReleaseExternalMemObjectsKHR == nullptr))
+        {
+            detail::errHandler(CL_INVALID_VALUE, __ENQUEUE_ACQUIRE_EXTERNAL_MEMORY_ERR);
+        }
+    }
+#endif // cl_khr_external_memory
 
 public:
 #ifdef CL_HPP_UNIT_TEST_ENABLE
@@ -8192,8 +8305,8 @@ public:
      * have completed.
      */
     cl_int enqueueMarkerWithWaitList(
-        const vector<Event> *events = 0,
-        Event *event = 0) const
+        const vector<Event> *events = nullptr,
+        Event *event = nullptr) const
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
@@ -8222,8 +8335,8 @@ public:
      * before this command to command_queue, have completed.
      */
     cl_int enqueueBarrierWithWaitList(
-        const vector<Event> *events = 0,
-        Event *event = 0) const
+        const vector<Event> *events = nullptr,
+        Event *event = nullptr) const
     {
         cl_event tmp;
         cl_int err = detail::errHandler(
@@ -8455,21 +8568,12 @@ public:
         const vector<Event>* events = nullptr,
         Event* event = nullptr) const
     {
-        size_type elements = 0;
-        if (mem_objects != nullptr) {
-            elements = mem_objects->size();
-        }
-        vector<cl_mem> mems(elements);
-        for (unsigned int i = 0; i < elements; i++) {
-            mems[i] = ((*mem_objects)[i])();
-        }
-        
         cl_event tmp;
         cl_int err = detail::errHandler(
             ::clEnqueueNativeKernel(
                 object_, userFptr, args.first, args.second,
                 (mem_objects != nullptr) ? (cl_uint) mem_objects->size() : 0,
-                mems.data(),
+                (mem_objects->size() > 0 ) ? reinterpret_cast<const cl_mem *>(mem_objects->data()) : nullptr,
                 (mem_locs != nullptr && mem_locs->size() > 0) ? (const void **) &mem_locs->front() : nullptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
                 (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
@@ -8658,6 +8762,66 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         return detail::errHandler(::clFinish(object_), __FINISH_ERR);
     }
 
+#ifdef cl_khr_external_memory
+    cl_int enqueueAcquireExternalMemObjects(
+        const vector<Memory>& mem_objects,
+        const vector<Event>* events_wait = nullptr,
+        Event *event = nullptr)
+    {
+        cl_int err = CL_INVALID_OPERATION;
+        cl_event tmp;
+
+        std::call_once(ext_memory_initialized_, initMemoryExtension, this->getInfo<CL_QUEUE_DEVICE>());
+
+        if (pfn_clEnqueueAcquireExternalMemObjectsKHR)
+        {
+            err = pfn_clEnqueueAcquireExternalMemObjectsKHR(
+                object_,
+                static_cast<cl_uint>(mem_objects.size()),
+                (mem_objects.size() > 0) ? reinterpret_cast<const cl_mem *>(mem_objects.data()) : nullptr,
+                (events_wait != nullptr) ? static_cast<cl_uint>(events_wait->size()) : 0,
+                (events_wait != nullptr && events_wait->size() > 0) ? reinterpret_cast<const cl_event*>(events_wait->data()) : nullptr,
+                &tmp);
+        }
+
+        detail::errHandler(err, __ENQUEUE_ACQUIRE_EXTERNAL_MEMORY_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    cl_int enqueueReleaseExternalMemObjects(
+        const vector<Memory>& mem_objects,
+        const vector<Event>* events_wait = nullptr,
+        Event *event = nullptr)
+    {
+        cl_int err = CL_INVALID_OPERATION;
+        cl_event tmp;
+
+        std::call_once(ext_memory_initialized_, initMemoryExtension, this->getInfo<CL_QUEUE_DEVICE>());
+
+        if (pfn_clEnqueueReleaseExternalMemObjectsKHR)
+        {
+            err = pfn_clEnqueueReleaseExternalMemObjectsKHR(
+                object_,
+                static_cast<cl_uint>(mem_objects.size()),
+                (mem_objects.size() > 0) ? reinterpret_cast<const cl_mem *>(mem_objects.data()) : nullptr,
+                (events_wait != nullptr) ? static_cast<cl_uint>(events_wait->size()) : 0,
+                (events_wait != nullptr && events_wait->size() > 0) ? reinterpret_cast<const cl_event*>(events_wait->data()) : nullptr,
+                &tmp);
+        }
+
+        detail::errHandler(err, __ENQUEUE_RELEASE_EXTERNAL_MEMORY_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+#endif // cl_khr_external_memory && CL_HPP_TARGET_OPENCL_VERSION >= 300
+
 #ifdef cl_khr_semaphore
     cl_int enqueueWaitSemaphores(
         const vector<Semaphore> &sema_objects,
@@ -8672,6 +8836,10 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         Event* event = nullptr);
 #endif // cl_khr_semaphore
 }; // CommandQueue
+
+#ifdef cl_khr_external_memory
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandQueue::ext_memory_initialized_;
+#endif
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandQueue::default_initialized_;
 CL_HPP_DEFINE_STATIC_MEMBER_ CommandQueue CommandQueue::default_;
@@ -10828,6 +10996,7 @@ public:
         return error;
     }
 
+#if defined(cl_khr_command_buffer_mutable_dispatch)
     cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
     {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
@@ -10837,6 +11006,7 @@ public:
         return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
                         __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 
 private:
     static std::once_flag ext_init_;
@@ -10860,8 +11030,10 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandFillBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandFillImageKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandNDRangeKernelKHR);
+#if defined(cl_khr_command_buffer_mutable_dispatch)
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetMutableCommandInfoKHR);
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 110
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateCommandBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clFinalizeCommandBufferKHR);
@@ -10878,8 +11050,10 @@ private:
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCommandFillBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCommandFillImageKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCommandNDRangeKernelKHR);
+#if defined(cl_khr_command_buffer_mutable_dispatch)
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetMutableCommandInfoKHR);
+#endif /* cl_khr_command_buffer_mutable_dispatch */
 #endif
         if ((pfn_clCreateCommandBufferKHR        == nullptr) &&
             (pfn_clFinalizeCommandBufferKHR      == nullptr) &&
@@ -10895,9 +11069,12 @@ private:
             (pfn_clCommandCopyImageToBufferKHR   == nullptr) &&
             (pfn_clCommandFillBufferKHR          == nullptr) &&
             (pfn_clCommandFillImageKHR           == nullptr) &&
-            (pfn_clCommandNDRangeKernelKHR       == nullptr) &&
-            (pfn_clUpdateMutableCommandsKHR      == nullptr) &&
-            (pfn_clGetMutableCommandInfoKHR      == nullptr))
+            (pfn_clCommandNDRangeKernelKHR       == nullptr)
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+            && (pfn_clUpdateMutableCommandsKHR      == nullptr)
+            && (pfn_clGetMutableCommandInfoKHR      == nullptr)
+#endif /* cl_khr_command_buffer_mutable_dispatch */
+            )
         {
             detail::errHandler(CL_INVALID_VALUE, __CREATE_COMMAND_BUFFER_KHR_ERR);
         }
@@ -10906,6 +11083,7 @@ private:
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandBufferKhr::ext_init_;
 
+#if defined(cl_khr_command_buffer_mutable_dispatch)
 /*! \class MutableCommandKhr
  * \brief MutableCommandKhr interface for cl_mutable_command_khr.
  */
@@ -10949,6 +11127,8 @@ public:
         return param;
     }
 }; // MutableCommandKhr
+#endif /* cl_khr_command_buffer_mutable_dispatch */
+
 #endif // cl_khr_command_buffer
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -11048,8 +11228,9 @@ public:
 #undef __FLUSH_ERR                         
 #undef __FINISH_ERR                        
 #undef __VECTOR_CAPACITY_ERR               
-#undef __CREATE_SUB_DEVICES_ERR            
-#undef __CREATE_SUB_DEVICES_ERR            
+#undef __CREATE_SUB_DEVICES_ERR
+#undef __ENQUEUE_ACQUIRE_EXTERNAL_MEMORY_ERR
+#undef __ENQUEUE_RELEASE_EXTERNAL_MEMORY_ERR
 #undef __ENQUEUE_MARKER_ERR                
 #undef __ENQUEUE_WAIT_FOR_EVENTS_ERR       
 #undef __ENQUEUE_BARRIER_ERR               
@@ -11074,6 +11255,7 @@ public:
 #endif //CL_HPP_USER_OVERRIDE_ERROR_STRINGS
 
 // Extensions
+#undef CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_
 
