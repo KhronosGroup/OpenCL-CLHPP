@@ -719,6 +719,7 @@ namespace cl {
 #endif
 
     class Memory;
+    class Platform;
     class Program;
     class Device;
     class Context;
@@ -1314,7 +1315,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_AVAILABLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_COMPILER_AVAILABLE, cl_bool) \
     F(cl_device_info, CL_DEVICE_EXECUTION_CAPABILITIES, cl_device_exec_capabilities) \
-    F(cl_device_info, CL_DEVICE_PLATFORM, cl_platform_id) \
+    F(cl_device_info, CL_DEVICE_PLATFORM, cl::Platform) \
     F(cl_device_info, CL_DEVICE_NAME, string) \
     F(cl_device_info, CL_DEVICE_VENDOR, string) \
     F(cl_device_info, CL_DRIVER_VERSION, string) \
@@ -2495,91 +2496,14 @@ public:
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     //! \brief Wrapper for clCreateSubDevices().
-    cl_int createSubDevices(
-        const cl_device_partition_property * properties,
-        vector<Device>* devices)
-    {
-        cl_uint n = 0;
-        cl_int err = clCreateSubDevices(object_, properties, 0, nullptr, &n);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
-        }
-
-        vector<cl_device_id> ids(n);
-        err = clCreateSubDevices(object_, properties, n, ids.data(), nullptr);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
-        }
-
-        // Cannot trivially assign because we need to capture intermediates 
-        // with safe construction
-        if (devices) {
-            devices->resize(ids.size());
-
-            // Assign to param, constructing with retain behaviour
-            // to correctly capture each underlying CL object
-            for (size_type i = 0; i < ids.size(); i++) {
-                // We do not need to retain because this device is being created 
-                // by the runtime
-                (*devices)[i] = Device(ids[i], false);
-            }
-        }
-
-        return CL_SUCCESS;
-    }
-#endif
+    cl_int createSubDevices(const cl_device_partition_property* properties,
+                            vector<Device>* devices);
+#endif // defined (CL_HPP_TARGET_OPENCL_VERSION >= 120)
 
 #if defined(cl_ext_device_fission)
     //! \brief Wrapper for clCreateSubDevices().
-    cl_int createSubDevices(
-        const cl_device_partition_property_ext * properties,
-        vector<Device>* devices)
-    {
-        typedef CL_API_ENTRY cl_int 
-            ( CL_API_CALL * PFN_clCreateSubDevicesEXT)(
-                cl_device_id /*in_device*/,
-                const cl_device_partition_property_ext * /* properties */,
-                cl_uint /*num_entries*/,
-                cl_device_id * /*out_devices*/,
-                cl_uint * /*num_devices*/ ) CL_API_SUFFIX__VERSION_1_1;
-
-        static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = nullptr;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        cl::Device device(object_);
-        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateSubDevicesEXT);
-#endif
-#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
-        CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSubDevicesEXT);
-#endif
-
-        cl_uint n = 0;
-        cl_int err = pfn_clCreateSubDevicesEXT(object_, properties, 0, nullptr, &n);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
-        }
-
-        vector<cl_device_id> ids(n);
-        err = pfn_clCreateSubDevicesEXT(object_, properties, n, ids.data(), nullptr);
-        if (err != CL_SUCCESS) {
-            return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
-        }
-        // Cannot trivially assign because we need to capture intermediates 
-        // with safe construction
-        if (devices) {
-            devices->resize(ids.size());
-
-            // Assign to param, constructing with retain behaviour
-            // to correctly capture each underlying CL object
-            for (size_type i = 0; i < ids.size(); i++) {
-                // We do not need to retain because this device is being created 
-                // by the runtime
-                (*devices)[i] = Device(ids[i], false);
-            }
-        }
-
-        return CL_SUCCESS;
-    }
+    cl_int createSubDevices(const cl_device_partition_property_ext* properties,
+                            vector<Device>* devices);
 #endif // defined(cl_ext_device_fission)
 };
 
@@ -2996,6 +2920,100 @@ public:
     }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 }; // class Platform
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+   //! \brief Wrapper for clCreateSubDevices().
+inline cl_int Device::createSubDevices(const cl_device_partition_property* properties,
+                         vector<Device>* devices)
+{
+    cl_uint n = 0;
+    cl_int err = clCreateSubDevices(object_, properties, 0, nullptr, &n);
+    if (err != CL_SUCCESS)
+    {
+        return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
+    }
+
+    vector<cl_device_id> ids(n);
+    err = clCreateSubDevices(object_, properties, n, ids.data(), nullptr);
+    if (err != CL_SUCCESS)
+    {
+        return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
+    }
+
+    // Cannot trivially assign because we need to capture intermediates
+    // with safe construction
+    if (devices)
+    {
+        devices->resize(ids.size());
+
+        // Assign to param, constructing with retain behaviour
+        // to correctly capture each underlying CL object
+        for (size_type i = 0; i < ids.size(); i++)
+        {
+            // We do not need to retain because this device is being created
+            // by the runtime
+            (*devices)[i] = Device(ids[i], false);
+        }
+    }
+
+    return CL_SUCCESS;
+}
+#endif // defined (CL_HPP_TARGET_OPENCL_VERSION >= 120)
+
+#if defined(cl_ext_device_fission)
+   //! \brief Wrapper for clCreateSubDevices().
+inline cl_int Device::createSubDevices(const cl_device_partition_property_ext* properties,
+                        vector<Device>* devices)
+{
+    typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clCreateSubDevicesEXT)(
+        cl_device_id /*in_device*/,
+        const cl_device_partition_property_ext* /* properties */,
+        cl_uint /*num_entries*/, cl_device_id* /*out_devices*/,
+        cl_uint* /*num_devices*/) CL_API_SUFFIX__VERSION_1_1;
+
+    static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = nullptr;
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl::Device device(object_);
+    cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
+    CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateSubDevicesEXT);
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
+    CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSubDevicesEXT);
+#endif
+
+    cl_uint n = 0;
+    cl_int err = pfn_clCreateSubDevicesEXT(object_, properties, 0, nullptr, &n);
+    if (err != CL_SUCCESS)
+    {
+        return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
+    }
+
+    vector<cl_device_id> ids(n);
+    err =
+        pfn_clCreateSubDevicesEXT(object_, properties, n, ids.data(), nullptr);
+    if (err != CL_SUCCESS)
+    {
+        return detail::errHandler(err, __CREATE_SUB_DEVICES_ERR);
+    }
+    // Cannot trivially assign because we need to capture intermediates
+    // with safe construction
+    if (devices)
+    {
+        devices->resize(ids.size());
+
+        // Assign to param, constructing with retain behaviour
+        // to correctly capture each underlying CL object
+        for (size_type i = 0; i < ids.size(); i++)
+        {
+            // We do not need to retain because this device is being created
+            // by the runtime
+            (*devices)[i] = Device(ids[i], false);
+        }
+    }
+
+    return CL_SUCCESS;
+}
+#endif // defined(cl_ext_device_fission)
 
 CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Platform::default_initialized_;
 CL_HPP_DEFINE_STATIC_MEMBER_ Platform Platform::default_;
@@ -6930,7 +6948,7 @@ private:
 
     static void initMemoryExtension(const cl::Device& device) 
     {
-        auto platform = device.getInfo<CL_DEVICE_PLATFORM>();
+        auto platform = device.getInfo<CL_DEVICE_PLATFORM>()();
 
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireExternalMemObjectsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseExternalMemObjectsKHR);
@@ -10485,7 +10503,7 @@ private:
     {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
-        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
+        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateSemaphoreWithPropertiesKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clReleaseSemaphoreKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clRetainSemaphoreKHR);
@@ -11011,7 +11029,7 @@ private:
     static void initExtensions(const cl::Device& device)
     {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
+        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateCommandBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clFinalizeCommandBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clRetainCommandBufferKHR);
