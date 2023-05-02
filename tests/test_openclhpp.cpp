@@ -1732,6 +1732,33 @@ void testKernelSetArgLocal(void)
     kernelPool[0].setArg(2, cl::Local(123));
 }
 
+void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    std::unique_ptr<int> buffer(new int(1000));
+    clSetKernelArgSVMPointer_ExpectAndReturn(make_kernel(0), 1, buffer.get(), CL_SUCCESS);
+    TEST_ASSERT_EQUAL(kernelPool[0].setArg(1, buffer), CL_SUCCESS);
+#endif
+}
+
+void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    VECTOR_CLASS<int> vec(1000);
+    clSetKernelArgSVMPointer_ExpectAndReturn(make_kernel(1), 2, vec.data(), CL_SUCCESS);
+    TEST_ASSERT_EQUAL(kernelPool[1].setArg(2, vec), CL_SUCCESS);
+#endif
+}
+
+void testKernelSetArgBySetKernelArgSVMPointerWithPointerType()
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    cl_mem *memory = &bufferPool[1]();
+    clSetKernelArgSVMPointer_ExpectAndReturn(make_kernel(2), 3, &bufferPool[1](), CL_SUCCESS);
+    TEST_ASSERT_EQUAL(kernelPool[2].setArg(3, memory), CL_SUCCESS);
+#endif
+}
+
 void testKernelSetExecInfo(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
