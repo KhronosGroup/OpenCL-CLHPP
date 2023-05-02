@@ -167,7 +167,7 @@ int main(void)
 
     // Traditional cl_mem allocations
     std::vector<int> output(numElements, 0xdeadbeef);
-    cl::Buffer outputBuffer(begin(output), end(output), false);
+    cl::Buffer outputBuffer(output.begin(), output.end(), false);
 
     std::vector<int, cl::SVMAllocator<int, cl::SVMTraitCoarse<>>> output2(numElements / 2, 0xdeadbeef);
     cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
@@ -222,7 +222,7 @@ int main(void)
         );
 
     // Copy the cl_mem output back to the vector
-    cl::copy(outputBuffer, begin(output), end(output));
+    cl::copy(outputBuffer, output.begin(), output.end());
     // Grab the SVM output vector using a map
     cl::mapSVM(output2);
 

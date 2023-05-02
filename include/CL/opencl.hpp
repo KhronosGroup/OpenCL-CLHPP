@@ -336,7 +336,7 @@
         // Traditional cl_mem allocations
 
         std::vector<int> output(numElements, 0xdeadbeef);
-        cl::Buffer outputBuffer(begin(output), end(output), false);
+        cl::Buffer outputBuffer(output.begin(), output.end(), false);
         cl::Pipe aPipe(sizeof(cl_int), numElements / 2);
 
         // Default command queue, also passed in as a parameter
@@ -373,7 +373,7 @@
             error
             );
 
-        cl::copy(outputBuffer, begin(output), end(output));
+        cl::copy(outputBuffer, output.begin(), output.end());
 
         cl::Device d = cl::Device::getDefault();
 
@@ -1197,7 +1197,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, string* param, long)
             return err;
         }
         if (param) {
-            param->assign(begin(value), prev(end(value)));
+            param->assign(value.begin(), value.end() - 1);
         }
     }
     else if (param) {
@@ -3360,7 +3360,7 @@ public:
                 return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
             }
 
-            formats->assign(begin(value), end(value));
+            formats->assign(value.begin(), value.end());
         }
         else {
             // If no values are being returned, ensure an empty vector comes back
