@@ -525,12 +525,6 @@
 #include <CL/opencl.h>
 #endif // !__APPLE__
 
-#if (__cplusplus >= 201103L || _MSVC_LANG >= 201103L )
-#define CL_HPP_NOEXCEPT_ noexcept
-#else
-#define CL_HPP_NOEXCEPT_
-#endif
-
 #if __cplusplus >= 201703L
 # define CL_HPP_DEFINE_STATIC_MEMBER_ inline
 #elif defined(_MSC_VER)
@@ -764,13 +758,11 @@ namespace cl {
         Error(cl_int err, const char * errStr = nullptr) : err_(err), errStr_(errStr)
         {}
 
-        ~Error() throw() {}
-
         /*! \brief Get error string associated with exception
          *
          * \return A memory pointer to the error message string.
          */
-        virtual const char * what() const throw ()
+        const char * what() const noexcept override
         {
             if (errStr_ == nullptr) {
                 return "empty";
@@ -2095,7 +2087,7 @@ public:
         detail::errHandler(retain(), __RETAIN_ERR);
     }
 
-    Wrapper(Wrapper<cl_type>&& rhs) CL_HPP_NOEXCEPT_
+    Wrapper(Wrapper<cl_type>&& rhs) noexcept
     {
         object_ = rhs.object_;
         rhs.object_ = nullptr;
@@ -2216,7 +2208,7 @@ public:
         detail::errHandler(retain(), __RETAIN_ERR);
     }
 
-    Wrapper(Wrapper<cl_type>&& rhs) CL_HPP_NOEXCEPT_
+    Wrapper(Wrapper<cl_type>&& rhs) noexcept
     {
         object_ = rhs.object_;
         referenceCountable_ = rhs.referenceCountable_;
@@ -3875,12 +3867,12 @@ public:
     {
     }
 
-    pointer address(reference r) CL_HPP_NOEXCEPT_
+    pointer address(reference r) noexcept
     {
         return std::addressof(r);
     }
 
-    const_pointer address(const_reference r) CL_HPP_NOEXCEPT_
+    const_pointer address(const_reference r) noexcept
     {
         return std::addressof(r);
     }
@@ -3933,7 +3925,7 @@ public:
      * Return the maximum possible allocation size.
      * This is the minimum of the maximum sizes of all devices in the context.
      */
-    size_type max_size() const CL_HPP_NOEXCEPT_
+    size_type max_size() const noexcept
     {
         size_type maxSize = std::numeric_limits<size_type>::max() / sizeof(T);
 
@@ -11264,7 +11256,6 @@ public:
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_
 #undef CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_
 
-#undef CL_HPP_NOEXCEPT_
 #undef CL_HPP_DEFINE_STATIC_MEMBER_
 
 } // namespace cl
