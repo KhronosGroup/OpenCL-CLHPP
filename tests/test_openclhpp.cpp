@@ -1314,7 +1314,7 @@ static cl_mem clCreateBufferWithProperties_testBufferWithProperties(
     TEST_ASSERT_EQUAL(0, num_calls);
     TEST_ASSERT_EQUAL_PTR(contextPool[0](), context);
     TEST_ASSERT_NOT_NULL(properties);
-    TEST_ASSERT_EQUAL(CL_DEVICE_HANDLE_LIST_KHR, *properties);
+    TEST_ASSERT_EQUAL(11, *properties);
     TEST_ASSERT_EQUAL(0, flags);
     TEST_ASSERT_EQUAL(0, size);
     TEST_ASSERT_NULL(host_ptr);
@@ -1329,7 +1329,7 @@ void testBufferWithProperties(void)
 #if CL_HPP_TARGET_OPENCL_VERSION >= 300
     clCreateBufferWithProperties_StubWithCallback(clCreateBufferWithProperties_testBufferWithProperties);
 
-    VECTOR_CLASS<cl_mem_properties> props{CL_DEVICE_HANDLE_LIST_KHR};
+    VECTOR_CLASS<cl_mem_properties> props{11};
     cl_int err;
     cl::Buffer buffer(contextPool[0], props, 0, 0, nullptr, &err);
 
@@ -3883,6 +3883,7 @@ void testSemaphoreRelease(void) {}
 /****************************************************************************
  * Tests for cl_khr_external_memory
  ****************************************************************************/
+#ifdef cl_khr_external_memory
 static cl_int clEnqueueAcquireExternalMemObjectsKHR_testEnqueueAcquireExternalMemObjects(
     cl_command_queue command_queue,
     cl_uint num_mem_objects,
@@ -3907,9 +3908,8 @@ static cl_int clEnqueueAcquireExternalMemObjectsKHR_testEnqueueAcquireExternalMe
     return CL_SUCCESS;
 }
 
-void testEnqueueAcquireExternalMemObjects()
+void testEnqueueAcquireExternalMemObjects(void)
 {
-#ifdef cl_khr_external_memory
     clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_testCommandQueueGetDevice);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
@@ -3928,7 +3928,6 @@ void testEnqueueAcquireExternalMemObjects()
     // prevent destructor from interfering with the test
     event() = nullptr;
     mem_objects[0]() = nullptr;
-#endif
 }
 
 static cl_int clEnqueueReleaseExternalMemObjectsKHR_testEnqueueReleaseExternalMemObjects(
@@ -3955,9 +3954,8 @@ static cl_int clEnqueueReleaseExternalMemObjectsKHR_testEnqueueReleaseExternalMe
     return CL_SUCCESS;
 }
 
-void testEnqueueReleaseExternalMemObjects()
+void testEnqueueReleaseExternalMemObjects(void)
 {
-#ifdef cl_khr_external_memory
     clGetCommandQueueInfo_StubWithCallback(clGetCommandQueueInfo_testCommandQueueGetDevice);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
@@ -3976,7 +3974,11 @@ void testEnqueueReleaseExternalMemObjects()
     // prevent destructor from interfering with the test
     event() = nullptr;
     mem_objects[0]() = nullptr;
-#endif
 }
+
+#else
+void testEnqueueAcquireExternalMemObjects(void) {}
+void testEnqueueReleaseExternalMemObjects(void) {}
+#endif // cl_khr_external_memory
 
 } // extern "C"
