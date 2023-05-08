@@ -424,6 +424,10 @@ void setUp(void)
     cl::pfn_clEnqueueReleaseExternalMemObjectsKHR = ::clEnqueueReleaseExternalMemObjectsKHR;
 #endif
 
+#if defined(cl_ext_image_requirements_info)
+    cl::pfn_clGetImageRequirementsInfoEXT = ::clGetImageRequirementsInfoEXT;
+#endif
+
     /* We reach directly into the objects rather than using assignment to
      * avoid the reference counting functions from being called.
      */
@@ -4191,7 +4195,6 @@ void testEnqueueReleaseExternalMemObjects(void) {}
 /****************************************************************************
  * Tests for allocate and deallocate API (clSVMAlloc, clSVMFree, clEnqueueSVMMap)
  ****************************************************************************/
-
 int *testMemory;
 void *clSVMAllocARM_stubForMemoryAllocation(cl_context context,cl_svm_mem_flags flags,
                          size_t size, cl_uint alignment, int cmock_num_calls)
@@ -4229,6 +4232,105 @@ void testSVMMemoryAllocation()
 #endif
 }
 
+#if defined(cl_ext_image_requirements_info)
+constexpr size_t TEST_SIZE_TYPE_VALUE  = 4;
+constexpr cl_uint TEST_UINT_VALUE  = 256;
 
+static cl_int clGetImageRequirementsInfoEXT_GetInfo(
+    cl_context context,
+    const cl_mem_properties* properties,
+    cl_mem_flags flags,
+    const cl_image_format* image_format,
+    const cl_image_desc* image_desc,
+    cl_image_requirements_info_ext param_name,
+    size_t param_value_size,
+    void* param_value,
+    size_t* param_value_size_ret,
+    int num_calls)
+{
+    switch(param_name)
+    {
+        case CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT:
+        case CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT:
+#if defined(cl_ext_image_from_buffer)
+        case CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT:
+#endif
+        case CL_IMAGE_REQUIREMENTS_SIZE_EXT:
+        {
+            size_t ret = 4;
+            if (param_value_size == sizeof(ret) && param_value) {
+                *static_cast<size_t *>(param_value) = ret;
+            }
+
+            if (param_value_size_ret) {
+                *param_value_size_ret = sizeof(ret);
+            }
+
+            return CL_SUCCESS;
+        }
+        case CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT:
+        case CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT:
+        case CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT:
+        case CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT:
+        {
+            cl_uint ret = TEST_UINT_VALUE;
+            if (param_value_size == sizeof(ret) && param_value) {
+                *static_cast<cl_uint *>(param_value) = ret;
+            }
+
+            if (param_value_size_ret) {
+                *param_value_size_ret = sizeof(ret);
+            }
+
+            return CL_SUCCESS;
+        }
+        default: break;
+    }
+    TEST_FAIL();
+    return CL_INVALID_OPERATION;
+}
+
+void testTemplateGetImageRequirementsInfo()
+{
+    cl::Context context(make_context(0));
+    cl_device_id device_expect = make_device_id(0);
+    int device_refcount = 1;
+
+    prepare_deviceRefcounts(1, &device_expect, &device_refcount);
+
+    clGetContextInfo_StubWithCallback(clGetContextInfo_device);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+
+    clGetImageRequirementsInfoEXT_StubWithCallback(clGetImageRequirementsInfoEXT_GetInfo);
+
+    auto info0 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::RowPitchAlign>();
+    TEST_ASSERT_EQUAL(info0, TEST_SIZE_TYPE_VALUE);
+
+    auto info1 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::BaseAddAlign>();
+    TEST_ASSERT_EQUAL(info1, TEST_SIZE_TYPE_VALUE);
+
+    auto info2 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::Size>();
+    TEST_ASSERT_EQUAL(info2, TEST_SIZE_TYPE_VALUE);
+
+#if defined(cl_ext_image_from_buffer)
+    auto info3 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::SlicePitchAlign>();
+    TEST_ASSERT_EQUAL(info3, TEST_SIZE_TYPE_VALUE);
+#endif
+
+    auto info4 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::NaxWidth>();
+    TEST_ASSERT_EQUAL(info4, TEST_UINT_VALUE);
+
+    auto info5 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::MaxHeight>();
+    TEST_ASSERT_EQUAL(info5, TEST_UINT_VALUE);
+
+    auto info6 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::MaxDepth>();
+    TEST_ASSERT_EQUAL(info6, TEST_UINT_VALUE);
+
+    auto info7 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::MaxArraySize>();
+    TEST_ASSERT_EQUAL(info7, TEST_UINT_VALUE);
+}
+#endif
 
 } // extern "C"
