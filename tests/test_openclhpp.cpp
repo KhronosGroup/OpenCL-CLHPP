@@ -416,6 +416,7 @@ void setUp(void)
     cl::pfn_clEnqueueWaitSemaphoresKHR = ::clEnqueueWaitSemaphoresKHR;
     cl::pfn_clEnqueueSignalSemaphoresKHR = ::clEnqueueSignalSemaphoresKHR;
     cl::pfn_clGetSemaphoreInfoKHR = ::clGetSemaphoreInfoKHR;
+#endif
 #if defined(cl_khr_external_semaphore)
     cl::pfn_clGetSemaphoreHandleForTypeKHR = ::clGetSemaphoreHandleForTypeKHR;
 #endif
@@ -3938,28 +3939,28 @@ void testTemplateGetSemaphoreHandleForTypeKHR()
     cl::Semaphore semaphore;
 #if defined(cl_khr_external_semaphore_dx_fence)
     {
-        auto handle = semaphore.getHandleForTypeKHR<CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR>(device);
-        TEST_ASSERT_EQUAL(handle, make_external_semaphore_handle(CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR));
+        auto handle0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::D3D12Fence>(device);
+        TEST_ASSERT_EQUAL(handle0, make_external_semaphore_handle(cl::ExternalSemaphoreType::D3D12Fence));
     }
 #endif
 #if defined(cl_khr_external_semaphore_opaque_fd)
     {
-        auto fd = semaphore.getHandleForTypeKHR<CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR>(device);
-        TEST_ASSERT_EQUAL(fd, make_external_semaphore_fd(CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR));
+        auto fd0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueFd>(device);
+        TEST_ASSERT_EQUAL(fd0, make_external_semaphore_fd(cl::ExternalSemaphoreType::OpaqueFd));
     }
 #endif
 #if defined(cl_khr_external_semaphore_sync_fd)
     {
-        auto fd = semaphore.getHandleForTypeKHR<CL_SEMAPHORE_HANDLE_SYNC_FD_KHR>(device);
-        TEST_ASSERT_EQUAL(fd, make_external_semaphore_fd(CL_SEMAPHORE_HANDLE_SYNC_FD_KHR));
+        auto fd1 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::SyncFd>(device);
+        TEST_ASSERT_EQUAL(fd1, make_external_semaphore_fd(cl::ExternalSemaphoreType::SyncFd));
     }
 #endif
 #if defined(cl_khr_external_semaphore_win32)
     {
-        auto handle0 = semaphore.getHandleForTypeKHR<CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR>(device);
-        TEST_ASSERT_EQUAL(handle0, make_external_semaphore_handle(CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR));
-        auto handle1 = semaphore.getHandleForTypeKHR<CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR>(device);
-        TEST_ASSERT_EQUAL(handle1, make_external_semaphore_handle(CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR));
+        auto handle1 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueWin32>(device);
+        TEST_ASSERT_EQUAL(handle1, make_external_semaphore_handle(cl::ExternalSemaphoreType::OpaqueWin32));
+        auto handle2 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueWin32Kmt>(device);
+        TEST_ASSERT_EQUAL(handle2, make_external_semaphore_handle(cl::ExternalSemaphoreType::OpaqueWin32Kmt));
     }
 #endif
 }

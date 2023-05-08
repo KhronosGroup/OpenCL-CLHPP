@@ -10464,7 +10464,7 @@ namespace compatibility {
 #ifdef cl_khr_semaphore
 
 #ifdef cl_khr_external_semaphore
-enum class ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
+enum ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 {
     None = 0,
 #ifdef cl_khr_external_semaphore_dx_fence
@@ -10551,6 +10551,11 @@ public:
     cl_int getHandleForTypeKHR(
         const Device& device, cl_external_semaphore_handle_type_khr name, T* param) const
     {
+        if (pfn_clGetSemaphoreHandleForTypeKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __GET_SEMAPHORE_HANDLE_FOR_TYPE_KHR_ERR);
+        }
+
         return detail::errHandler(
             detail::getInfo(
                 pfn_clGetSemaphoreHandleForTypeKHR, object_, device(), name, param),
