@@ -417,6 +417,9 @@ void setUp(void)
     cl::pfn_clEnqueueSignalSemaphoresKHR = ::clEnqueueSignalSemaphoresKHR;
     cl::pfn_clGetSemaphoreInfoKHR = ::clGetSemaphoreInfoKHR;
 #endif
+#if defined(cl_khr_external_semaphore)
+    cl::pfn_clGetSemaphoreHandleForTypeKHR = ::clGetSemaphoreHandleForTypeKHR;
+#endif
 #ifdef cl_khr_external_memory
     cl::pfn_clEnqueueAcquireExternalMemObjectsKHR = ::clEnqueueAcquireExternalMemObjectsKHR;
     cl::pfn_clEnqueueReleaseExternalMemObjectsKHR = ::clEnqueueReleaseExternalMemObjectsKHR;
@@ -3879,6 +3882,137 @@ void testSemaphoreGetInfoDevicesList(void) {}
 void testSemaphoreRetain(void) {}
 void testSemaphoreRelease(void) {}
 #endif // cl_khr_semaphore
+// Tests for external semaphores:
+#if defined(cl_khr_external_semaphore)
+
+static void* make_external_semaphore_handle(
+    cl_external_semaphore_handle_type_khr handle_type )
+{
+    return (void*)(uintptr_t)(handle_type << 16 | 0x1111);
+}
+
+static int make_external_semaphore_fd(
+    cl_external_semaphore_handle_type_khr handle_type)
+{
+    return (int)(handle_type << 16 | 0x2222);
+}
+
+static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
+    cl_semaphore_khr sema_object,
+    cl_device_id device,
+    cl_external_semaphore_handle_type_khr handle_type,
+    size_t handle_size,
+    void* handle_ptr,
+    size_t* handle_size_ret,
+    int num_calls)
+{
+    (void) sema_object;
+    (void) device;
+
+    switch (handle_type) {
+#if defined(cl_khr_external_semaphore_dx_fence)
+    case CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR:
+    {
+        void* ret = make_external_semaphore_handle(handle_type);
+        if (handle_size == sizeof(ret) && handle_ptr) {
+            void** pHandle = static_cast<void**>(handle_ptr);
+            *pHandle = ret;
+        }
+        if (handle_size_ret) {
+            *handle_size_ret = sizeof(ret);
+        }
+        return CL_SUCCESS;
+    }
+#endif
+#if defined(cl_khr_external_semaphore_win32)
+    case CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR:
+    case CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR:
+    {
+        void* ret = make_external_semaphore_handle(handle_type);
+        if (handle_size == sizeof(ret) && handle_ptr) {
+            void** pHandle = static_cast<void**>(handle_ptr);
+            *pHandle = ret;
+        }
+        if (handle_size_ret) {
+            *handle_size_ret = sizeof(ret);
+        }
+        return CL_SUCCESS;
+    }
+#endif
+#if defined(cl_khr_external_semaphore_opaque_fd)
+    case CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR:
+    {
+        int ret = make_external_semaphore_fd(handle_type);
+        if (handle_size == sizeof(ret) && handle_ptr) {
+            int* pHandle = static_cast<int*>(handle_ptr);
+            *pHandle = ret;
+        }
+        if (handle_size_ret) {
+            *handle_size_ret = sizeof(ret);
+        }
+        return CL_SUCCESS;
+    }
+#endif
+#if defined(cl_khr_external_semaphore_opaque_fd)
+    case CL_SEMAPHORE_HANDLE_SYNC_FD_KHR:
+    {
+        int ret = make_external_semaphore_fd(handle_type);
+        if (handle_size == sizeof(ret) && handle_ptr) {
+            int* pHandle = static_cast<int*>(handle_ptr);
+            *pHandle = ret;
+        }
+        if (handle_size_ret) {
+            *handle_size_ret = sizeof(ret);
+        }
+        return CL_SUCCESS;
+    }
+#endif
+    default: break;
+    }
+    TEST_FAIL();
+    return CL_INVALID_OPERATION;
+}
+
+void testTemplateGetSemaphoreHandleForTypeKHR()
+{
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    cl::Device device(make_device_id(0));
+
+    clGetSemaphoreHandleForTypeKHR_StubWithCallback(clGetSemaphoreHandleForTypeKHR_GetHandles);
+
+    cl::Semaphore semaphore;
+#if defined(cl_khr_external_semaphore_dx_fence)
+    {
+        auto handle0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::D3D12Fence>(device);
+        TEST_ASSERT_EQUAL(handle0, make_external_semaphore_handle(cl::ExternalSemaphoreType::D3D12Fence));
+    }
+#endif
+#if defined(cl_khr_external_semaphore_opaque_fd)
+    {
+        auto fd0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueFd>(device);
+        TEST_ASSERT_EQUAL(fd0, make_external_semaphore_fd(cl::ExternalSemaphoreType::OpaqueFd));
+    }
+#endif
+#if defined(cl_khr_external_semaphore_sync_fd)
+    {
+        auto fd1 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::SyncFd>(device);
+        TEST_ASSERT_EQUAL(fd1, make_external_semaphore_fd(cl::ExternalSemaphoreType::SyncFd));
+    }
+#endif
+#if defined(cl_khr_external_semaphore_win32)
+    {
+        auto handle1 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueWin32>(device);
+        TEST_ASSERT_EQUAL(handle1, make_external_semaphore_handle(cl::ExternalSemaphoreType::OpaqueWin32));
+        auto handle2 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueWin32Kmt>(device);
+        TEST_ASSERT_EQUAL(handle2, make_external_semaphore_handle(cl::ExternalSemaphoreType::OpaqueWin32Kmt));
+    }
+#endif
+}
+
+#endif // defined(cl_khr_external_semaphore)
 
 /****************************************************************************
  * Tests for cl_khr_external_memory
