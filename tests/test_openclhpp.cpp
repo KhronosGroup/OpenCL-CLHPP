@@ -71,9 +71,7 @@ static inline cl_semaphore_khr make_semaphore_khr(int index)
 }
 #endif
 
-/* Pools of pre-allocated wrapped objects for tests. There is no device pool,
- * because there is no way to know whether the test wants the device to be
- * reference countable or not.
+/* Pools of pre-allocated wrapped objects for tests.
  */
 static const int POOL_MAX = 5;
 static cl::Platform platformPool[POOL_MAX];
@@ -90,6 +88,7 @@ static cl::CommandBufferKhr commandBufferKhrPool[POOL_MAX];
 #if defined(cl_khr_semaphore)
 static cl::Semaphore semaphorePool[POOL_MAX];
 #endif
+static cl::Device devicePool[POOL_MAX];
 
 /****************************************************************************
  * Stub functions shared by multiple tests
@@ -444,6 +443,7 @@ void setUp(void)
 #if defined(cl_khr_semaphore)
         semaphorePool[i]() = make_semaphore_khr(i);
 #endif
+        devicePool[i]() = make_device_id(i);
     }
 
     programRefcounts.reset();
@@ -465,6 +465,7 @@ void tearDown(void)
         image3DPool[i]() = nullptr;
         kernelPool[i]() = nullptr;
         programPool[i]() = nullptr;
+        devicePool[i]() = nullptr;
 #if defined(cl_khr_command_buffer)
         commandBufferKhrPool[i]() = nullptr;
 #endif
@@ -3498,6 +3499,78 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+// Tests for Device::GetInfo
+static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
+    cl_device_id device, cl_device_info param_name, size_t param_value_size,
+    void *param_value, size_t *param_value_size_ret, int cmock_num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_VENDOR_ID, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_uint);
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_uint *>(param_value) = 0xABCD;
+    }
+    return CL_SUCCESS;
+}
+void testDevice_GetInfo_CLDeviceVendorID()
+{
+    cl_uint expected = 0xABCD;
+    clGetDeviceInfo_StubWithCallback(
+        clGetInfo_testDeviceGetInfoCLDeviceVendorId);
+    cl_uint vendorID = devicePool[0].getInfo<CL_DEVICE_VENDOR_ID>();
+    TEST_ASSERT_EQUAL_HEX(expected, vendorID);
+}
+static cl_int clGetInfo_testDeviceGetInfoCLDeviceImageSupport(
+    cl_device_id device, cl_device_info param_name, size_t param_value_size,
+    void *param_value, size_t *param_value_size_ret, int cmock_num_calls)
+{
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_IMAGE_SUPPORT, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_bool));
+    if (param_value_size_ret != nullptr)
+        *param_value_size_ret = sizeof(cl_bool);
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_bool *>(param_value) = true;
+    }
+    return CL_SUCCESS;
+}
+void testDevice_GetInfo_CLDeviceImageSupport()
+{
+    cl_bool expected = true;
+    clGetDeviceInfo_StubWithCallback(
+        clGetInfo_testDeviceGetInfoCLDeviceImageSupport);
+    cl_bool deviceImageSupport =
+        devicePool[0].getInfo<CL_DEVICE_IMAGE_SUPPORT>();
+    TEST_ASSERT_EQUAL_HEX(expected, deviceImageSupport);
+}
+static cl_int clGetInfo_testDeviceGetInfoCLDeviceName(
+    cl_device_id device, cl_device_info param_name, size_t param_value_size,
+    void *param_value, size_t *param_value_size_ret, int cmock_num_calls)
+{
+    static char testDeviceName[] = "testDeviceName";
+    TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_NAME, param_name);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(testDeviceName));
+   
+    if (param_value_size_ret != nullptr) 
+        *param_value_size_ret = sizeof(testDeviceName);
+    if (param_value != nullptr)
+    {
+        strcpy((char*)param_value, testDeviceName);
+    }
+    return CL_SUCCESS;
+}
+void testDevice_GetInfo_CLDeviceName()
+{
+    cl::string expected = "testDeviceName";
+    clGetDeviceInfo_StubWithCallback(clGetInfo_testDeviceGetInfoCLDeviceName);
+    cl::string deviceName = devicePool[0].getInfo<CL_DEVICE_NAME>();
+    TEST_ASSERT_EQUAL_STRING(expected.c_str(), deviceName.c_str());
+} 
 
 /****************************************************************************
  * Tests for cl::Semaphore
