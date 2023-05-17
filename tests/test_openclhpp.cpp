@@ -4088,7 +4088,8 @@ void testTemplateGetSemaphoreHandleForTypeKHR()
     }
 #endif
 }
-
+#else
+void testTemplateGetSemaphoreHandleForTypeKHR() {}
 #endif // defined(cl_khr_external_semaphore)
 
 /****************************************************************************
@@ -4331,6 +4332,8 @@ void testTemplateGetImageRequirementsInfo()
     auto info7 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::MaxArraySize>();
     TEST_ASSERT_EQUAL(info7, TEST_UINT_VALUE);
 }
-#endif
+#else
+void testTemplateGetImageRequirementsInfo() {}
+#endif // cl_ext_image_requirements_info
 
 } // extern "C"

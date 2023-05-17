@@ -3217,7 +3217,7 @@ private:
     };
 
     static cl_int getImageRequirementsInfoExtHelper(const Context &context,
-        const ImageRequirementsInfo &info, 
+        const ImageRequirementsInfo &info,
         cl_image_requirements_info_ext param_name,
         size_type param_value_size,
         void* param_value,
@@ -3235,7 +3235,7 @@ private:
         if (pfn_clGetImageRequirementsInfoEXT == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION, __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
         }
-            
+
         return detail::errHandler(
             pfn_clGetImageRequirementsInfoEXT(context(), info.properties,
                 info.flags, info.image_format, info.image_desc, param_name,
@@ -3542,7 +3542,7 @@ public:
         const cl_image_desc* image_desc = nullptr) const
     {
         ImageRequirementsInfo imageInfo = {flags, properties, image_format, image_desc};
-    
+
         return detail::errHandler(
             detail::getInfo(
                 Context::getImageRequirementsInfoExtHelper, *this, imageInfo, name, param),
