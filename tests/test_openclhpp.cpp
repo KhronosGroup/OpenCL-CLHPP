@@ -13,6 +13,7 @@ extern "C"
 #include <cmock.h>
 #include "Mockcl.h"
 #include "Mockcl_ext.h"
+#include "Mockcl_gl.h"
 #include <string.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -4336,4 +4337,52 @@ void testTemplateGetImageRequirementsInfo()
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
 
+static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
+                                                     cl_mem_flags flags,
+                                                     cl_GLuint bufobj,
+                                                     cl_int *errcode_ret,
+                                                     int num_calls)
+{
+    (void)num_calls;
+
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL(0, flags);
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
+                                                  cl_gl_object_type *type,
+                                                  cl_GLuint *gl_object_name,
+                                                  int num)
+{
+    memobj = make_mem(0);
+    *type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+    *gl_object_name = 0;
+    return CL_SUCCESS;
+}
+
+cl_int clReleaseMemObject_testgetObjectInfo(cl_mem memobj, int ret)
+{
+    return CL_SUCCESS;
+}
+
+void testgetObjectInfo() {
+    cl_mem_flags flags = 0;
+    cl_int err = 0;
+    cl_GLuint bufobj = 0;
+    cl_mem memobj = make_mem(0);
+    cl_gl_object_type type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+    clGetGLObjectInfo_StubWithCallback(clGetGLObjectInfo_testgetObjectInfo);
+    clCreateFromGLBuffer_StubWithCallback(
+        clCreateFromGLBuffer_testgetObjectInfo);
+    clReleaseMemObject_StubWithCallback(clReleaseMemObject_testgetObjectInfo);
+    cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
+
+    buffer.getObjectInfo(&type, &bufobj);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+}
 } // extern "C"
