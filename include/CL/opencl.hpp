@@ -897,6 +897,10 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __ENQUEUE_COPY_IMAGE_TO_BUFFER_ERR  CL_HPP_ERR_STR_(clEnqueueCopyImageToBuffer)
 #define __ENQUEUE_COPY_BUFFER_TO_IMAGE_ERR  CL_HPP_ERR_STR_(clEnqueueCopyBufferToImage)
 #define __ENQUEUE_MAP_BUFFER_ERR            CL_HPP_ERR_STR_(clEnqueueMapBuffer)
+#define __ENQUEUE_MAP_SVM_ERR               CL_HPP_ERR_STR_(clEnqueueSVMMap)
+#define __ENQUEUE_FILL_SVM_ERR              CL_HPP_ERR_STR_(clEnqueueSVMMemFill)
+#define __ENQUEUE_COPY_SVM_ERR              CL_HPP_ERR_STR_(clEnqueueSVMMemcpy)
+#define __ENQUEUE_UNMAP_SVM_ERR             CL_HPP_ERR_STR_(clEnqueueSVMUnmap)
 #define __ENQUEUE_MAP_IMAGE_ERR             CL_HPP_ERR_STR_(clEnqueueMapImage)
 #define __ENQUEUE_UNMAP_MEM_OBJECT_ERR      CL_HPP_ERR_STR_(clEnqueueUnMapMemObject)
 #define __ENQUEUE_NDRANGE_KERNEL_ERR        CL_HPP_ERR_STR_(clEnqueueNDRangeKernel)
@@ -3950,7 +3954,8 @@ public:
      */
     pointer allocate(
         size_type size,
-        typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0)
+        typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0,
+        bool map = true)
     {
         // Allocate memory with default alignment matching the size of the type
         void* voidPointer =
@@ -3969,7 +3974,7 @@ public:
 #endif // #if defined(CL_HPP_ENABLE_EXCEPTIONS)
 
         // If allocation was coarse-grained then map it
-        if (!(SVMTrait::getSVMMemFlags() & CL_MEM_SVM_FINE_GRAIN_BUFFER)) {
+        if (map && !(SVMTrait::getSVMMemFlags() & CL_MEM_SVM_FINE_GRAIN_BUFFER)) {
             cl_int err = enqueueMapSVM(retValue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size*sizeof(T));
             if (err != CL_SUCCESS) {
                 std::bad_alloc excep;
@@ -8173,6 +8178,162 @@ public:
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
+
+    /**
+    * Enqueues a command that copies a region of memory from the source pointer to the destination pointer.
+    * This function is specifically for transferring data between the host and a coarse-grained SVM buffer.
+    */
+    template<typename T>
+    cl_int enqueueMemcpySVM(
+            T *dst_ptr,
+            const T *src_ptr,
+            cl_bool blocking,
+            size_type size,
+            const vector<Event> *events = nullptr,
+            Event *event = nullptr) const {
+        cl_event tmp;
+        cl_int err = detail::errHandler(::clEnqueueSVMMemcpy(
+                object_, blocking, static_cast<void *>(dst_ptr), static_cast<const void *>(src_ptr), size,
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    /**
+    *Enqueues a command that will copy data from one coarse-grained SVM buffer to another.
+    *This function takes two cl::pointer instances representing the destination and source buffers.
+    */
+    template<typename T, class D>
+    cl_int enqueueMemcpySVM(
+            cl::pointer<T, D> &dst_ptr,
+            const cl::pointer<T, D> &src_ptr,
+            cl_bool blocking,
+            size_type size,
+            const vector<Event> *events = nullptr,
+            Event *event = nullptr) const {
+        cl_event tmp;
+        cl_int err = detail::errHandler(::clEnqueueSVMMemcpy(
+                object_, blocking, static_cast<void *>(dst_ptr.get()), static_cast<const void *>(src_ptr.get()),
+                size,
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    /**
+    * Enqueues a command that will allow the host to update a region of a coarse-grained SVM buffer.
+    * This variant takes a cl::vector instance.
+    */
+    template<typename T, class Alloc>
+    cl_int enqueueMemcpySVM(
+            cl::vector<T, Alloc> &dst_container,
+            const cl::vector<T, Alloc> &src_container,
+            cl_bool blocking,
+            const vector<Event> *events = nullptr,
+            Event *event = nullptr) const {
+        cl_event tmp;
+        if(src_container.size() != dst_container.size()){
+            return detail::errHandler(CL_INVALID_VALUE,__ENQUEUE_COPY_SVM_ERR);
+        }
+        cl_int err = detail::errHandler(::clEnqueueSVMMemcpy(
+                object_, blocking, static_cast<void *>(dst_container.data()),
+                static_cast<const void *>(src_container.data()),
+                dst_container.size() * sizeof(T),
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (event != NULL) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    /**
+    * Enqueues a command to fill a SVM buffer with a pattern.
+    *
+    */
+    template<typename T, typename PatternType>
+    cl_int enqueueMemFillSVM(
+            T *ptr,
+            PatternType pattern,
+            size_type size,
+            const vector<Event> *events = nullptr,
+            Event *event = nullptr) const {
+        cl_event tmp;
+        cl_int err = detail::errHandler(::clEnqueueSVMMemFill(
+                object_, static_cast<void *>(ptr), static_cast<void *>(&pattern),
+                sizeof(PatternType), size,
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr), __ENQUEUE_FILL_SVM_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    /**
+    * Enqueues a command that fills a region of a coarse-grained SVM buffer with a specified pattern.
+    * This variant takes a cl::pointer instance.
+    */
+    template<typename T, class D, typename PatternType>
+    cl_int enqueueMemFillSVM(
+            cl::pointer<T, D> &ptr,
+            PatternType pattern,
+            size_type size,
+            const vector<Event> *events = nullptr,
+            Event *event = nullptr) const {
+        cl_event tmp;
+        cl_int err = detail::errHandler(::clEnqueueSVMMemFill(
+                object_, static_cast<void *>(ptr.get()), static_cast<void *>(&pattern),
+                sizeof(PatternType), size,
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr), __ENQUEUE_FILL_SVM_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
+    /**
+    * Enqueues a command that will allow the host to fill a region of a coarse-grained SVM buffer with a specified pattern.
+    * This variant takes a cl::vector instance.
+    */
+    template<typename T, class Alloc, typename PatternType>
+    cl_int enqueueMemFillSVM(
+            cl::vector<T, Alloc> &container,
+            PatternType pattern,
+            const vector<Event> *events = nullptr,
+            Event* event = nullptr) const
+    {
+        cl_event tmp;
+        cl_int err = detail::errHandler(::clEnqueueSVMMemFill(
+                object_, static_cast<void *>(container.data()), static_cast<void *>(&pattern),
+                sizeof(PatternType), container.size() * sizeof(T),
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (event != nullptr) ? &tmp : NULL), __ENQUEUE_FILL_SVM_ERR);
+
+        if (event != nullptr && err == CL_SUCCESS)
+            *event = tmp;
+
+        return err;
+    }
+
     /**
      * Enqueues a command that will allow the host to update a region of a coarse-grained SVM buffer.
      * This variant takes a raw SVM pointer.
@@ -8192,7 +8353,7 @@ public:
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
-            __ENQUEUE_MAP_BUFFER_ERR);
+            __ENQUEUE_MAP_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -8220,7 +8381,7 @@ public:
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
-            __ENQUEUE_MAP_BUFFER_ERR);
+            __ENQUEUE_MAP_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -8246,7 +8407,7 @@ public:
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
-            __ENQUEUE_MAP_BUFFER_ERR);
+            __ENQUEUE_MAP_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -8295,7 +8456,7 @@ public:
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
-            __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+            __ENQUEUE_UNMAP_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -8320,7 +8481,7 @@ public:
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
-            __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+            __ENQUEUE_UNMAP_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -8345,7 +8506,7 @@ public:
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
-            __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+            __ENQUEUE_UNMAP_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -9363,7 +9524,7 @@ inline cl_int enqueueMapSVM(
     cl_int error;
     CommandQueue queue = CommandQueue::getDefault(&error);
     if (error != CL_SUCCESS) {
-        return detail::errHandler(error, __ENQUEUE_MAP_BUFFER_ERR);
+        return detail::errHandler(error, __ENQUEUE_MAP_SVM_ERR);
     }
 
     return queue.enqueueMapSVM(
@@ -9410,7 +9571,7 @@ inline cl_int enqueueMapSVM(
     cl_int error;
     CommandQueue queue = CommandQueue::getDefault(&error);
     if (error != CL_SUCCESS) {
-        return detail::errHandler(error, __ENQUEUE_MAP_BUFFER_ERR);
+        return detail::errHandler(error, __ENQUEUE_MAP_SVM_ERR);
     }
 
     return queue.enqueueMapSVM(
@@ -9462,11 +9623,11 @@ inline cl_int enqueueUnmapSVM(
     cl_int error;
     CommandQueue queue = CommandQueue::getDefault(&error);
     if (error != CL_SUCCESS) {
-        return detail::errHandler(error, __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+        return detail::errHandler(error, __ENQUEUE_UNMAP_SVM_ERR);
     }
 
     return detail::errHandler(queue.enqueueUnmapSVM(ptr, events, event), 
-        __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+        __ENQUEUE_UNMAP_SVM_ERR);
 
 }
 
@@ -9484,11 +9645,11 @@ inline cl_int enqueueUnmapSVM(
     cl_int error;
     CommandQueue queue = CommandQueue::getDefault(&error);
     if (error != CL_SUCCESS) {
-        return detail::errHandler(error, __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+        return detail::errHandler(error, __ENQUEUE_UNMAP_SVM_ERR);
     }
 
     return detail::errHandler(queue.enqueueUnmapSVM(ptr, events, event),
-        __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+        __ENQUEUE_UNMAP_SVM_ERR);
 }
 
 /**
@@ -9505,11 +9666,11 @@ inline cl_int enqueueUnmapSVM(
     cl_int error;
     CommandQueue queue = CommandQueue::getDefault(&error);
     if (error != CL_SUCCESS) {
-        return detail::errHandler(error, __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+        return detail::errHandler(error, __ENQUEUE_UNMAP_SVM_ERR);
     }
 
     return detail::errHandler(queue.enqueueUnmapSVM(container, events, event),
-        __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
+        __ENQUEUE_UNMAP_SVM_ERR);
 }
 
 #endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -11336,7 +11497,12 @@ public:
 #undef __ENQUEUE_FILL_IMAGE_ERR            
 #undef __ENQUEUE_COPY_IMAGE_TO_BUFFER_ERR  
 #undef __ENQUEUE_COPY_BUFFER_TO_IMAGE_ERR  
-#undef __ENQUEUE_MAP_BUFFER_ERR            
+#undef __ENQUEUE_MAP_BUFFER_ERR
+#undef __ENQUEUE_MAP_IMAGE_ERR
+#undef __ENQUEUE_MAP_SVM_ERR
+#undef __ENQUEUE_FILL_SVM_ERR
+#undef __ENQUEUE_COPY_SVM_ERR
+#undef __ENQUEUE_UNMAP_SVM_ERR              
 #undef __ENQUEUE_MAP_IMAGE_ERR             
 #undef __ENQUEUE_UNMAP_MEM_OBJECT_ERR      
 #undef __ENQUEUE_NDRANGE_KERNEL_ERR        
