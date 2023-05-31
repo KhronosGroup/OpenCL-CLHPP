@@ -3407,6 +3407,16 @@ void testLinkProgramWithVectorProgramInput(void)
 #endif
 }
 
+void testGetPlatformVersion(void)
+{
+    cl_platform_id platform = make_platform_id(0);
+
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+
+    cl_uint version = cl::detail::getPlatformVersion(platform);
+    TEST_ASSERT_EQUAL_UINT32(1, version);
+}
+
 /****************************************************************************
  * Tests for cl::CommandBufferKhr
  ****************************************************************************/
