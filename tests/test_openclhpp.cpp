@@ -3407,14 +3407,47 @@ void testLinkProgramWithVectorProgramInput(void)
 #endif
 }
 
-void testGetPlatformVersion(void)
+void testGetPlatformVersion_1_1(void)
 {
     cl_platform_id platform = make_platform_id(0);
 
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
 
     cl_uint version = cl::detail::getPlatformVersion(platform);
-    TEST_ASSERT_EQUAL_UINT32(1, version);
+    TEST_ASSERT_EQUAL_UINT32(0x10001, version);
+}
+
+void testGetPlatformVersion_1_2(void)
+{
+    cl_platform_id platform = make_platform_id(0);
+
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    cl_uint version = cl::detail::getPlatformVersion(platform);
+    TEST_ASSERT_EQUAL_UINT32(0x10002, version);
+}
+
+void testGetPlatformVersion_2_0(void)
+{
+    cl_platform_id platform = make_platform_id(0);
+
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
+
+    cl_uint version = cl::detail::getPlatformVersion(platform);
+    TEST_ASSERT_EQUAL_UINT32(0x20000, version);
+}
+
+
+void testGetPlatformVersion_3_0(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    cl_platform_id platform = make_platform_id(0);
+
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_3_0);
+
+    cl_uint version = cl::detail::getPlatformVersion(platform);
+    TEST_ASSERT_EQUAL_UINT32(0x30000, version);
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 }
 
 /****************************************************************************
