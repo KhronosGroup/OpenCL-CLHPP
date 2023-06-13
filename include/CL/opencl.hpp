@@ -973,6 +973,10 @@ static inline cl_int errHandler (cl_int err, const char * errStr = nullptr)
 #define __RELEASE_COMMAND_BUFFER_KHR_ERR            CL_HPP_ERR_STR_(clReleaseCommandBufferKHR)
 #endif // cl_khr_command_buffer
 
+#if defined(cl_ext_image_requirements_info)
+#define __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR            CL_HPP_ERR_STR_(clGetImageRequirementsInfoEXT)
+#endif //cl_ext_image_requirements_info
+
 /**
  * CL 1.2 version that uses device fission.
  */
@@ -1090,6 +1094,11 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetMutableCommandInfoKHR);
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clUpdateMutableCommandsKHR pfn_clUpdateMutableCommandsKHR           = nullptr;
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetMutableCommandInfoKHR pfn_clGetMutableCommandInfoKHR           = nullptr;
 #endif /* cl_khr_command_buffer_mutable_dispatch */
+
+#if defined(cl_ext_image_requirements_info)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetImageRequirementsInfoEXT);
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetImageRequirementsInfoEXT pfn_clGetImageRequirementsInfoEXT  = nullptr;
+#endif
 
 namespace detail {
 
@@ -1585,6 +1594,18 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_pipe_info, CL_PIPE_PROPERTIES, cl::vector<cl_pipe_properties>) \
     F(cl_sampler_info, CL_SAMPLER_PROPERTIES, cl::vector<cl_sampler_properties>) \
 
+#define CL_HPP_PARAM_NAME_CL_IMAGE_REQUIREMENTS_EXT(F) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT, size_type) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT, size_type) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_SIZE_EXT, size_type) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT, cl_uint) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT, cl_uint) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT, cl_uint) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT, cl_uint) \
+
+#define CL_HPP_PARAM_NAME_CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT(F) \
+    F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT, size_type) \
+
 template <typename enum_type, cl_int Name>
 struct param_traits {};
 
@@ -1715,6 +1736,14 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_INTEGER_DOT_PRODUCT_ACCEL
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_4x8BIT_PACKED_KHR, cl_device_integer_dot_product_acceleration_properties_khr)
 #endif // defined(CL_DEVICE_INTEGER_DOT_PRODUCT_ACCELERATION_PROPERTIES_8BIT_KHR)
 #endif // defined(cl_khr_integer_dot_product)
+
+#if defined(cl_ext_image_requirements_info)
+CL_HPP_PARAM_NAME_CL_IMAGE_REQUIREMENTS_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_ext_image_requirements_info
+
+#if defined(cl_ext_image_from_buffer)
+CL_HPP_PARAM_NAME_CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_ext_image_from_buffer
 
 #ifdef CL_PLATFORM_ICD_SUFFIX_KHR
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_platform_info, CL_PLATFORM_ICD_SUFFIX_KHR, string)
@@ -3088,6 +3117,25 @@ UnloadCompiler()
 }
 #endif // #if defined(CL_USE_DEPRECATED_OPENCL_1_1_APIS)
 
+
+#if defined(cl_ext_image_requirements_info)
+enum ImageRequirementsInfoExt : cl_image_requirements_info_ext
+{
+    RowPitchAlign = CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT,
+    BaseAddAlign = CL_IMAGE_REQUIREMENTS_BASE_ADDRESS_ALIGNMENT_EXT,
+    Size = CL_IMAGE_REQUIREMENTS_SIZE_EXT,
+    NaxWidth = CL_IMAGE_REQUIREMENTS_MAX_WIDTH_EXT,
+    MaxHeight = CL_IMAGE_REQUIREMENTS_MAX_HEIGHT_EXT,
+    MaxDepth = CL_IMAGE_REQUIREMENTS_MAX_DEPTH_EXT,
+    MaxArraySize = CL_IMAGE_REQUIREMENTS_MAX_ARRAY_SIZE_EXT,
+#if defined(cl_ext_image_from_buffer)
+    SlicePitchAlign = CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT,
+#endif
+};
+
+#endif // cl_ext_image_requirements_info
+
+
 /*! \brief Class interface for cl_context.
  *
  *  \note Copies of these objects are shallow, meaning that the copy will refer
@@ -3150,6 +3198,51 @@ private:
     static void makeDefaultProvided(const Context &c) {
         default_ = c;
     }
+
+#if defined(cl_ext_image_requirements_info)
+    struct ImageRequirementsInfo {
+
+        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* properties, const ImageFormat* format, const cl_image_desc* desc)
+        {
+            flags = f;
+            properties = properties;
+            image_format = format;
+            image_desc = desc;
+        }
+
+        cl_mem_flags flags = 0;
+        const cl_mem_properties* properties;
+        const ImageFormat* image_format;
+        const cl_image_desc* image_desc;
+    };
+
+    static cl_int getImageRequirementsInfoExtHelper(const Context &context,
+        const ImageRequirementsInfo &info,
+        cl_image_requirements_info_ext param_name,
+        size_type param_value_size,
+        void* param_value,
+        size_type* param_value_size_ret)
+    {
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+        Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
+        cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetImageRequirementsInfoEXT);
+#else
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetImageRequirementsInfoEXT);
+#endif
+
+        if (pfn_clGetImageRequirementsInfoEXT == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION, __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+        }
+
+        return detail::errHandler(
+            pfn_clGetImageRequirementsInfoEXT(context(), info.properties,
+                info.flags, info.image_format, info.image_desc, param_name,
+                param_value_size, param_value, param_value_size_ret),
+            __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+    }
+#endif // cl_ext_image_requirements_info
     
 public:
 #ifdef CL_HPP_UNIT_TEST_ENABLE
@@ -3438,6 +3531,41 @@ public:
 
         return CL_SUCCESS;
     }
+
+#if defined(cl_ext_image_requirements_info)
+    template <typename T>
+    cl_int getImageRequirementsInfoExt(cl_image_requirements_info_ext name,
+        T* param,
+        cl_mem_flags flags = 0,
+        const cl_mem_properties* properties = nullptr,
+        const ImageFormat* image_format = nullptr,
+        const cl_image_desc* image_desc = nullptr) const
+    {
+        ImageRequirementsInfo imageInfo = {flags, properties, image_format, image_desc};
+
+        return detail::errHandler(
+            detail::getInfo(
+                Context::getImageRequirementsInfoExtHelper, *this, imageInfo, name, param),
+                __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR);
+    }
+
+    template <cl_image_requirements_info_ext type> typename
+    detail::param_traits<detail::cl_image_requirements_info_ext, type>::param_type
+        getImageRequirementsInfoExt(cl_mem_flags flags = 0,
+            const cl_mem_properties* properties = nullptr,
+            const ImageFormat* image_format = nullptr,
+            const cl_image_desc* image_desc = nullptr,
+            cl_int* err = nullptr) const
+    {
+        typename detail::param_traits<
+        detail::cl_image_requirements_info_ext, type>::param_type param;
+        cl_int result = getImageRequirementsInfoExt(type, &param, flags, properties, image_format, image_desc);
+        if (err != nullptr) {
+            *err = result;
+        }
+        return param;
+    }
+#endif // cl_ext_image_requirements_info
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 300
     /*! \brief  Registers a destructor callback function with a context.
@@ -11539,6 +11667,7 @@ public:
 #undef __GET_DEVICE_AND_HOST_TIMER_ERR
 #undef __GET_SEMAPHORE_KHR_INFO_ERR
 #undef __CREATE_SEMAPHORE_KHR_WITH_PROPERTIES_ERR
+#undef __GET_IMAGE_REQUIREMENT_INFO_EXT_ERR
 #undef __ENQUEUE_WAIT_SEMAPHORE_KHR_ERR
 #undef __ENQUEUE_SIGNAL_SEMAPHORE_KHR_ERR
 #undef __RETAIN_SEMAPHORE_KHR_ERR
