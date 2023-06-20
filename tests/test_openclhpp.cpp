@@ -4372,7 +4372,7 @@ void testTemplateGetImageRequirementsInfo()
     TEST_ASSERT_EQUAL(info3, TEST_SIZE_TYPE_VALUE);
 #endif
 
-    auto info4 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::NaxWidth>();
+    auto info4 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::MaxWidth>();
     TEST_ASSERT_EQUAL(info4, TEST_UINT_VALUE);
 
     auto info5 = context.getImageRequirementsInfoExt<cl::ImageRequirementsInfoExt::MaxHeight>();
