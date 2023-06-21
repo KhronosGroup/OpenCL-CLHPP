@@ -21,7 +21,9 @@ jobs:
         CMAKE: [3.1.3]
     env:
       CMAKE_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cmake
+      CPACK_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cpack
       CTEST_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/ctest
+      DEB_INSTALLATION_PATH: /usr
       # Workaround for https://github.com/actions/runner/issues/2058
       OPENCL_PKGCONFIG_PATHS: /__w/OpenCL-CLHPP/OpenCL-CLHPP/install/share/pkgconfig:/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-Headers/install/share/pkgconfig:/__w/OpenCL-CLHPP/OpenCL-CLHPP/external/OpenCL-ICD-Loader/install/lib/pkgconfig
 
@@ -35,8 +37,11 @@ jobs:
     - name: Checkout OpenCL-Headers
       uses: actions/checkout@v3
       with:
-        repository: KhronosGroup/OpenCL-Headers
+        # Change to KhronosGroup/OpenCL-Headers when PR for DEB packaging is merged
+        repository: StreamHPC/OpenCL-Headers
         path: external/OpenCL-Headers
+        # Remove when PR for DEB packaging is merged
+        ref: 58-create-deb-package
 
     - name: Checkout OpenCL-ICD-Loader
       uses: actions/checkout@v3
@@ -51,15 +56,16 @@ jobs:
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
+        -D CPACK_PACKAGING_INSTALL_PREFIX=$DEB_INSTALLATION_PATH
         -D BUILD_TESTING=OFF
         -B$GITHUB_WORKSPACE/external/OpenCL-Headers/build
         -H$GITHUB_WORKSPACE/external/OpenCL-Headers &&
-        $CMAKE_EXE
-        --build $GITHUB_WORKSPACE/external/OpenCL-Headers/build
-        --target install
-        --
-        -j`nproc`
+        $CPACK_EXE
+        --config "$GITHUB_WORKSPACE/external/OpenCL-Headers/build/CPackConfig.cmake"
+        -G DEB
+        -C Release
+        -B "$GITHUB_WORKSPACE/external/OpenCL-Headers/package-deb" &&
+        dpkg -i $GITHUB_WORKSPACE/external/OpenCL-Headers/package-deb/*.deb
 
     - name: Build & install OpenCL-ICD-Loader
       run: $CMAKE_EXE
@@ -68,7 +74,6 @@ jobs:
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
         -D BUILD_TESTING=OFF
         -B$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/build
@@ -84,7 +89,7 @@ jobs:
       # no -Werror during configuration because:
       # warning: ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]
       # warning: unused parameter [-Wunused-parameter]
-      run: 
+      run:
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D BUILD_TESTING=ON
@@ -95,7 +100,8 @@ jobs:
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/install
-        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
+        -D CPACK_PACKAGING_INSTALL_PREFIX=$DEB_INSTALLATION_PATH
         -B$GITHUB_WORKSPACE/build
         -H$GITHUB_WORKSPACE
 
@@ -105,6 +111,14 @@ jobs:
         --build $GITHUB_WORKSPACE/build
         --
         -j`nproc`
+
+    - name: Package DEB
+      shell: bash
+      run: $CPACK_EXE
+        --config "$GITHUB_WORKSPACE/build/CPackConfig.cmake"
+        -G DEB
+        -C Release
+        -B "$GITHUB_WORKSPACE/package-deb"
 
     - name: Test
       working-directory: ${{runner.workspace}}/OpenCL-CLHPP/build
@@ -119,6 +133,30 @@ jobs:
         --
         -j`nproc`
 
+    - name: Consume (Package DEB)
+      shell: bash
+      run: |
+        dpkg -i $GITHUB_WORKSPACE/package-deb/*.deb
+        rm -rf $GITHUB_WORKSPACE/build
+        $CMAKE_EXE \
+        -G "${{matrix.GEN}}" \
+        -D BUILD_TESTING=ON \
+        -D BUILD_EXAMPLES=ON \
+        -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}} \
+        -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}" \
+        -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}} \
+        -D CMAKE_CXX_STANDARD=${{matrix.STD}} \
+        -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}} \
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install" \
+        -B$GITHUB_WORKSPACE/build \
+        -H$GITHUB_WORKSPACE
+        if [[ "${{matrix.GEN}}" == "Unix Makefiles" ]]; then
+          $CMAKE_EXE --build $GITHUB_WORKSPACE/build -- -j`nproc`
+        else
+          $CMAKE_EXE --build $GITHUB_WORKSPACE/build --config Debug   -- -j`nproc`
+          $CMAKE_EXE --build $GITHUB_WORKSPACE/build --config Release -- -j`nproc`
+        fi
+
     - name: "Consume (standalone): Configure/Build/Test"
       shell: bash
       run: $CMAKE_EXE
@@ -128,7 +166,7 @@ jobs:
         -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}}
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install;$GITHUB_WORKSPACE/install"
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
         -B$GITHUB_WORKSPACE/build/downstream/bare
         -H$GITHUB_WORKSPACE/tests/pkgconfig/bare ;
         $CMAKE_EXE
@@ -138,8 +176,8 @@ jobs:
 
     - name: "Consume (SDK): Configure/Build/Test"
       shell: bash
-      run: $CMAKE_EXE -E make_directory $GITHUB_WORKSPACE/install/share/cmake/OpenCL ;
-        echo -e "include(\"$GITHUB_WORKSPACE/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake\")\ninclude(\"$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake\")\ninclude(\"\${CMAKE_CURRENT_LIST_DIR}/../OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake\")" > $GITHUB_WORKSPACE/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
+      run: $CMAKE_EXE -E make_directory $DEB_INSTALLATION_PATH/share/cmake/OpenCL ;
+        echo -e "include(\"$DEB_INSTALLATION_PATH/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake\")\ninclude(\"$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake\")\ninclude(\"$DEB_INSTALLATION_PATH/share/cmake/OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake\")" > $DEB_INSTALLATION_PATH/share/cmake/OpenCL/OpenCLConfig.cmake ;
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
@@ -147,7 +185,7 @@ jobs:
         -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}}
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install;$GITHUB_WORKSPACE/install"
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
         -B$GITHUB_WORKSPACE/build/downstream/sdk
         -H$GITHUB_WORKSPACE/tests/pkgconfig/sdk ;
         $CMAKE_EXE
@@ -157,13 +195,11 @@ jobs:
 
     - name: Test pkg-config
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/usr/local/include"
 
     - name: Test pkg-config dependency
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/external/OpenCL-Headers/install/include"
-
-
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/usr/local/include"
 
 
 
@@ -177,11 +213,13 @@ jobs:
         GEN: [Ninja Multi-Config]
         STD: [11, 14]
         BIN: [64] # Temporarily disable cross-compilation (will need toolchain files)
-        CMAKE: [3.21.2]
+        CMAKE: [3.21.3]
     env:
       CMAKE_URL: https://github.com/Kitware/CMake/releases/download/v${{ matrix.CMAKE }}/cmake-${{ matrix.CMAKE }}-Linux-x86_64.tar.gz
       CMAKE_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cmake
+      CPACK_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/cpack
       CTEST_EXE: /opt/Kitware/CMake/${{ matrix.CMAKE }}/bin/ctest
+      DEB_INSTALLATION_PATH: /usr
 
 
     steps:
@@ -193,8 +231,11 @@ jobs:
     - name: Checkout OpenCL-Headers
       uses: actions/checkout@v3
       with:
-        repository: KhronosGroup/OpenCL-Headers
+        # Change to KhronosGroup/OpenCL-Headers when PR for DEB packaging is merged
+        repository: StreamHPC/OpenCL-Headers
         path: external/OpenCL-Headers
+        # Remove when PR for DEB packaging is merged
+        ref: 58-create-deb-package
 
     - name: Checkout OpenCL-ICD-Loader
       uses: actions/checkout@v3
@@ -205,13 +246,13 @@ jobs:
     - name: Create Build Environment
       run: sudo apt-get update -q;
         if [[ "${{matrix.GEN}}" =~ "Ninja" && ! `which ninja` ]]; then sudo apt install -y ninja-build; fi;
-        sudo apt install gcc-${{matrix.VER}} g++-${{matrix.VER}}; 
+        sudo apt install gcc-${{matrix.VER}} g++-${{matrix.VER}};
         if [[ "${{matrix.BIN}}" == "32" ]];
         then sudo apt install gcc-${COMPILER_VER}-multilib;
         fi;
         mkdir -p /opt/Kitware/CMake;
         wget -c $CMAKE_URL -O - | tar -xz --directory /opt/Kitware/CMake;
-        mv /opt/Kitware/CMake/cmake-${{ matrix.CMAKE }}-* /opt/Kitware/CMake/${{ matrix.CMAKE }}
+        mv /opt/Kitware/CMake/cmake-${{ matrix.CMAKE }}-* /opt/Kitware/CMake/${{ matrix.CMAKE }};
       # Install Ninja only if it's the selected generator and it's not available.
 
     - name: Build & install OpenCL-Headers
@@ -220,16 +261,16 @@ jobs:
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
+        -D CPACK_PACKAGING_INSTALL_PREFIX=$DEB_INSTALLATION_PATH
         -D BUILD_TESTING=OFF
         -B$GITHUB_WORKSPACE/external/OpenCL-Headers/build
         -H$GITHUB_WORKSPACE/external/OpenCL-Headers &&
-        $CMAKE_EXE
-        --build $GITHUB_WORKSPACE/external/OpenCL-Headers/build
-        --target install
-        --config Release
-        --
-        -j`nproc`
+        $CPACK_EXE
+        --config "$GITHUB_WORKSPACE/external/OpenCL-Headers/build/CPackConfig.cmake"
+        -G DEB
+        -C Release
+        -B "$GITHUB_WORKSPACE/external/OpenCL-Headers/package-deb" &&
+        sudo dpkg -i $GITHUB_WORKSPACE/external/OpenCL-Headers/package-deb/*.deb
 
     - name: Build & install OpenCL-ICD-Loader
       run: $CMAKE_EXE
@@ -237,7 +278,6 @@ jobs:
         -D CMAKE_C_FLAGS="-w -m${{matrix.BIN}}"
         -D CMAKE_C_COMPILER=gcc-${{matrix.VER}}
         -D CMAKE_C_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
         -D BUILD_TESTING=OFF
         -B$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/build
@@ -263,7 +303,8 @@ jobs:
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/install
-        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
+        -D CPACK_PACKAGING_INSTALL_PREFIX=$DEB_INSTALLATION_PATH
         -B$GITHUB_WORKSPACE/build
         -H$GITHUB_WORKSPACE
 
@@ -272,6 +313,14 @@ jobs:
       run: |
         $CMAKE_EXE --build $GITHUB_WORKSPACE/build --config Release -- -j`nproc`;
         $CMAKE_EXE --build $GITHUB_WORKSPACE/build --config Debug   -- -j`nproc`
+
+    - name: Package DEB
+      shell: bash
+      run: $CPACK_EXE
+        --config "$GITHUB_WORKSPACE/build/CPackConfig.cmake"
+        -G DEB
+        -C Release
+        -B "$GITHUB_WORKSPACE/package-deb"
 
     - name: Test
       working-directory: ${{runner.workspace}}/OpenCL-CLHPP/build
@@ -289,6 +338,25 @@ jobs:
         --
         -j`nproc`
 
+    - name: Consume (Package DEB)
+      shell: bash
+      run: |
+        sudo dpkg -i $GITHUB_WORKSPACE/package-deb/*.deb
+        rm -rf $GITHUB_WORKSPACE/build
+        $CMAKE_EXE \
+        -G "${{matrix.GEN}}" \
+        -D BUILD_TESTING=ON \
+        -D BUILD_EXAMPLES=ON \
+        -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}" \
+        -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}} \
+        -D CMAKE_CXX_STANDARD=${{matrix.STD}} \
+        -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}} \
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install" \
+        -B$GITHUB_WORKSPACE/build \
+        -H$GITHUB_WORKSPACE
+        $CMAKE_EXE --build $GITHUB_WORKSPACE/build --config Debug   -- -j`nproc`
+        $CMAKE_EXE --build $GITHUB_WORKSPACE/build --config Release -- -j`nproc`
+
     - name: "Consume (standalone): Configure/Build/Test"
       shell: bash
       run: $CMAKE_EXE
@@ -297,7 +365,7 @@ jobs:
         -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}}
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install;$GITHUB_WORKSPACE/install"
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
         -B$GITHUB_WORKSPACE/build/downstream/bare
         -H$GITHUB_WORKSPACE/tests/pkgconfig/bare ;
         $CMAKE_EXE --build $GITHUB_WORKSPACE/build/downstream/bare --config Release;
@@ -308,15 +376,15 @@ jobs:
 
     - name: "Consume (SDK): Configure/Build/Test"
       shell: bash
-      run: $CMAKE_EXE -E make_directory $GITHUB_WORKSPACE/install/share/cmake/OpenCL ;
-        echo -e "include(\"$GITHUB_WORKSPACE/external/OpenCL-Headers/install/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake\")\ninclude(\"$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake\")\ninclude(\"\${CMAKE_CURRENT_LIST_DIR}/../OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake\")" > $GITHUB_WORKSPACE/install/share/cmake/OpenCL/OpenCLConfig.cmake ;
+      run: $CMAKE_EXE -E make_directory $DEB_INSTALLATION_PATH/share/cmake/OpenCL ;
+        echo -e "include(\"$DEB_INSTALLATION_PATH/share/cmake/OpenCLHeaders/OpenCLHeadersTargets.cmake\")\ninclude(\"$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install/share/cmake/OpenCLICDLoader/OpenCLICDLoaderTargets.cmake\")\ninclude(\"$DEB_INSTALLATION_PATH/share/cmake/OpenCLHeadersCpp/OpenCLHeadersCppTargets.cmake\")" > $DEB_INSTALLATION_PATH/share/cmake/OpenCL/OpenCLConfig.cmake ;
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}}
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
-        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-Headers/install;$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install;$GITHUB_WORKSPACE/install"
+        -D CMAKE_PREFIX_PATH="$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install"
         -B$GITHUB_WORKSPACE/build/downstream/sdk
         -H$GITHUB_WORKSPACE/tests/pkgconfig/sdk ;
         $CMAKE_EXE --build $GITHUB_WORKSPACE/build/downstream/sdk --config Release;
@@ -327,8 +395,8 @@ jobs:
 
     - name: Test pkg-config
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/usr/local/include"
 
     - name: Test pkg-config dependency
       shell: bash
-      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I$GITHUB_WORKSPACE/external/OpenCL-Headers/install/include"
+      run: PKG_CONFIG_PATH="$OPENCL_PKGCONFIG_PATHS" pkg-config OpenCL-CLHPP --cflags | grep -q "\-I/usr/local/include"
