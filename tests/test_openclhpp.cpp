@@ -1332,9 +1332,11 @@ static cl_mem clCreateBufferWithProperties_testBufferWithProperties(
 
     return make_mem(0);
 }
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
 
 void testBufferWithProperties(void)
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
     clCreateBufferWithProperties_StubWithCallback(clCreateBufferWithProperties_testBufferWithProperties);
 
     VECTOR_CLASS<cl_mem_properties> props{11};
@@ -1346,8 +1348,8 @@ void testBufferWithProperties(void)
 
     // prevent destructor from interfering with the test
     buffer() = nullptr;
-}
 #endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
 
 /****************************************************************************
  * Tests for cl::Image1DBuffer
