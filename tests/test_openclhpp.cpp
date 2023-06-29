@@ -1839,6 +1839,8 @@ cl_int clSetKernelExecInfo_setSVMPointers(cl_kernel kernel,
                                 size_t param_value_size,
                                 const void *param_value, int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_kernel(0), kernel);
     TEST_ASSERT_EQUAL_HEX(CL_KERNEL_EXEC_INFO_SVM_PTRS, param_name);
     TEST_ASSERT(param_value_size == 2 * sizeof(void *));
@@ -1867,6 +1869,8 @@ cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
                                  size_t param_value_size,
                                  const void *param_value, int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_kernel(0), kernel);
     TEST_ASSERT_EQUAL_HEX(*(cl_bool*)param_value, CL_FALSE);
     TEST_ASSERT_EQUAL_HEX(CL_KERNEL_EXEC_INFO_SVM_FINE_GRAIN_SYSTEM,param_name);
@@ -3560,6 +3564,8 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
     void *param_value, size_t *param_value_size_ret, int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_VENDOR_ID, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
@@ -3583,6 +3589,8 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceImageSupport(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
     void *param_value, size_t *param_value_size_ret, int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_IMAGE_SUPPORT, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_bool));
@@ -3607,6 +3615,8 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceName(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
     void *param_value, size_t *param_value_size_ret, int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     static char testDeviceName[] = "testDeviceName";
     TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
     TEST_ASSERT_EQUAL_HEX(CL_DEVICE_NAME, param_name);
@@ -3781,6 +3791,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetContext(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
     TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_CONTEXT_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_context));
@@ -3815,6 +3826,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetReferenceCount(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
     TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_REFERENCE_COUNT_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
@@ -3846,6 +3858,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetProperties(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) num_calls;
     static const cl_semaphore_properties_khr test_properties[] =
         {CL_SEMAPHORE_TYPE_KHR,
          CL_SEMAPHORE_TYPE_BINARY_KHR};
@@ -3884,6 +3897,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetType(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
     TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_TYPE_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_semaphore_type_khr));
@@ -3915,6 +3929,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetPayload(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) num_calls;
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
     TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_PAYLOAD_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_semaphore_payload_khr));
@@ -3946,6 +3961,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) num_calls;
     static const cl_device_id test_devices[] =
         {make_device_id(0), make_device_id(1)};
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
@@ -4037,6 +4053,7 @@ static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
 {
     (void) sema_object;
     (void) device;
+    (void) num_calls;
 
     switch (handle_type) {
 #if defined(cl_khr_external_semaphore_dx_fence)
@@ -4252,12 +4269,25 @@ int *testMemory;
 void *clSVMAllocARM_stubForMemoryAllocation(cl_context context,cl_svm_mem_flags flags,
                          size_t size, cl_uint alignment, int cmock_num_calls)
 {
+    (void) context;
+    (void) flags;
+    (void) alignment;
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_HEX(size, 3 * sizeof(int));
     testMemory = new int[3];
     return testMemory;
 }
 cl_int clEnqueueSVMMap_stubForMemoryAllocation(cl_command_queue command_queue, cl_bool blocking_map, cl_map_flags flags, void* svm_ptr, size_t size, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event, int cmock_num_calls)
 {
+    (void) command_queue;
+    (void) blocking_map;
+    (void) flags;
+    (void) num_events_in_wait_list;
+    (void) event_wait_list;
+    (void) event;
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_PTR(svm_ptr, testMemory);
     TEST_ASSERT_EQUAL_HEX(size, 3 * sizeof(int));
     return CL_SUCCESS;
@@ -4265,6 +4295,9 @@ cl_int clEnqueueSVMMap_stubForMemoryAllocation(cl_command_queue command_queue, c
 void clSVMFree_stubForMemoryAllocation(cl_context context, void *svm_pointer,
     int cmock_num_calls)
 {
+    (void) context;
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL_PTR(svm_pointer, testMemory);
     delete svm_pointer; 
 }
@@ -4301,6 +4334,13 @@ static cl_int clGetImageRequirementsInfoEXT_GetInfo(
     size_t* param_value_size_ret,
     int num_calls)
 {
+    (void) context;
+    (void) properties;
+    (void) flags;
+    (void) image_format;
+    (void) image_desc;
+    (void) num_calls;
+
     switch(param_name)
     {
         case CL_IMAGE_REQUIREMENTS_ROW_PITCH_ALIGNMENT_EXT:
