@@ -83,7 +83,7 @@ static cl::Image3D image3DPool[POOL_MAX];
 static cl::Kernel kernelPool[POOL_MAX];
 static cl::Program programPool[POOL_MAX];
 #if defined(cl_khr_command_buffer)
-static cl::CommandBufferKhr commandBufferKhrPool[POOL_MAX];
+static cl::khr::CommandBuffer commandBufferKhrPool[POOL_MAX];
 #endif
 #if defined(cl_khr_semaphore)
 static cl::Semaphore semaphorePool[POOL_MAX];
@@ -3464,14 +3464,14 @@ void testLinkProgramWithVectorProgramInput(void)
 }
 
 /****************************************************************************
- * Tests for cl::CommandBufferKhr
+ * Tests for cl::CommandBuffer
  ****************************************************************************/
 #if defined(cl_khr_command_buffer)
 void testMoveAssignCommandBufferKhrNonNull(void);
 void testMoveAssignCommandBufferKhrNull(void);
 void testMoveConstructCommandBufferKhrNonNull(void);
 void testMoveConstructCommandBufferKhrNull(void);
-MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
+MAKE_MOVE_TESTS(CommandBuffer, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
 #else
 void testMoveAssignCommandBufferKhrNonNull(void) {}
 void testMoveAssignCommandBufferKhrNull(void) {}
