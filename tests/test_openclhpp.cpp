@@ -4214,11 +4214,10 @@ void clSVMFree_stubForMemoryAllocation(cl_context context, void *svm_pointer,
     int cmock_num_calls)
 {
     TEST_ASSERT_EQUAL_PTR(svm_pointer, testMemory);
-    delete (int*) svm_pointer; 
+    delete[] (int*) svm_pointer; 
 }
 void testSVMMemoryAllocation()
-{//
-
+{
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAllocator;
         
