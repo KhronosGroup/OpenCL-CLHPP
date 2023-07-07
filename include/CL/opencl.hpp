@@ -1100,6 +1100,12 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetImageRequirementsInfoEXT);
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetImageRequirementsInfoEXT pfn_clGetImageRequirementsInfoEXT  = nullptr;
 #endif
 
+#if defined(cl_ext_device_fission)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateSubDevicesEXT);
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateSubDevicesEXT
+    pfn_clCreateSubDevicesEXT = nullptr;
+#endif
+
 namespace detail {
 
 // Generic getInfoHelper. The final parameter is used to guide overload
@@ -3045,13 +3051,6 @@ inline cl_int Device::createSubDevices(const cl_device_partition_property* prope
 inline cl_int Device::createSubDevices(const cl_device_partition_property_ext* properties,
                         vector<Device>* devices)
 {
-    typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clCreateSubDevicesEXT)(
-        cl_device_id /*in_device*/,
-        const cl_device_partition_property_ext* /* properties */,
-        cl_uint /*num_entries*/, cl_device_id* /*out_devices*/,
-        cl_uint* /*num_devices*/) CL_API_SUFFIX__VERSION_1_1;
-
-    static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = nullptr;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl::Device device(object_);
     cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
