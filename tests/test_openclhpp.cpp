@@ -4263,7 +4263,7 @@ void testEnqueueReleaseExternalMemObjects(void) {}
 #endif // cl_khr_external_memory
 
 /****************************************************************************
- * Tests for allocate and deallocate API (clSVMAlloc, clSVMFree, clEnqueueSVMMap)
+ * Tests for allocate and deallocate API (stubs for clSVMAlloc, clSVMFree, clEnqueueSVMMap)
  ****************************************************************************/
 int *testMemory;
 void *clSVMAllocARM_stubForMemoryAllocation(cl_context context,cl_svm_mem_flags flags,
@@ -4275,7 +4275,7 @@ void *clSVMAllocARM_stubForMemoryAllocation(cl_context context,cl_svm_mem_flags 
     (void) cmock_num_calls;
 
     TEST_ASSERT_EQUAL_HEX(size, 3 * sizeof(int));
-    testMemory = new int[3];
+    testMemory = new int[size / sizeof(int)];
     return testMemory;
 }
 cl_int clEnqueueSVMMap_stubForMemoryAllocation(cl_command_queue command_queue, cl_bool blocking_map, cl_map_flags flags, void* svm_ptr, size_t size, cl_uint num_events_in_wait_list, const cl_event* event_wait_list, cl_event* event, int cmock_num_calls)
@@ -4299,11 +4299,10 @@ void clSVMFree_stubForMemoryAllocation(cl_context context, void *svm_pointer,
     (void) cmock_num_calls;
 
     TEST_ASSERT_EQUAL_PTR(svm_pointer, testMemory);
-    delete svm_pointer; 
+    delete[] (int*) svm_pointer; 
 }
 void testSVMMemoryAllocation()
 {
-
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAllocator;
         
