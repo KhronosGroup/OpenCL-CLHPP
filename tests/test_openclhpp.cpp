@@ -1310,6 +1310,7 @@ void testBufferConstructorQueueIterator(void)
     clReleaseCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 static cl_mem clCreateBufferWithProperties_testBufferWithProperties(
     cl_context context,
     const cl_mem_properties *properties,
@@ -1331,6 +1332,7 @@ static cl_mem clCreateBufferWithProperties_testBufferWithProperties(
 
     return make_mem(0);
 }
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
 
 void testBufferWithProperties(void)
 {
@@ -1346,7 +1348,7 @@ void testBufferWithProperties(void)
 
     // prevent destructor from interfering with the test
     buffer() = nullptr;
-#endif
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
 }
 
 /****************************************************************************
