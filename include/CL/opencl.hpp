@@ -736,14 +736,15 @@ namespace cl {
     namespace khr {
     class CommandBuffer;
     class MutableCommand;
-    }      // namespace khr
-    }      // namespace cl
+    } // namespace khr
+    } // namespace cl
 #endif // cl_khr_command_buffer
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
-    /*! \brief Exception class 
-     * 
-     *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is defined.
+    /*! \brief Exception class
+     *
+     *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is
+     * defined.
      */
     class Error : public std::exception
     {
