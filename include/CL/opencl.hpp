@@ -732,12 +732,10 @@ namespace cl {
     class Semaphore;
 #endif
 #if defined(cl_khr_command_buffer)
-    namespace cl {
     namespace khr {
     class CommandBuffer;
     class MutableCommand;
     } // namespace khr
-    } // namespace cl
 #endif // cl_khr_command_buffer
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
@@ -1856,7 +1854,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPE
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBuffer)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, cl::khr::CommandBuffer)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR, cl::vector<cl_ndrange_kernel_command_properties_khr>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_KERNEL_KHR, cl_kernel)
@@ -10998,7 +10996,6 @@ inline cl_int CommandQueue::enqueueSignalSemaphores(
 /*! \class CommandBuffer
  * \brief CommandBuffer interface for cl_command_buffer_khr.
  */
-namespace cl {
 namespace khr {
 
 class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
@@ -11507,24 +11504,22 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
     }
 }; // CommandBuffer
 } // namespace khr
-} // namespace cl
 
-CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandBuffer::ext_init_;
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag cl::khr::CommandBuffer::ext_init_;
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
 /*! \class MutableCommand
  * \brief MutableCommand interface for cl_mutable_command_khr.
  */
-namespace cl {
 namespace khr {
 class MutableCommand : public detail::Wrapper<cl_mutable_command_khr> {
   public:
     //! \brief Default constructor - initializes to nullptr.
     MutableCommand() : detail::Wrapper<cl_type>() {}
 
-    explicit MutableCommand(const cl_mutable_command_khr &mutableCommand,
+    explicit MutableCommand(const cl_mutable_command_khr &MutableCommand,
                             bool retainObject = false)
-        : detail::Wrapper<cl_type>(mutableCommand, retainObject) {}
+        : detail::Wrapper<cl_type>(MutableCommand, retainObject) {}
 
     MutableCommand &operator=(const cl_mutable_command_khr &rhs) {
         detail::Wrapper<cl_type>::operator=(rhs);
@@ -11557,7 +11552,6 @@ class MutableCommand : public detail::Wrapper<cl_mutable_command_khr> {
     }
 }; // MutableCommand
 } // namespace khr
-} // namespace cl
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
 #endif // cl_khr_command_buffer

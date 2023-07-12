@@ -3464,14 +3464,16 @@ void testLinkProgramWithVectorProgramInput(void)
 }
 
 /****************************************************************************
- * Tests for cl::CommandBuffer
+ * Tests for cl::khr::CommandBuffer
  ****************************************************************************/
 #if defined(cl_khr_command_buffer)
 void testMoveAssignCommandBufferKhrNonNull(void);
 void testMoveAssignCommandBufferKhrNull(void);
 void testMoveConstructCommandBufferKhrNonNull(void);
 void testMoveConstructCommandBufferKhrNull(void);
-MAKE_MOVE_TESTS(CommandBuffer, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
+// using CommandBuffer = cl::khr::CommandBuffer;
+MAKE_MOVE_TESTS(cl::khr::CommandBuffer, make_command_buffer_khr,
+                clReleaseCommandBufferKHR, commandBufferKhrPool)
 #else
 void testMoveAssignCommandBufferKhrNonNull(void) {}
 void testMoveAssignCommandBufferKhrNull(void) {}
