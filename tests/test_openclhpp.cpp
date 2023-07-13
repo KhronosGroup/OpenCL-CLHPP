@@ -356,38 +356,65 @@ MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCo
  * macro value.
  */
 #ifdef TEST_RVALUE_REFERENCES
-#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
-    void prefix ## MoveAssign ## type ## NonNull(void) \
-    { \
-        releaseFunc ## _ExpectAndReturn(makeFunc(0), CL_SUCCESS); \
-        pool[0] = std::move(pool[1]); \
-        TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
-        TEST_ASSERT_NULL(pool[1]()); \
-    } \
-    \
-    void prefix ## MoveAssign ## type ## Null(void) \
-    { \
-        pool[0]() = nullptr; \
-        pool[0] = std::move(pool[1]); \
-        TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
-        TEST_ASSERT_NULL(pool[1]()); \
-    } \
-    \
-    void prefix ## MoveConstruct ## type ## NonNull(void) \
-    { \
-        cl::type tmp(std::move(pool[0])); \
-        TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp()); \
-        TEST_ASSERT_NULL(pool[0]()); \
-        tmp() = nullptr; \
-    } \
-    \
-    void prefix ## MoveConstruct ## type ## Null(void) \
-    { \
-        cl::type empty; \
-        cl::type tmp(std::move(empty)); \
-        TEST_ASSERT_NULL(tmp()); \
-        TEST_ASSERT_NULL(empty()); \
-    }
+#ifdef KHR_NAMESPACE
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool)            \
+  void prefix##MoveAssign##type##NonNull(void) {                               \
+    releaseFunc##_ExpectAndReturn(makeFunc(0), CL_SUCCESS);                    \
+    pool[0] = std::move(pool[1]);                                              \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+    TEST_ASSERT_NULL(pool[1]());                                               \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveAssign##type##Null(void) {                                  \
+    pool[0]() = nullptr;                                                       \
+    pool[0] = std::move(pool[1]);                                              \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+    TEST_ASSERT_NULL(pool[1]());                                               \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveConstruct##type##NonNull(void) {                            \
+    cl::khr::type tmp(std::move(pool[0]));                                     \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp());                                 \
+    TEST_ASSERT_NULL(pool[0]());                                               \
+    tmp() = nullptr;                                                           \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveConstruct##type##Null(void) {                               \
+    cl::khr::type empty;                                                       \
+    cl::khr::type tmp(std::move(empty));                                       \
+    TEST_ASSERT_NULL(tmp());                                                   \
+    TEST_ASSERT_NULL(empty());                                                 \
+  }
+#else
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool)            \
+  void prefix##MoveAssign##type##NonNull(void) {                               \
+    releaseFunc##_ExpectAndReturn(makeFunc(0), CL_SUCCESS);                    \
+    pool[0] = std::move(pool[1]);                                              \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+    TEST_ASSERT_NULL(pool[1]());                                               \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveAssign##type##Null(void) {                                  \
+    pool[0]() = nullptr;                                                       \
+    pool[0] = std::move(pool[1]);                                              \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+    TEST_ASSERT_NULL(pool[1]());                                               \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveConstruct##type##NonNull(void) {                            \
+    cl::type tmp(std::move(pool[0]));                                          \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp());                                 \
+    TEST_ASSERT_NULL(pool[0]());                                               \
+    tmp() = nullptr;                                                           \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveConstruct##type##Null(void) {                               \
+    cl::type empty;                                                            \
+    cl::type tmp(std::move(empty));                                            \
+    TEST_ASSERT_NULL(tmp());                                                   \
+    TEST_ASSERT_NULL(empty());                                                 \
+  }
+#endif // KHR_NAMESPACE
 #else
 #define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveAssign ## type ## NonNull(void) {} \
@@ -3471,9 +3498,12 @@ void testMoveAssignCommandBufferKhrNonNull(void);
 void testMoveAssignCommandBufferKhrNull(void);
 void testMoveConstructCommandBufferKhrNonNull(void);
 void testMoveConstructCommandBufferKhrNull(void);
-// using CommandBuffer = cl::khr::CommandBuffer;
-MAKE_MOVE_TESTS(cl::khr::CommandBuffer, make_command_buffer_khr,
+#ifndef KHR_NAMESPACE
+#define KHR_NAMESPACE
+MAKE_MOVE_TESTS(CommandBuffer, make_command_buffer_khr,
                 clReleaseCommandBufferKHR, commandBufferKhrPool)
+#undef KHR_NAMESPACE
+#endif
 #else
 void testMoveAssignCommandBufferKhrNonNull(void) {}
 void testMoveAssignCommandBufferKhrNull(void) {}
