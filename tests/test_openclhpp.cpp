@@ -356,36 +356,6 @@ MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCo
  * macro value.
  */
 #ifdef TEST_RVALUE_REFERENCES
-#ifdef KHR_NAMESPACE
-#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool)            \
-  void prefix##MoveAssign##type##NonNull(void) {                               \
-    releaseFunc##_ExpectAndReturn(makeFunc(0), CL_SUCCESS);                    \
-    pool[0] = std::move(pool[1]);                                              \
-    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
-    TEST_ASSERT_NULL(pool[1]());                                               \
-  }                                                                            \
-                                                                               \
-  void prefix##MoveAssign##type##Null(void) {                                  \
-    pool[0]() = nullptr;                                                       \
-    pool[0] = std::move(pool[1]);                                              \
-    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
-    TEST_ASSERT_NULL(pool[1]());                                               \
-  }                                                                            \
-                                                                               \
-  void prefix##MoveConstruct##type##NonNull(void) {                            \
-    cl::khr::type tmp(std::move(pool[0]));                                     \
-    TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp());                                 \
-    TEST_ASSERT_NULL(pool[0]());                                               \
-    tmp() = nullptr;                                                           \
-  }                                                                            \
-                                                                               \
-  void prefix##MoveConstruct##type##Null(void) {                               \
-    cl::khr::type empty;                                                       \
-    cl::khr::type tmp(std::move(empty));                                       \
-    TEST_ASSERT_NULL(tmp());                                                   \
-    TEST_ASSERT_NULL(empty());                                                 \
-  }
-#else
 #define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool)            \
   void prefix##MoveAssign##type##NonNull(void) {                               \
     releaseFunc##_ExpectAndReturn(makeFunc(0), CL_SUCCESS);                    \
@@ -414,7 +384,6 @@ MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCo
     TEST_ASSERT_NULL(tmp());                                                   \
     TEST_ASSERT_NULL(empty());                                                 \
   }
-#endif // KHR_NAMESPACE
 #else
 #define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveAssign ## type ## NonNull(void) {} \
@@ -3493,100 +3462,127 @@ void testLinkProgramWithVectorProgramInput(void)
 /****************************************************************************
  * Tests for cl::khr::CommandBuffer
  ****************************************************************************/
-#if defined(cl_khr_command_buffer)
-void testMoveAssignCommandBufferKhrNonNull(void);
-void testMoveAssignCommandBufferKhrNull(void);
-void testMoveConstructCommandBufferKhrNonNull(void);
-void testMoveConstructCommandBufferKhrNull(void);
-#ifndef KHR_NAMESPACE
-#define KHR_NAMESPACE
-MAKE_MOVE_TESTS(CommandBuffer, make_command_buffer_khr,
-                clReleaseCommandBufferKHR, commandBufferKhrPool)
-#undef KHR_NAMESPACE
-#endif
-#else
-void testMoveAssignCommandBufferKhrNonNull(void) {}
-void testMoveAssignCommandBufferKhrNull(void) {}
-void testMoveConstructCommandBufferKhrNonNull(void) {}
-void testMoveConstructCommandBufferKhrNull(void) {}
-#endif
+// #if defined(cl_khr_command_buffer)
+// void testMoveAssignCommandBufferKhrNonNull(void);
+// void testMoveAssignCommandBufferKhrNull(void);
+// void testMoveConstructCommandBufferKhrNonNull(void);
+// void testMoveConstructCommandBufferKhrNull(void);
+// #ifdef MAKE_MOVE_TESTS2
+// #undef MAKE_MOVE_TESTS2
+// #define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool)            \
+//   void prefix##MoveAssign##type##NonNull(void) {                               \
+//     releaseFunc##_ExpectAndReturn(makeFunc(0), CL_SUCCESS);                    \
+//     pool[0] = std::move(pool[1]);                                              \
+//     TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+//     TEST_ASSERT_NULL(pool[1]());                                               \
+//   }                                                                            \
+//                                                                                \
+//   void prefix##MoveAssign##type##Null(void) {                                  \
+//     pool[0]() = nullptr;                                                       \
+//     pool[0] = std::move(pool[1]);                                              \
+//     TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+//     TEST_ASSERT_NULL(pool[1]());                                               \
+//   }                                                                            \
+//                                                                                \
+//   void prefix##MoveConstruct##type##NonNull(void) {                            \
+//     cl::khr::type tmp(std::move(pool[0]));                                     \
+//     TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp());                                 \
+//     TEST_ASSERT_NULL(pool[0]());                                               \
+//     tmp() = nullptr;                                                           \
+//   }                                                                            \
+//                                                                                \
+//   void prefix##MoveConstruct##type##Null(void) {                               \
+//     cl::khr::type empty;                                                       \
+//     cl::khr::type tmp(std::move(empty));                                       \
+//     TEST_ASSERT_NULL(tmp());                                                   \
+//     TEST_ASSERT_NULL(empty());                                                 \
+//   }
+// #endif
+// MAKE_MOVE_TESTS(CommandBuffer, make_command_buffer_khr,
+//                 clReleaseCommandBufferKHR, commandBufferKhrPool)
+// #else
+// void testMoveAssignCommandBufferKhrNonNull(void) {}
+// void testMoveAssignCommandBufferKhrNull(void) {}
+// void testMoveConstructCommandBufferKhrNonNull(void) {}
+// void testMoveConstructCommandBufferKhrNull(void) {}
+// #endif
 
-// Stub for clGetCommandBufferInfoKHR that returns 1
-static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues(
-    cl_command_buffer_khr command_buffer,
-    cl_command_buffer_info_khr param_name,
-    size_t param_value_size,
-    void *param_value,
-    size_t *param_value_size_ret,
-    int /*num_calls*/)
-{
-    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
-    TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_NUM_QUEUES_KHR, param_name);
-    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
-    if (param_value_size_ret != nullptr)
-        *param_value_size_ret = sizeof(cl_uint);
-    if (param_value != nullptr)
-        *static_cast<cl_uint *> (param_value) = 1;
-    return CL_SUCCESS;
-}
+// // Stub for clGetCommandBufferInfoKHR that returns 1
+// static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues(
+//     cl_command_buffer_khr command_buffer,
+//     cl_command_buffer_info_khr param_name,
+//     size_t param_value_size,
+//     void *param_value,
+//     size_t *param_value_size_ret,
+//     int /*num_calls*/)
+// {
+//     TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+//     TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_NUM_QUEUES_KHR, param_name);
+//     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
+//     if (param_value_size_ret != nullptr)
+//         *param_value_size_ret = sizeof(cl_uint);
+//     if (param_value != nullptr)
+//         *static_cast<cl_uint *> (param_value) = 1;
+//     return CL_SUCCESS;
+// }
 
-void testCommandBufferInfoKHRNumQueues(void)
-{
-#if defined(cl_khr_command_buffer)
-    cl_uint expected = 1;
+// void testCommandBufferInfoKHRNumQueues(void)
+// {
+// #if defined(cl_khr_command_buffer)
+//     cl_uint expected = 1;
 
-    clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues);
+//     clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues);
 
-    cl_uint num = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_NUM_QUEUES_KHR>();
-    TEST_ASSERT_EQUAL_HEX(expected, num);
-#endif
-}
+//     cl_uint num = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_NUM_QUEUES_KHR>();
+//     TEST_ASSERT_EQUAL_HEX(expected, num);
+// #endif
+// }
 
-// Stub for clGetCommandBufferInfoKHR that returns command queues array
-static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
-    cl_command_buffer_khr command_buffer,
-    cl_command_buffer_info_khr param_name,
-    size_t param_value_size,
-    void *param_value,
-    size_t *param_value_size_ret,
-    int /*num_calls*/)
-{
-    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
-    TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_QUEUES_KHR, param_name);
-    TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl_command_queue));
-    if (param_value_size_ret != nullptr)
-        *param_value_size_ret = 3 * sizeof(cl_command_queue);
-    if (param_value != nullptr)
-    {
-        cl_command_queue *command_queues = static_cast<cl_command_queue *> (param_value);
-        command_queues[0] = make_command_queue(0);
-        command_queues[1] = make_command_queue(1);
-        command_queues[2] = make_command_queue(2);
-    }
-    return CL_SUCCESS;
-}
+// // Stub for clGetCommandBufferInfoKHR that returns command queues array
+// static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
+//     cl_command_buffer_khr command_buffer,
+//     cl_command_buffer_info_khr param_name,
+//     size_t param_value_size,
+//     void *param_value,
+//     size_t *param_value_size_ret,
+//     int /*num_calls*/)
+// {
+//     TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+//     TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_QUEUES_KHR, param_name);
+//     TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl_command_queue));
+//     if (param_value_size_ret != nullptr)
+//         *param_value_size_ret = 3 * sizeof(cl_command_queue);
+//     if (param_value != nullptr)
+//     {
+//         cl_command_queue *command_queues = static_cast<cl_command_queue *> (param_value);
+//         command_queues[0] = make_command_queue(0);
+//         command_queues[1] = make_command_queue(1);
+//         command_queues[2] = make_command_queue(2);
+//     }
+//     return CL_SUCCESS;
+// }
 
-void testCommandBufferInfoKHRCommandQueues(void)
-{
-#if defined(cl_khr_command_buffer)
-    // creat expected values for refcounter
-    VECTOR_CLASS<cl_command_queue> expected_queue_vec;
-    std::array<int, 3> refcount;
-    for (int i=0;i<3;i++) {
-        expected_queue_vec.push_back(commandQueuePool[i]());
-        refcount[i] = 1;
-    }
+// void testCommandBufferInfoKHRCommandQueues(void)
+// {
+// #if defined(cl_khr_command_buffer)
+//     // creat expected values for refcounter
+//     VECTOR_CLASS<cl_command_queue> expected_queue_vec;
+//     std::array<int, 3> refcount;
+//     for (int i=0;i<3;i++) {
+//         expected_queue_vec.push_back(commandQueuePool[i]());
+//         refcount[i] = 1;
+//     }
 
-    clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
-    prepare_commandQueueRefcounts(expected_queue_vec.size(), expected_queue_vec.data(), refcount.data());
+//     clGetCommandBufferInfoKHR_StubWithCallback(clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
+//     prepare_commandQueueRefcounts(expected_queue_vec.size(), expected_queue_vec.data(), refcount.data());
 
-    VECTOR_CLASS<cl::CommandQueue> command_queues = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
-    TEST_ASSERT_EQUAL(3, command_queues.size());
-    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
-    TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
-    TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
-#endif
-}
+//     VECTOR_CLASS<cl::CommandQueue> command_queues = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
+//     TEST_ASSERT_EQUAL(3, command_queues.size());
+//     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
+//     TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
+//     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
+// #endif
+// }
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
@@ -4419,5 +4415,128 @@ void testTemplateGetImageRequirementsInfo()
 #else
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
+
+/****************************************************************************
+ * Tests for cl::khr::CommandBuffer
+ * Please put above any tests of functionalities defined in cl namespace.
+ * Some macros where redifined with cl::khr namespace.
+ ****************************************************************************/
+#if defined(cl_khr_command_buffer)
+void testMoveAssignCommandBufferKhrNonNull(void);
+void testMoveAssignCommandBufferKhrNull(void);
+void testMoveConstructCommandBufferKhrNonNull(void);
+void testMoveConstructCommandBufferKhrNull(void);
+#ifdef MAKE_MOVE_TESTS2
+#undef MAKE_MOVE_TESTS2
+#define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool)            \
+  void prefix##MoveAssign##type##NonNull(void) {                               \
+    releaseFunc##_ExpectAndReturn(makeFunc(0), CL_SUCCESS);                    \
+    pool[0] = std::move(pool[1]);                                              \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+    TEST_ASSERT_NULL(pool[1]());                                               \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveAssign##type##Null(void) {                                  \
+    pool[0]() = nullptr;                                                       \
+    pool[0] = std::move(pool[1]);                                              \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]());                             \
+    TEST_ASSERT_NULL(pool[1]());                                               \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveConstruct##type##NonNull(void) {                            \
+    cl::khr::type tmp(std::move(pool[0]));                                     \
+    TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp());                                 \
+    TEST_ASSERT_NULL(pool[0]());                                               \
+    tmp() = nullptr;                                                           \
+  }                                                                            \
+                                                                               \
+  void prefix##MoveConstruct##type##Null(void) {                               \
+    cl::khr::type empty;                                                       \
+    cl::khr::type tmp(std::move(empty));                                       \
+    TEST_ASSERT_NULL(tmp());                                                   \
+    TEST_ASSERT_NULL(empty());                                                 \
+  }
+#endif
+MAKE_MOVE_TESTS(CommandBuffer, make_command_buffer_khr,
+                clReleaseCommandBufferKHR, commandBufferKhrPool)
+#else
+void testMoveAssignCommandBufferKhrNonNull(void) {}
+void testMoveAssignCommandBufferKhrNull(void) {}
+void testMoveConstructCommandBufferKhrNonNull(void) {}
+void testMoveConstructCommandBufferKhrNull(void) {}
+#endif
+
+// Stub for clGetCommandBufferInfoKHR that returns 1
+static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues(
+    cl_command_buffer_khr command_buffer, cl_command_buffer_info_khr param_name,
+    size_t param_value_size, void *param_value, size_t *param_value_size_ret,
+    int /*num_calls*/) {
+  TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+  TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_NUM_QUEUES_KHR, param_name);
+  TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
+  if (param_value_size_ret != nullptr)
+    *param_value_size_ret = sizeof(cl_uint);
+  if (param_value != nullptr)
+    *static_cast<cl_uint *>(param_value) = 1;
+  return CL_SUCCESS;
+}
+
+void testCommandBufferInfoKHRNumQueues(void) {
+#if defined(cl_khr_command_buffer)
+  cl_uint expected = 1;
+
+  clGetCommandBufferInfoKHR_StubWithCallback(
+      clGetCommandBufferInfoKHR_testCommandBufferKhrGetNumQueues);
+
+  cl_uint num =
+      commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_NUM_QUEUES_KHR>();
+  TEST_ASSERT_EQUAL_HEX(expected, num);
+#endif
+}
+
+// Stub for clGetCommandBufferInfoKHR that returns command queues array
+static cl_int clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues(
+    cl_command_buffer_khr command_buffer, cl_command_buffer_info_khr param_name,
+    size_t param_value_size, void *param_value, size_t *param_value_size_ret,
+    int /*num_calls*/) {
+  TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+  TEST_ASSERT_EQUAL_HEX(CL_COMMAND_BUFFER_QUEUES_KHR, param_name);
+  TEST_ASSERT(param_value == nullptr ||
+              param_value_size >= 3 * sizeof(cl_command_queue));
+  if (param_value_size_ret != nullptr)
+    *param_value_size_ret = 3 * sizeof(cl_command_queue);
+  if (param_value != nullptr) {
+    cl_command_queue *command_queues =
+        static_cast<cl_command_queue *>(param_value);
+    command_queues[0] = make_command_queue(0);
+    command_queues[1] = make_command_queue(1);
+    command_queues[2] = make_command_queue(2);
+  }
+  return CL_SUCCESS;
+}
+
+void testCommandBufferInfoKHRCommandQueues(void) {
+#if defined(cl_khr_command_buffer)
+  // creat expected values for refcounter
+  VECTOR_CLASS<cl_command_queue> expected_queue_vec;
+  std::array<int, 3> refcount;
+  for (int i = 0; i < 3; i++) {
+    expected_queue_vec.push_back(commandQueuePool[i]());
+    refcount[i] = 1;
+  }
+
+  clGetCommandBufferInfoKHR_StubWithCallback(
+      clGetCommandBufferInfoKHR_testCommandBufferKhrGetCommandQueues);
+  prepare_commandQueueRefcounts(expected_queue_vec.size(),
+                                expected_queue_vec.data(), refcount.data());
+
+  VECTOR_CLASS<cl::CommandQueue> command_queues =
+      commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
+  TEST_ASSERT_EQUAL(3, command_queues.size());
+  TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queues[0]());
+  TEST_ASSERT_EQUAL_PTR(make_command_queue(1), command_queues[1]());
+  TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
+#endif
+}
 
 } // extern "C"
