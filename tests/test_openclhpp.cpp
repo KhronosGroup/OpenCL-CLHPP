@@ -3633,40 +3633,6 @@ void testDevice_GetInfo_CLDeviceName()
 }
 
 #if defined(cl_ext_device_fission)
-static cl_int clGetPlatformInfo_testDevice_createSubDevices(
-    cl_platform_id id, cl_platform_info param_name, size_t param_value_size,
-    void *param_value, size_t *param_value_size_ret, int num_calls) {
-    (void)num_calls;
-    const char *version = {"OpenCL 1.1 Mock"};
-    size_t bytes = strlen(version) + 1;
-    TEST_ASSERT_NOT_NULL(id);
-    TEST_ASSERT_EQUAL_PTR(make_platform_id(0), id);
-    TEST_ASSERT_EQUAL_HEX(CL_PLATFORM_VERSION, param_name);
-    TEST_ASSERT(param_value == nullptr || param_value_size >= bytes);
-    if (param_value_size_ret != nullptr)
-        *param_value_size_ret = bytes;
-    if (param_value != nullptr)
-        strcpy((char *) param_value, version);
-    
-    return CL_SUCCESS;
-}
-
-static cl_int clGetDeviceInfo_testDevice_createSubDevices(
-    cl_device_id id, cl_device_info param_name, size_t param_value_size,
-    void *param_value, size_t *param_value_size_ret, int num_calls) {
-    (void)id;
-    (void)num_calls;
-
-    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_PLATFORM, param_name);
-    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_device_id));
-    if (param_value_size_ret != nullptr)
-        *param_value_size_ret = sizeof(cl_device_id);
-    if (param_value != nullptr)
-        *(cl_platform_id *)param_value = make_platform_id(0);
-    return CL_SUCCESS;
-    
-}
-
 static cl_int clCreateSubDevices_testDevice_createSubDevices(
     cl_device_id in_device, const cl_device_partition_property *properties,
     cl_uint num_devices, cl_device_id *out_devices, cl_uint *num_devices_ret,
@@ -3678,26 +3644,32 @@ static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
     cl_device_id device_in, const cl_device_partition_property_ext *properties,
     cl_uint n, cl_device_id *out_devices, cl_uint *num, int num_calls) {
   cl_int ret = CL_SUCCESS;
+
+  TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_TYPES_EXT, *properties);
+  if(nullptr != out_devices){
+    out_devices[0] = make_device_id(0);
+  }
+  else{
+    *num = 1;
+  }
   if (device_in == make_device_id(0)) {
     return CL_SUCCESS;
   } else if (device_in == make_device_id(1) && nullptr == num) {
     return CL_DEVICE_NOT_FOUND;
   } else {
-    return CL_DEVICE_NOT_FOUND;
+    return CL_SUCCESS;
   }
 }
 
 void testDevice_createSubDevices() {
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
   const cl_device_partition_property_ext properties =
       CL_DEVICE_PARTITION_TYPES_EXT;
-  std::vector<cl::Device> devices;
+  std::vector<cl::Device> devices(1);
   cl_platform_id platform = make_platform_id(0);
 
-  clGetPlatformInfo_StubWithCallback(
-      clGetPlatformInfo_testDevice_createSubDevices);
-  clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_testDevice_createSubDevices);
-  clCreateSubDevices_StubWithCallback(
-      clCreateSubDevices_testDevice_createSubDevices);
+  clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+  clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
 
   clCreateSubDevicesEXT_StubWithCallback(
       clCreateSubDevicesEXT_testDevice_createSubDevices);
@@ -3705,11 +3677,16 @@ void testDevice_createSubDevices() {
   cl_int ret = devicePool[0].createSubDevices(&properties, &devices);
   TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
   ret = devicePool[1].createSubDevices(&properties, &devices);
+
+  
   TEST_ASSERT_EQUAL(CL_DEVICE_NOT_FOUND, ret);
   ret = devicePool[2].createSubDevices(&properties, &devices);
-  TEST_ASSERT_EQUAL(CL_DEVICE_NOT_FOUND, ret);
+  TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+  TEST_ASSERT_EQUAL(devices[0].get(), make_device_id(0));
+#endif /*CL_HPP_ENABLE_EXCEPTIONS*/
 }
-#endif
+
+#endif /*cl_ext_device_fission*/
 
 /****************************************************************************
  * Tests for cl::Semaphore
