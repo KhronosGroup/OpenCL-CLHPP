@@ -1789,7 +1789,7 @@ void testKernelSetArgLocal(void)
     kernelPool[0].setArg(2, cl::Local(123));
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
+void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     std::unique_ptr<int> buffer(new int(1000));
@@ -1798,7 +1798,7 @@ void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
 #endif
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
+void testKernelSetArgBySetKernelArgSVMPointerWithVectorType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     VECTOR_CLASS<int> vec(1000);
@@ -1807,7 +1807,7 @@ void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
 #endif
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithPointerType()
+void testKernelSetArgBySetKernelArgSVMPointerWithPointerType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl_mem *memory = &bufferPool[1]();
@@ -1854,7 +1854,7 @@ cl_int clSetKernelExecInfo_setSVMPointers(cl_kernel kernel,
     return CL_SUCCESS;
 }
 
-void testKernelSetSVMPointers()
+void testKernelSetSVMPointers(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_setSVMPointers);
@@ -1880,7 +1880,7 @@ cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
 
     return CL_SUCCESS;
 }
-void testKernelEnableFineGrainedSystemSVM()
+void testKernelEnableFineGrainedSystemSVM(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_EnableFineGrainedSystemSVM);
@@ -3622,7 +3622,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceVendorID()
+void testDevice_GetInfo_CLDeviceVendorID(void)
 {
     cl_uint expected = 0xABCD;
     clGetDeviceInfo_StubWithCallback(
@@ -3647,7 +3647,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceImageSupport(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceImageSupport()
+void testDevice_GetInfo_CLDeviceImageSupport(void)
 {
     cl_bool expected = true;
     clGetDeviceInfo_StubWithCallback(
@@ -3675,7 +3675,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceName(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceName()
+void testDevice_GetInfo_CLDeviceName(void)
 {
     cl::string expected = "testDeviceName";
     clGetDeviceInfo_StubWithCallback(clGetInfo_testDeviceGetInfoCLDeviceName);
@@ -4164,7 +4164,7 @@ static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
     return CL_INVALID_OPERATION;
 }
 
-void testTemplateGetSemaphoreHandleForTypeKHR()
+void testTemplateGetSemaphoreHandleForTypeKHR(void)
 {
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -4346,7 +4346,7 @@ void clSVMFree_stubForMemoryAllocation(cl_context context, void *svm_pointer,
     TEST_ASSERT_EQUAL_PTR(svm_pointer, testMemory);
     delete[] (int*) svm_pointer; 
 }
-void testSVMMemoryAllocation()
+void testSVMMemoryAllocation(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAllocator;
@@ -4427,7 +4427,7 @@ static cl_int clGetImageRequirementsInfoEXT_GetInfo(
     return CL_INVALID_OPERATION;
 }
 
-void testTemplateGetImageRequirementsInfo()
+void testTemplateGetImageRequirementsInfo(void)
 {
     cl::Context context(make_context(0));
     cl_device_id device_expect = make_device_id(0);
