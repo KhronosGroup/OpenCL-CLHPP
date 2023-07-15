@@ -1859,7 +1859,7 @@ void testKernelSetSVMPointers()
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_setSVMPointers);
   
-    cl::vector<void *> vec = { (void *)0xaabbccdd, (void *)0xddccbbaa };
+    cl::vector<void *> vec = { (void *)(size_t)0xaabbccdd, (void *)(size_t)0xddccbbaa };
     cl_int ret = kernelPool[0].setSVMPointers(vec);
 
     cl_int expected = CL_SUCCESS;
