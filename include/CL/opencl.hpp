@@ -11057,11 +11057,8 @@ public:
     cl_int getInfo(cl_command_buffer_info_khr name, T* param) const
     {
         if (pfn_clGetCommandBufferInfoKHR == nullptr) {
-          if (::clGetCommandBufferInfoKHR == nullptr)
             return detail::errHandler(CL_INVALID_OPERATION,
                                       __GET_COMMAND_BUFFER_INFO_KHR_ERR);
-          else
-            pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
         }
         return detail::errHandler(
             detail::getInfo(pfn_clGetCommandBufferInfoKHR, object_, name, param),
@@ -11074,7 +11071,15 @@ public:
     {
         typename detail::param_traits<
             detail::cl_command_buffer_info_khr, name>::param_type param;
-        cl_int result = getInfo(name, &param);
+
+        cl_int result = CL_SUCCESS;
+
+        if (pfn_clGetCommandBufferInfoKHR == nullptr &&
+            &::clGetCommandBufferInfoKHR != nullptr)
+          result = detail::getInfo(&::clGetCommandBufferInfoKHR, object_, name,
+                                   &param);
+        else
+          result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
         }
