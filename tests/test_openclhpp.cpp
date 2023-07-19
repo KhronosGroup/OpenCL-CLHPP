@@ -86,7 +86,7 @@ static cl::Program programPool[POOL_MAX];
 static cl::khr::CommandBuffer commandBufferKhrPool[POOL_MAX];
 #endif
 #if defined(cl_khr_semaphore)
-static cl::Semaphore semaphorePool[POOL_MAX];
+static cl::khr::Semaphore semaphorePool[POOL_MAX];
 #endif
 static cl::Device devicePool[POOL_MAX];
 
@@ -3633,7 +3633,7 @@ void testDevice_GetInfo_CLDeviceName()
 } 
 
 /****************************************************************************
- * Tests for cl::Semaphore
+ * Tests for cl::khr::Semaphore
  ****************************************************************************/
 #if defined(cl_khr_semaphore)
 void testMoveAssignSemaphoreNonNull(void);
@@ -3641,7 +3641,9 @@ void testMoveAssignSemaphoreNull(void);
 void testMoveConstructSemaphoreNonNull(void);
 void testMoveConstructSemaphoreNull(void);
 namespace cl{
-MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
+    namespace khr{
+    MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
+    }
 }
 #else
 void testMoveAssignSemaphoreNonNull(void) {}
@@ -3682,7 +3684,7 @@ void testEnqueueWaitSemaphores(void)
 {
     clEnqueueWaitSemaphoresKHR_StubWithCallback(clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores);
 
-    VECTOR_CLASS<cl::Semaphore> sema_objects;
+    VECTOR_CLASS<cl::khr::Semaphore> sema_objects;
     sema_objects.emplace_back(make_semaphore_khr(1));
     VECTOR_CLASS<cl_semaphore_payload_khr> sema_payloads(1);
     cl::Event event;
@@ -3727,7 +3729,7 @@ void testEnqueueSignalSemaphores(void)
 {
     clEnqueueSignalSemaphoresKHR_StubWithCallback(clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores);
 
-    VECTOR_CLASS<cl::Semaphore> sema_objects;
+    VECTOR_CLASS<cl::khr::Semaphore> sema_objects;
     sema_objects.emplace_back(make_semaphore_khr(2));
     VECTOR_CLASS<cl_semaphore_payload_khr> sema_payloads(1);
     cl::Event event;
@@ -3770,7 +3772,7 @@ void testSemaphoreWithProperties(void)
 
     VECTOR_CLASS<cl_semaphore_properties_khr> sema_props{CL_SEMAPHORE_TYPE_KHR};
     cl_int err = CL_INVALID_OPERATION;
-    cl::Semaphore sem(contextPool[0], sema_props, &err);
+    cl::khr::Semaphore sem(contextPool[0], sema_props, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_semaphore_khr(1), sem());
@@ -4118,7 +4120,7 @@ void testTemplateGetSemaphoreHandleForTypeKHR()
 
     clGetSemaphoreHandleForTypeKHR_StubWithCallback(clGetSemaphoreHandleForTypeKHR_GetHandles);
 
-    cl::Semaphore semaphore;
+    cl::khr::Semaphore semaphore;
 #if defined(cl_khr_external_semaphore_dx_fence)
     {
         auto handle0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::D3D12Fence>(device);
