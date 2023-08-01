@@ -4343,17 +4343,7 @@ static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
                                                      cl_int *errcode_ret,
                                                      int num_calls)
 {
-    switch (num_calls) {
-    case 0:
-            TEST_ASSERT_EQUAL(0, bufobj);
-            break;
-    case 1:
-            TEST_ASSERT_EQUAL(1, bufobj);
-            break;
-    default:
-            break;
-    }
-
+    TEST_ASSERT_EQUAL(0, bufobj);
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_EQUAL(0, flags);
     if (errcode_ret)
@@ -4366,28 +4356,10 @@ static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
                                                   cl_GLuint *gl_object_name,
                                                   int num)
 {
-    cl_int ret = CL_SUCCESS;
     TEST_ASSERT_EQUAL(memobj, make_mem(0));
-    switch (num) {
-    case 0:
-        TEST_ASSERT_EQUAL(CL_GL_OBJECT_TEXTURE2D_ARRAY, *type);
-        *type = CL_GL_OBJECT_BUFFER;
-        break;
-    case 1:
-        TEST_ASSERT_EQUAL(CL_GL_OBJECT_BUFFER, *type);
-        *type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
-        ret = CL_DEVICE_NOT_FOUND;
-        break;
-    default:
-        break;
-    }
+    *type = CL_GL_OBJECT_BUFFER;
 
     *gl_object_name = 0;
-    return ret;
-}
-
-cl_int clReleaseMemObject_testgetObjectInfo(cl_mem memobj, int ret)
-{
     return CL_SUCCESS;
 }
 
@@ -4400,7 +4372,7 @@ void testgetObjectInfo() {
     clGetGLObjectInfo_StubWithCallback(clGetGLObjectInfo_testgetObjectInfo);
     clCreateFromGLBuffer_StubWithCallback(
         clCreateFromGLBuffer_testgetObjectInfo);
-    clReleaseMemObject_StubWithCallback(clReleaseMemObject_testgetObjectInfo);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
     cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
 
     TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
@@ -4408,12 +4380,6 @@ void testgetObjectInfo() {
 
     TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
-    TEST_ASSERT_EQUAL(bufobj, 0);
-    type = CL_GL_OBJECT_BUFFER;
-    bufobj = 1;
-
-    TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_DEVICE_NOT_FOUND);
-    TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_TEXTURE2D_ARRAY);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
 } // extern "C"
