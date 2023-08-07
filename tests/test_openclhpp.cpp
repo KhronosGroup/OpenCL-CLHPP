@@ -4517,4 +4517,61 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+static cl_int clGetProgramInfo_testcompile(cl_program program,
+                                           cl_program_build_info param_name,
+                                           size_t param_value_size,
+                                           void *param_value,
+                                           size_t *param_value_size_ret,
+                                           int /*num_calls*/) {
+    TEST_ASSERT_EQUAL_PTR(make_program(0), program);
+    TEST_ASSERT_EQUAL_HEX(CL_PROGRAM_DEVICES, param_name);
+    TEST_ASSERT(param_value == nullptr ||
+                param_value_size >= sizeof(cl_context));
+    if (param_value_size_ret != nullptr)
+            *param_value_size_ret = sizeof(cl_context);
+    if (param_value != nullptr)
+            *static_cast<cl_context *>(param_value) = make_context(0);
+    return CL_SUCCESS;
+}
+
+static cl_int clCompileProgram_testcompile(
+    cl_program program, cl_uint num_devices, const cl_device_id *device_list,
+    const char *options, cl_uint num_input_headers,
+    const cl_program *input_headers, const char **header_include_names,
+    cmock_cl_func_ptr6 pfn_notify, void *user_data, int num_calls) {
+    TEST_ASSERT_EQUAL_PTR(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL_PTR(device_list, nullptr);
+    TEST_ASSERT_EQUAL_PTR(options, nullptr);
+    TEST_ASSERT_EQUAL(num_input_headers, 0);
+    TEST_ASSERT_EQUAL_PTR(input_headers, nullptr);
+    TEST_ASSERT_EQUAL_PTR(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, 0);
+    TEST_ASSERT_EQUAL_PTR(user_data, nullptr);
+    TEST_ASSERT_EQUAL(num_calls, 0);
+    return CL_COMPILE_PROGRAM_FAILURE;
+}
+
+void testcompile() {
+    const char *options = nullptr;
+    void(CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr;
+    void *data = (void *)nullptr;
+    cl_int ret = 0;
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testcompile);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clCompileProgram_StubWithCallback(clCompileProgram_testcompile);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+    clGetProgramBuildInfo_StubWithCallback(
+        clGetProgramBuildInfo_testGetBuildInfo);
+    ret = programPool[0].compile(options, notifyFptr, data);
+    TEST_ASSERT_EQUAL(ret, CL_COMPILE_PROGRAM_FAILURE);
+}
+#else
+void testcompile() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 } // extern "C"
