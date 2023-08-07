@@ -4472,4 +4472,35 @@ void testTemplateGetImageRequirementsInfo()
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 110
+cl_mem clCreateSubBuffer_testCreateSubBuffer(
+    cl_mem buffer, cl_mem_flags flags, cl_buffer_create_type buffer_create_type,
+    const void *buffer_create_info, cl_int *errcode_ret, int num_calls) {
+    (void)errcode_ret;
+    TEST_ASSERT_EQUAL(make_mem(0), buffer);
+    TEST_ASSERT_EQUAL(0, flags);
+    TEST_ASSERT_EQUAL(0, buffer_create_type);
+    TEST_ASSERT_EQUAL_PTR(nullptr, buffer_create_info);
+    TEST_ASSERT_EQUAL(0, num_calls);
+
+    return make_mem(1);
+}
+
+void testCreateSubBuffer() {
+    cl_mem_flags flags = 0;
+    cl_buffer_create_type buffer_create_type = 0;
+    const void *buffer_create_info = nullptr;
+    cl_int *err = nullptr;
+    static cl::Buffer ret;
+
+    clCreateSubBuffer_StubWithCallback(clCreateSubBuffer_testCreateSubBuffer);
+    ret = bufferPool[0].createSubBuffer(flags, buffer_create_type,
+                                        buffer_create_info, err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(1), ret());
+    ret() = nullptr;
+}
+#else
+void testCreateSubBuffer() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 } // extern "C"
