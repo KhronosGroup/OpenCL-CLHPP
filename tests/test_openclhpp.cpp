@@ -4516,5 +4516,46 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
+
+static cl_int clCreateKernelsInProgram_testcreateKernels(
+    cl_program program, cl_uint num_kernels, cl_kernel *kernels,
+    cl_uint *num_kernels_ret, int num_calls) {
+    switch (num_calls) {
+    case 0:
+    case 1:
+            TEST_ASSERT_EQUAL(make_program(0), program);
+            if (num_kernels_ret != nullptr) {
+                *num_kernels_ret = 1;
+            }
+            return CL_SUCCESS;
+    case 2:
+            TEST_ASSERT_EQUAL(make_program(1), program);
+            if (num_kernels_ret != nullptr) {
+                *num_kernels_ret = 1;
+            }
+            return CL_SUCCESS;
+    case 3:
+            TEST_ASSERT_EQUAL(make_program(1), program);
+            return CL_DEVICE_NOT_FOUND;
+    case 4:
+            TEST_ASSERT_EQUAL(make_program(2), program);
+            return CL_DEVICE_NOT_AVAILABLE;
+    default:
+            return CL_SUCCESS;
+    }
+}
+
+void testcreateKernels() {
+    cl_int ret = 0;
+    cl::vector<cl::Kernel> kernels;
+
+    clCreateKernelsInProgram_StubWithCallback(
+        clCreateKernelsInProgram_testcreateKernels);
+    ret = programPool[0].createKernels(&kernels);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    ret = programPool[1].createKernels(&kernels);
+    TEST_ASSERT_EQUAL(CL_DEVICE_NOT_FOUND, ret);
+    ret = programPool[2].createKernels(&kernels);
+    TEST_ASSERT_EQUAL(CL_DEVICE_NOT_AVAILABLE, ret);
 }
 } // extern "C"
