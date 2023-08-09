@@ -4472,4 +4472,38 @@ void testTemplateGetImageRequirementsInfo()
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
 
+cl_int clEnqueueWriteImage_testenqueueWriteImage(
+    cl_command_queue command_queue, cl_mem image, cl_bool blocking_write,
+    const size_t *origin, const size_t *region, size_t input_row_pitch,
+    size_t input_slice_pitch, const void *ptr, cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list, cl_event *event, int num_calls) {
+    (void)command_queue;
+    (void)image;
+    (void)origin;
+    (void)region;
+    TEST_ASSERT_EQUAL(false, blocking_write);
+    TEST_ASSERT_EQUAL(0, input_row_pitch);
+    TEST_ASSERT_EQUAL(0, input_slice_pitch);
+    TEST_ASSERT_EQUAL_PTR(nullptr, ptr);
+    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event);
+    TEST_ASSERT_EQUAL(nullptr, num_calls);
+    return CL_SUCCESS;
+}
+void testenqueueWriteImage() {
+    cl_int ret = 0;
+    cl_bool blocking = false;
+    const std::array<cl::size_type, 3> origin;
+    const std::array<cl::size_type, 3> region;
+    size_t row_pitch = 0;
+    size_t slice_pitch = 0;
+    const void *ptr = nullptr;
+
+    clEnqueueWriteImage_StubWithCallback(
+        clEnqueueWriteImage_testenqueueWriteImage);
+    ret = commandQueuePool[0].enqueueWriteImage(
+        image2DPool[0], blocking, origin, region, row_pitch, slice_pitch, ptr);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+}
 } // extern "C"
