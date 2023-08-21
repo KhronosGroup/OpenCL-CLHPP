@@ -4471,7 +4471,6 @@ void testTemplateGetImageRequirementsInfo(void)
 #else
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
-
 static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
                                                      cl_mem_flags flags,
                                                      cl_GLuint bufobj,
@@ -4516,5 +4515,45 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
+
+void *some_memory;
+
+static cl_int clEnqueueReadBuffer_testEnqueueReadBuffer(
+    cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_read,
+    size_t offset, size_t size, void *ptr, cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list, cl_event *event, int num_calls) {
+    (void)command_queue;
+    TEST_ASSERT_EQUAL(make_mem(0), buffer);
+    TEST_ASSERT_EQUAL(false, blocking_read);
+    TEST_ASSERT_EQUAL(0, offset);
+    TEST_ASSERT_EQUAL(0, size);
+    TEST_ASSERT_EQUAL_PTR(some_memory, ptr);
+    TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+    TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(0, num_calls);
+    if (event != nullptr) {
+            *event = make_event(1);
+    }
+    return CL_SUCCESS;
+}
+
+void testEnqueueReadBuffer() {
+    cl_bool blocking = false;
+    size_t offset = 0;
+    size_t size = 0;
+    void *ptr = some_memory;
+    cl::Event event;
+    cl::vector<cl::Event> events = {event};
+    cl_int ret = CL_INVALID_COMMAND_QUEUE;
+
+    clEnqueueReadBuffer_StubWithCallback(
+        clEnqueueReadBuffer_testEnqueueReadBuffer);
+    ret = commandQueuePool[0].enqueueReadBuffer(bufferPool[0], blocking, offset,
+                                                size, ptr, &events, &event);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+
+    event() = nullptr;
+    events[0]() = nullptr;
 }
 } // extern "C"
