@@ -4517,4 +4517,38 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+static cl_int clEnqueueAcquireGLObjects_testenqueueAcquireGLObjects(
+    cl_command_queue command_queue, cl_uint num_objects,
+    const cl_mem *mem_objects, cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list, cl_event *event, int num_calls) {
+    (void)command_queue;
+    TEST_ASSERT_EQUAL(1, num_objects);
+    TEST_ASSERT_NOT_NULL(mem_objects);
+    TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+    TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(0, num_calls);
+    if (event != nullptr) {
+            *event = make_event(1);
+    }
+    return CL_SUCCESS;
+}
+
+void testenqueueAcquireGLObjects() {
+    cl::Memory obj;
+    cl::vector<cl::Memory> mem_objects = {obj};
+    cl::Event event;
+    cl::vector<cl::Event> events = {event};
+    cl_int ret = CL_INVALID_COMMAND_QUEUE;
+
+    clEnqueueAcquireGLObjects_StubWithCallback(
+        clEnqueueAcquireGLObjects_testenqueueAcquireGLObjects);
+    ret = commandQueuePool[0].enqueueAcquireGLObjects(&mem_objects, &events,
+                                                      &event);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+
+    event() = nullptr;
+    events[0]() = nullptr;
+    mem_objects[0]() = nullptr;
+}
 } // extern "C"
