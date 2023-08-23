@@ -3741,7 +3741,7 @@ void testMoveAssignSemaphoreNonNull(void);
 void testMoveAssignSemaphoreNull(void);
 void testMoveConstructSemaphoreNonNull(void);
 void testMoveConstructSemaphoreNull(void);
-MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
+MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool)
 #else
 void testMoveAssignSemaphoreNonNull(void) {}
 void testMoveAssignSemaphoreNull(void) {}
