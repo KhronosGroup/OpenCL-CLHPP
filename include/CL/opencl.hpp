@@ -3204,10 +3204,10 @@ private:
 #if defined(cl_ext_image_requirements_info)
     struct ImageRequirementsInfo {
 
-        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* properties, const ImageFormat* format, const cl_image_desc* desc)
+        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* p, const ImageFormat* format, const cl_image_desc* desc)
         {
             flags = f;
-            properties = properties;
+            properties = p;
             image_format = format;
             image_desc = desc;
         }
