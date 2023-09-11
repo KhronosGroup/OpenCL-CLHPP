@@ -1200,8 +1200,7 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
-    TEST_ASSERT_BITS(CL_MEM_COPY_HOST_PTR, flags, !CL_MEM_COPY_HOST_PTR);
-    TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
+    TEST_ASSERT_EQUAL(flags, CL_MEM_READ_ONLY);
     TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
     TEST_ASSERT_NULL(host_ptr);
     if (errcode_ret)
