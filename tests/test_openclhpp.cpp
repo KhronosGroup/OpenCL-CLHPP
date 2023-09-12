@@ -13,6 +13,7 @@ extern "C"
 #include <cmock.h>
 #include "Mockcl.h"
 #include "Mockcl_ext.h"
+#include "Mockcl_gl.h"
 #include <string.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -4471,4 +4472,49 @@ void testTemplateGetImageRequirementsInfo(void)
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
 
+static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
+                                                     cl_mem_flags flags,
+                                                     cl_GLuint bufobj,
+                                                     cl_int *errcode_ret,
+                                                     int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, bufobj);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL(0, flags);
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
+                                                  cl_gl_object_type *type,
+                                                  cl_GLuint *gl_object_name,
+                                                  int num)
+{
+    TEST_ASSERT_EQUAL(memobj, make_mem(0));
+    *type = CL_GL_OBJECT_BUFFER;
+
+    *gl_object_name = 0;
+    return CL_SUCCESS;
+}
+
+void testgetObjectInfo() {
+    cl_mem_flags flags = 0;
+    cl_int err = 0;
+    cl_GLuint bufobj = 0;
+    cl_mem memobj = make_mem(0);
+    cl_gl_object_type type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+    clGetGLObjectInfo_StubWithCallback(clGetGLObjectInfo_testgetObjectInfo);
+    clCreateFromGLBuffer_StubWithCallback(
+        clCreateFromGLBuffer_testgetObjectInfo);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
+    cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
+    TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
+    TEST_ASSERT_EQUAL(bufobj, 0);
+}
 } // extern "C"

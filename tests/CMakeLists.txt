@@ -40,31 +40,35 @@ endif()
 # End of workaround
 
 add_custom_command(
-    OUTPUT stripped/cl.h stripped/cl_ext.h
+    OUTPUT stripped/cl.h stripped/cl_ext.h stripped/cl_gl.h
     COMMAND ${CMAKE_COMMAND} -E make_directory stripped
     COMMAND ${CMAKE_COMMAND} -E make_directory mocks
     COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h" -D OUTPUT="stripped/cl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
     COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl_ext.h" -D OUTPUT="stripped/cl_ext.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
-    COMMENT "Stripping defines from cl.h and cl_ext.h"
+    COMMAND ${CMAKE_COMMAND} -D INPUT="${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl_gl.h" -D OUTPUT="stripped/cl_gl.h" -P ${CMAKE_CURRENT_SOURCE_DIR}/strip_defines.cmake
+    COMMENT "Stripping defines from cl.h, cl_ext.h and cl_gl.h"
     DEPENDS ${OPENCL_HEADERS_INTERFACE_INCLUDE_DIRECTORIES}/CL/cl.h strip_defines.cmake)
 
 add_custom_target(
     strip_cl_defines ALL
     DEPENDS stripped/cl.h
     DEPENDS stripped/cl_ext.h
+    DEPENDS stripped/cl_gl.h
     SOURCES strip_defines.cmake)
 
 add_custom_command(
-    OUTPUT mocks/Mockcl.c mocks/Mockcl.h mocks/Mockcl_ext.c mocks/Mockcl_ext.h
+    OUTPUT mocks/Mockcl.c mocks/Mockcl.h mocks/Mockcl_ext.c mocks/Mockcl_ext.h mocks/Mockcl_gl.c mocks/Mockcl_gl.h
     COMMAND ${RUBY_EXECUTABLE} ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/cmock.yml stripped/cl.h
     COMMAND ${RUBY_EXECUTABLE} ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/cmock.yml stripped/cl_ext.h
+    COMMAND ${RUBY_EXECUTABLE} ${CMOCK_DIR}/lib/cmock.rb -o${CMAKE_CURRENT_SOURCE_DIR}/cmock.yml stripped/cl_gl.h
     COMMENT "Generating mocks"
-    DEPENDS stripped/cl.h stripped/cl_ext.h cmock.yml)
+    DEPENDS stripped/cl.h stripped/cl_ext.h stripped/cl_gl.h cmock.yml)
 
 add_custom_target(
     mock_cl_header ALL
     DEPENDS mocks/Mockcl.c mocks/Mockcl.h
     DEPENDS mocks/Mockcl_ext.c mocks/Mockcl_ext.h
+    DEPENDS mocks/Mockcl_gl.c mocks/Mockcl_gl.h
     SOURCES cmock.yml)
 
 add_dependencies(mock_cl_header strip_cl_defines)
@@ -103,13 +107,15 @@ endif()
 set(TEST_HEADERS
     ${PROJECT_SOURCE_DIR}/include/CL/opencl.hpp
     mocks/Mockcl.h
-    mocks/Mockcl_ext.h)
+    mocks/Mockcl_ext.h
+    mocks/Mockcl_gl.h)
 
 set(TEST_SOURCES
     ${CMAKE_CURRENT_BINARY_DIR}/test_openclhpp_Runner.c
     test_openclhpp.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl.c
     ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl_ext.c
+    ${CMAKE_CURRENT_BINARY_DIR}/mocks/Mockcl_gl.c
     ${CMOCK_DIR}/src/cmock.c
     ${UNITY_DIR}/src/unity.c)
 
