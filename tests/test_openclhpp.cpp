@@ -407,6 +407,7 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+    cl::pfn_clCommandFillBufferKHR = ::clCommandFillBufferKHR;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
@@ -484,6 +485,7 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+    cl::pfn_clCommandFillBufferKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -3604,6 +3606,44 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+cl_int clCommandFillBufferKHR_testcommandFillBuffer(cl_command_buffer_khr command_buffer, cl_command_queue command_queue, cl_mem buffer,
+ const void* pattern, size_t pattern_size, size_t offset, size_t size, cl_uint num_sync_points_in_wait_list,
+ const cl_sync_point_khr* sync_point_wait_list, cl_sync_point_khr* sync_point, cl_mutable_command_khr* mutable_handle, int num_calls)
+{
+    (void)size;
+    (void)num_calls;
+    (void)sync_point;
+    TEST_ASSERT_EQUAL(command_buffer,commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL(buffer,bufferPool[0]());
+    TEST_ASSERT_EQUAL(pattern_size, sizeof(float));
+    TEST_ASSERT_EQUAL(offset, 0);
+    TEST_ASSERT_EQUAL(num_sync_points_in_wait_list, 1);
+    TEST_ASSERT_EQUAL(*(float*)pattern, 0);
+    TEST_ASSERT_EQUAL(*sync_point_wait_list, 0);
+    TEST_ASSERT_EQUAL_PTR(mutable_handle, nullptr);
+    return 0;
+}
+
+void testcommandFillBuffer(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl_int ret = CL_INVALID_CONTEXT;
+    float pattern = 0;
+    size_t  offset = 0;
+    size_t size = sizeof(pattern);
+    cl_sync_point_khr sync_point = 0;
+    cl::vector<cl_sync_point_khr> sync_points_vec = {sync_point};
+    cl::MutableCommandKhr* mutable_handle = nullptr;
+    cl::CommandQueue* command_queue = nullptr;
+    
+    clCommandFillBufferKHR_StubWithCallback(clCommandFillBufferKHR_testcommandFillBuffer);
+    ret = commandBufferKhrPool[0].commandFillBuffer(bufferPool[0], pattern, offset, size, &sync_points_vec,
+                                                           &sync_point, mutable_handle, command_queue);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
