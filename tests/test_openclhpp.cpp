@@ -3633,29 +3633,23 @@ void testDevice_GetInfo_CLDeviceName()
 }
 
 #if defined(cl_ext_device_fission)
-static cl_int clCreateSubDevices_testDevice_createSubDevices(
-    cl_device_id in_device, const cl_device_partition_property *properties,
-    cl_uint num_devices, cl_device_id *out_devices, cl_uint *num_devices_ret,
-    int num) {
-    return 0;
-}
-
 static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
     cl_device_id device_in, const cl_device_partition_property_ext *properties,
     cl_uint n, cl_device_id *out_devices, cl_uint *num, int num_calls) {
   cl_int ret = CL_SUCCESS;
 
-  TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_TYPES_EXT, *properties);
+  TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_EQUALLY_EXT, *properties);
   if(nullptr != out_devices){
     out_devices[0] = make_device_id(0);
   }
-  else{
-    *num = 1;
+  if (nullptr != num)
+  {
+      *num = 1;
   }
   if (device_in == make_device_id(0)) {
     return CL_SUCCESS;
-  } else if (device_in == make_device_id(1) && nullptr == num) {
-    return CL_DEVICE_NOT_FOUND;
+  } else if (device_in == make_device_id(1)) {
+    return CL_INVALID_DEVICE;
   } else {
     return CL_SUCCESS;
   }
@@ -3664,9 +3658,8 @@ static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
 void testDevice_createSubDevices() {
 #ifndef CL_HPP_ENABLE_EXCEPTIONS
   const cl_device_partition_property_ext properties =
-      CL_DEVICE_PARTITION_TYPES_EXT;
+      CL_DEVICE_PARTITION_EQUALLY_EXT;
   std::vector<cl::Device> devices(1);
-  cl_platform_id platform = make_platform_id(0);
 
   clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
   clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
@@ -3677,15 +3670,12 @@ void testDevice_createSubDevices() {
   cl_int ret = devicePool[0].createSubDevices(&properties, &devices);
   TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
   ret = devicePool[1].createSubDevices(&properties, &devices);
-
-  
-  TEST_ASSERT_EQUAL(CL_DEVICE_NOT_FOUND, ret);
+  TEST_ASSERT_EQUAL(CL_INVALID_DEVICE , ret);
   ret = devicePool[2].createSubDevices(&properties, &devices);
   TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
   TEST_ASSERT_EQUAL(devices[0].get(), make_device_id(0));
 #endif /*CL_HPP_ENABLE_EXCEPTIONS*/
 }
-
 #endif /*cl_ext_device_fission*/
 
 /****************************************************************************
