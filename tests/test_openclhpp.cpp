@@ -4518,26 +4518,48 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
 #if CL_HPP_TARGET_OPENCL_VERSION >= 300
-static cl_int clSetContextDestructor_testsetDestructorCallback(
+static void CL_CALLBACK test_context_destructor_callback(
+    cl_context,
+    void*)
+{
+}
+
+static cl_int clSetContextDestructorCallback_testsetDestructorCallback(
     cl_context context, cmock_cl_func_ptr3 pfn_notify, void *user_data,
     int num_calls) {
     TEST_ASSERT_EQUAL_PTR(context, make_context(0));
-    TEST_ASSERT_EQUAL_PTR(pfn_notify, nullptr);
     TEST_ASSERT_EQUAL_PTR(user_data, nullptr);
     TEST_ASSERT_EQUAL(0, num_calls);
-    return CL_INVALID_CONTEXT;
+    if(test_context_destructor_callback == pfn_notify)
+    {
+        return CL_SUCCESS;
+    }
+    else
+    {
+        return CL_INVALID_VALUE;
+    }
 }
 
-void testsetDestructorCallback() {
+void testsetDestructorCallbackNull() {
     cl_int ret = 0;
     void(CL_CALLBACK * pfn_notify)(cl_context, void *) = nullptr;
 
     clSetContextDestructorCallback_StubWithCallback(
-        clSetContextDestructor_testsetDestructorCallback);
+        clSetContextDestructorCallback_testsetDestructorCallback);
     ret = contextPool[0].setDestructorCallback(pfn_notify);
-    TEST_ASSERT_EQUAL(CL_INVALID_CONTEXT, ret);
+    TEST_ASSERT_EQUAL(CL_INVALID_VALUE, ret);
 }
+
+void testsetDestructorCallbackNotNull() {
+    cl_int ret = 0;
+
+    clSetContextDestructorCallback_StubWithCallback(
+        clSetContextDestructorCallback_testsetDestructorCallback);
+    ret = contextPool[0].setDestructorCallback(test_context_destructor_callback);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+} 
 #else
-void testsetDestructorCallback() {}
+void testsetDestructorCallbackNull() {}
+void testsetDestructorCallbackNotNull() {}
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 } // extern "C"
