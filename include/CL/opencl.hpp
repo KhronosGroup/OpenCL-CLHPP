@@ -741,10 +741,9 @@ namespace khr{
 #endif // cl_khr_command_buffer
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
-    /*! \brief Exception class
-     *
-     *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is
-     * defined.
+    /*! \brief Exception class 
+     * 
+     *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is defined.
      */
     class Error : public std::exception
     {
@@ -11001,33 +11000,33 @@ inline cl_int CommandQueue::enqueueSignalSemaphores(
  * \brief CommandBuffer interface for cl_command_buffer_khr.
  */
 namespace khr {
-
-class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
-  public:
+class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr>
+{
+public:
     //! \brief Default constructor - initializes to nullptr.
-    CommandBuffer() : detail::Wrapper<cl_type>() {}
+    CommandBuffer() : detail::Wrapper<cl_type>() { }
 
     explicit CommandBuffer(const vector<CommandQueue> &queues,
-                           cl_command_buffer_properties_khr properties = 0,
-                           cl_int *errcode_ret = nullptr) {
+        cl_command_buffer_properties_khr properties = 0,
+        cl_int* errcode_ret = nullptr)
+    {
         cl_command_buffer_properties_khr command_buffer_properties[] = {
-            CL_COMMAND_BUFFER_FLAGS_KHR, properties, 0};
+            CL_COMMAND_BUFFER_FLAGS_KHR, properties, 0
+        };
 
-        /* initialization of addresses to extension functions (it is done only
-         * once) */
-        std::call_once(ext_init_, [&] {
-          initExtensions(queues[0].getInfo<CL_QUEUE_DEVICE>());
-        });
+        /* initialization of addresses to extension functions (it is done only once) */
+        std::call_once(ext_init_, [&] { initExtensions(queues[0].getInfo<CL_QUEUE_DEVICE>()); });
         cl_int error = CL_INVALID_OPERATION;
 
         static_assert(sizeof(cl::CommandQueue) == sizeof(cl_command_queue),
-                      "Size of cl::CommandQueue must be equal to size of "
-                      "cl_command_queue");
+            "Size of cl::CommandQueue must be equal to size of cl_command_queue");
 
-        if (pfn_clCreateCommandBufferKHR) {
-            object_ = pfn_clCreateCommandBufferKHR(
-                (cl_uint)queues.size(), (cl_command_queue *)&queues.front(),
-                command_buffer_properties, &error);
+        if (pfn_clCreateCommandBufferKHR)
+        {
+            object_ = pfn_clCreateCommandBufferKHR((cl_uint) queues.size(),
+                (cl_command_queue *) &queues.front(),
+                command_buffer_properties,
+                &error);
         }
 
         detail::errHandler(error, __CREATE_COMMAND_BUFFER_KHR_ERR);
@@ -11036,32 +11035,33 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         }
     }
 
-    explicit CommandBuffer(const cl_command_buffer_khr &commandBuffer,
-                              bool retainObject = false)
-        : detail::Wrapper<cl_type>(commandBuffer, retainObject) {}
+    explicit CommandBuffer(const cl_command_buffer_khr& commandBuffer, bool retainObject = false) :
+        detail::Wrapper<cl_type>(commandBuffer, retainObject) { }
 
-    CommandBuffer &operator=(const cl_command_buffer_khr &rhs) {
+    CommandBuffer& operator=(const cl_command_buffer_khr& rhs)
+    {
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
 
     template <typename T>
-    cl_int getInfo(cl_command_buffer_info_khr name, T *param) const {
+    cl_int getInfo(cl_command_buffer_info_khr name, T* param) const
+    {
         if (pfn_clGetCommandBufferInfoKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __GET_COMMAND_BUFFER_INFO_KHR_ERR);
+                    __GET_COMMAND_BUFFER_INFO_KHR_ERR);
         }
-        return detail::errHandler(detail::getInfo(pfn_clGetCommandBufferInfoKHR,
-                                                  object_, name, param),
-                                  __GET_COMMAND_BUFFER_INFO_KHR_ERR);
+        return detail::errHandler(
+            detail::getInfo(pfn_clGetCommandBufferInfoKHR, object_, name, param),
+                __GET_COMMAND_BUFFER_INFO_KHR_ERR);
     }
 
-    template <cl_command_buffer_info_khr name>
-    typename detail::param_traits<detail::cl_command_buffer_info_khr,
-                                  name>::param_type
-    getInfo(cl_int *err = nullptr) const {
-        typename detail::param_traits<detail::cl_command_buffer_info_khr,
-                                      name>::param_type param;
+    template <cl_command_buffer_info_khr name> typename
+        detail::param_traits<detail::cl_command_buffer_info_khr, name>::param_type
+        getInfo(cl_int* err = nullptr) const
+    {
+        typename detail::param_traits<
+            detail::cl_command_buffer_info_khr, name>::param_type param;
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -11069,56 +11069,50 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return param;
     }
 
-    cl_int finalizeCommandBuffer() const {
-        return detail::errHandler(::clFinalizeCommandBufferKHR(object_),
-                                  __FINALIZE_COMMAND_BUFFER_KHR_ERR);
+    cl_int finalizeCommandBuffer() const
+    {
+        return detail::errHandler(::clFinalizeCommandBufferKHR(object_), __FINALIZE_COMMAND_BUFFER_KHR_ERR);
     }
 
     cl_int enqueueCommandBuffer(vector<CommandQueue> &queues,
-                                const vector<Event> *events = nullptr,
-                                Event *event = nullptr) {
+        const vector<Event>* events = nullptr,
+        Event* event = nullptr)
+    {
         if (pfn_clEnqueueCommandBufferKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
+                    __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
         }
 
-        static_assert(sizeof(cl::CommandQueue) == sizeof(cl_command_queue),
-                      "Size of cl::CommandQueue must be equal to size of "
-                      "cl_command_queue");
+         static_assert(sizeof(cl::CommandQueue) == sizeof(cl_command_queue),
+            "Size of cl::CommandQueue must be equal to size of cl_command_queue");
 
-        return detail::errHandler(
-            pfn_clEnqueueCommandBufferKHR(
-                (cl_uint)queues.size(), (cl_command_queue *)&queues.front(),
-                object_, (events != nullptr) ? (cl_uint)events->size() : 0,
-                (events != nullptr && events->size() > 0)
-                    ? (cl_event *)&events->front()
-                    : nullptr,
-                (cl_event *)event),
-            __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
+        return detail::errHandler(pfn_clEnqueueCommandBufferKHR((cl_uint) queues.size(),
+                (cl_command_queue *) &queues.front(),
+                object_,
+                (events != nullptr) ? (cl_uint) events->size() : 0,
+                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (cl_event*) event),
+                __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
     }
 
-    cl_int commandBarrierWithWaitList(
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+    cl_int commandBarrierWithWaitList(const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandBarrierWithWaitListKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_BARRIER_WITH_WAIT_LIST_KHR_ERR);
+                    __COMMAND_BARRIER_WITH_WAIT_LIST_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandBarrierWithWaitListKHR(
-                object_,
+            pfn_clCommandBarrierWithWaitListKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_BARRIER_WITH_WAIT_LIST_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11127,31 +11121,34 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int commandCopyBuffer(
-        const Buffer &src, const Buffer &dst, size_type src_offset,
-        size_type dst_offset, size_type size,
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+    cl_int commandCopyBuffer(const Buffer& src,
+        const Buffer& dst,
+        size_type src_offset,
+        size_type dst_offset,
+        size_type size,
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandCopyBufferKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_COPY_BUFFER_KHR_ERR);
+                    __COMMAND_COPY_BUFFER_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandCopyBufferKHR(
-                object_,
+            pfn_clCommandCopyBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                src(), dst(), src_offset, dst_offset, size,
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                src(),
+                dst(),
+                src_offset,
+                dst_offset,
+                size,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_COPY_BUFFER_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11160,37 +11157,42 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int commandCopyBufferRect(
-        const Buffer &src, const Buffer &dst,
-        const array<size_type, 3> &src_origin,
-        const array<size_type, 3> &dst_origin,
-        const array<size_type, 3> &region, size_type src_row_pitch,
-        size_type src_slice_pitch, size_type dst_row_pitch,
+    cl_int commandCopyBufferRect(const Buffer& src,
+        const Buffer& dst,
+        const array<size_type, 3>& src_origin,
+        const array<size_type, 3>& dst_origin,
+        const array<size_type, 3>& region,
+        size_type src_row_pitch,
+        size_type src_slice_pitch,
+        size_type dst_row_pitch,
         size_type dst_slice_pitch,
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandCopyBufferRectKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_COPY_BUFFER_RECT_KHR_ERR);
+                    __COMMAND_COPY_BUFFER_RECT_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandCopyBufferRectKHR(
-                object_,
+            pfn_clCommandCopyBufferRectKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                src(), dst(), src_origin.data(), dst_origin.data(),
-                region.data(), src_row_pitch, src_slice_pitch, dst_row_pitch,
+                src(),
+                dst(),
+                src_origin.data(),
+                dst_origin.data(),
+                region.data(),
+                src_row_pitch,
+                src_slice_pitch,
+                dst_row_pitch,
                 dst_slice_pitch,
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_COPY_BUFFER_RECT_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11199,32 +11201,34 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int commandCopyBufferToImage(
-        const Buffer &src, const Image &dst, size_type src_offset,
-        const array<size_type, 3> &dst_origin,
-        const array<size_type, 3> &region,
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+    cl_int commandCopyBufferToImage(const Buffer& src,
+        const Image& dst,
+        size_type src_offset,
+        const array<size_type, 3>& dst_origin,
+        const array<size_type, 3>& region,
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandCopyBufferToImageKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_COPY_BUFFER_TO_IMAGE_KHR_ERR);
+                    __COMMAND_COPY_BUFFER_TO_IMAGE_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandCopyBufferToImageKHR(
-                object_,
+            pfn_clCommandCopyBufferToImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                src(), dst(), src_offset, dst_origin.data(), region.data(),
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                src(),
+                dst(),
+                src_offset,
+                dst_origin.data(),
+                region.data(),
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_COPY_BUFFER_TO_IMAGE_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11233,34 +11237,34 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int
-    commandCopyImage(const Image &src, const Image &dst,
-                     const array<size_type, 3> &src_origin,
-                     const array<size_type, 3> &dst_origin,
-                     const array<size_type, 3> &region,
-                     const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-                     cl_sync_point_khr *sync_point = nullptr,
-                     MutableCommand *mutable_handle = nullptr,
-                     const CommandQueue *command_queue = nullptr) {
+    cl_int commandCopyImage(const Image& src,
+        const Image& dst,
+        const array<size_type, 3>& src_origin,
+        const array<size_type, 3>& dst_origin,
+        const array<size_type, 3>& region,
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandCopyImageKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_COPY_IMAGE_KHR_ERR);
+                    __COMMAND_COPY_IMAGE_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandCopyImageKHR(
-                object_,
+            pfn_clCommandCopyImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                src(), dst(), src_origin.data(), dst_origin.data(),
+                src(),
+                dst(),
+                src_origin.data(),
+                dst_origin.data(),
                 region.data(),
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_COPY_IMAGE_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11269,32 +11273,34 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int commandCopyImageToBuffer(
-        const Image &src, const Buffer &dst,
-        const array<size_type, 3> &src_origin,
-        const array<size_type, 3> &region, size_type dst_offset,
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+    cl_int commandCopyImageToBuffer(const Image& src,
+        const Buffer& dst,
+        const array<size_type, 3>& src_origin,
+        const array<size_type, 3>& region,
+        size_type dst_offset,
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandCopyImageToBufferKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_COPY_IMAGE_TO_BUFFER_KHR_ERR);
+                    __COMMAND_COPY_IMAGE_TO_BUFFER_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandCopyImageToBufferKHR(
-                object_,
+            pfn_clCommandCopyImageToBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                src(), dst(), src_origin.data(), region.data(), dst_offset,
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                src(),
+                dst(),
+                src_origin.data(),
+                region.data(),
+                dst_offset,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_COPY_IMAGE_TO_BUFFER_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11303,33 +11309,34 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    template <typename PatternType>
-    cl_int commandFillBuffer(
-        const Buffer &buffer, PatternType pattern, size_type offset,
+    template<typename PatternType>
+    cl_int commandFillBuffer(const Buffer& buffer,
+        PatternType pattern,
+        size_type offset,
         size_type size,
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandFillBufferKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_FILL_BUFFER_KHR_ERR);
+                    __COMMAND_FILL_BUFFER_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandFillBufferKHR(
-                object_,
+            pfn_clCommandFillBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                buffer(), static_cast<void *>(&pattern), sizeof(PatternType),
-                offset, size,
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                buffer(),
+                static_cast<void*>(&pattern),
+                sizeof(PatternType),
+                offset,
+                size,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_FILL_BUFFER_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11338,33 +11345,32 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int
-    commandFillImage(const Image &image, cl_float4 fillColor,
-                     const array<size_type, 3> &origin,
-                     const array<size_type, 3> &region,
-                     const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-                     cl_sync_point_khr *sync_point = nullptr,
-                     MutableCommand *mutable_handle = nullptr,
-                     const CommandQueue *command_queue = nullptr) {
+    cl_int commandFillImage(const Image& image,
+        cl_float4 fillColor,
+        const array<size_type, 3>& origin,
+        const array<size_type, 3>& region,
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandFillImageKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_FILL_IMAGE_KHR_ERR);
+                    __COMMAND_FILL_IMAGE_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandFillImageKHR(
-                object_,
+            pfn_clCommandFillImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                image(), static_cast<void *>(&fillColor), origin.data(),
+                image(),
+                static_cast<void*>(&fillColor),
+                origin.data(),
                 region.data(),
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_FILL_IMAGE_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11373,35 +11379,35 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
         return error;
     }
 
-    cl_int commandNDRangeKernel(
-        const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
-        const Kernel &kernel, const NDRange &offset, const NDRange &global,
-        const NDRange &local = NullRange,
-        const vector<cl_sync_point_khr> *sync_points_vec = nullptr,
-        cl_sync_point_khr *sync_point = nullptr,
-        MutableCommand *mutable_handle = nullptr,
-        const CommandQueue *command_queue = nullptr) {
+    cl_int commandNDRangeKernel(const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+        const Kernel& kernel,
+        const NDRange& offset,
+        const NDRange& global,
+        const NDRange& local = NullRange,
+        const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
+        cl_sync_point_khr* sync_point = nullptr,
+        MutableCommand* mutable_handle = nullptr,
+        const CommandQueue* command_queue = nullptr)
+    {
         if (pfn_clCommandNDRangeKernelKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __COMMAND_NDRANGE_KERNEL_KHR_ERR);
+                    __COMMAND_NDRANGE_KERNEL_KHR_ERR);
         }
 
         cl_sync_point_khr tmp_sync_point;
         cl_int error = detail::errHandler(
-            pfn_clCommandNDRangeKernelKHR(
-                object_,
+            pfn_clCommandNDRangeKernelKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                &properties[0], kernel(), (cl_uint)global.dimensions(),
-                offset.dimensions() != 0 ? (const size_type *)offset : nullptr,
-                (const size_type *)global,
-                local.dimensions() != 0 ? (const size_type *)local : nullptr,
-                (sync_points_vec != nullptr) ? (cl_uint)sync_points_vec->size()
-                                             : 0,
-                (sync_points_vec != nullptr && sync_points_vec->size() > 0)
-                    ? &sync_points_vec->front()
-                    : nullptr,
+                &properties[0],
+                kernel(),
+                (cl_uint) global.dimensions(),
+                offset.dimensions() != 0 ? (const size_type*) offset : nullptr,
+                (const size_type*) global,
+                local.dimensions() != 0 ? (const size_type*) local : nullptr,
+                (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
+                (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
-                (cl_mutable_command_khr *)mutable_handle),
+                (cl_mutable_command_khr*) mutable_handle),
             __COMMAND_NDRANGE_KERNEL_KHR_ERR);
 
         if (sync_point != nullptr && error == CL_SUCCESS)
@@ -11411,55 +11417,42 @@ class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr> {
     }
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
-    cl_int
-    updateMutableCommands(const cl_mutable_base_config_khr *mutable_config) {
+    cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
+    {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+                    __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
         }
-        return detail::errHandler(
-            pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
-            __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+        return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
+                        __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
-  private:
+private:
     static std::once_flag ext_init_;
 
-    static void initExtensions(const cl::Device &device) {
+    static void initExtensions(const cl::Device& device)
+    {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clCreateCommandBufferKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clFinalizeCommandBufferKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clRetainCommandBufferKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clReleaseCommandBufferKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clGetCommandBufferInfoKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clEnqueueCommandBufferKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clCommandBarrierWithWaitListKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateCommandBufferKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clFinalizeCommandBufferKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clRetainCommandBufferKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clReleaseCommandBufferKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetCommandBufferInfoKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueCommandBufferKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandBarrierWithWaitListKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandCopyBufferKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clCommandCopyBufferRectKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clCommandCopyBufferToImageKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandCopyBufferRectKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandCopyBufferToImageKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandCopyImageKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clCommandCopyImageToBufferKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandCopyImageToBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandFillBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandFillImageKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clCommandNDRangeKernelKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCommandNDRangeKernelKHR);
 #if defined(cl_khr_command_buffer_mutable_dispatch)
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clUpdateMutableCommandsKHR);
-        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform,
-                                             clGetMutableCommandInfoKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clUpdateMutableCommandsKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetMutableCommandInfoKHR);
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 #elif CL_HPP_TARGET_OPENCL_VERSION >= 110
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateCommandBufferKHR);
@@ -11516,38 +11509,39 @@ CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag cl::khr::CommandBuffer::ext_init_;
  * \brief MutableCommand interface for cl_mutable_command_khr.
  */
 namespace khr {
-class MutableCommand : public detail::Wrapper<cl_mutable_command_khr> {
-  public:
+class MutableCommand : public detail::Wrapper<cl_mutable_command_khr>
+{
+public:
     //! \brief Default constructor - initializes to nullptr.
-    MutableCommand() : detail::Wrapper<cl_type>() {}
+    MutableCommand() : detail::Wrapper<cl_type>() { }
 
-    explicit MutableCommand(const cl_mutable_command_khr &MutableCommand,
-                            bool retainObject = false)
-        : detail::Wrapper<cl_type>(MutableCommand, retainObject) {}
+    explicit MutableCommand(const cl_mutable_command_khr& mutableCommand, bool retainObject = false) :
+        detail::Wrapper<cl_type>(mutableCommand, retainObject) { }
 
-    MutableCommand &operator=(const cl_mutable_command_khr &rhs) {
+    MutableCommand& operator=(const cl_mutable_command_khr& rhs)
+    {
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
     }
 
     template <typename T>
-    cl_int getInfo(cl_mutable_command_info_khr name, T *param) const {
+    cl_int getInfo(cl_mutable_command_info_khr name, T* param) const
+    {
         if (pfn_clGetMutableCommandInfoKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                                      __GET_MUTABLE_COMMAND_INFO_KHR_ERR);
+                    __GET_MUTABLE_COMMAND_INFO_KHR_ERR);
         }
         return detail::errHandler(
-            detail::getInfo(pfn_clGetMutableCommandInfoKHR, object_, name,
-                            param),
-            __GET_MUTABLE_COMMAND_INFO_KHR_ERR);
+            detail::getInfo(pfn_clGetMutableCommandInfoKHR, object_, name, param),
+                __GET_MUTABLE_COMMAND_INFO_KHR_ERR);
     }
 
-    template <cl_mutable_command_info_khr name>
-    typename detail::param_traits<detail::cl_mutable_command_info_khr,
-                                  name>::param_type
-    getInfo(cl_int *err = nullptr) const {
-        typename detail::param_traits<detail::cl_mutable_command_info_khr,
-                                      name>::param_type param;
+    template <cl_mutable_command_info_khr name> typename
+        detail::param_traits<detail::cl_mutable_command_info_khr, name>::param_type
+        getInfo(cl_int* err = nullptr) const
+    {
+        typename detail::param_traits<
+            detail::cl_mutable_command_info_khr, name>::param_type param;
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
