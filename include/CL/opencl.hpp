@@ -4989,9 +4989,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
 };
 
 /*! \class Image1DArray
@@ -5052,7 +5049,7 @@ public:
         ImageFormat format,
         size_type arraySize,
         size_type width,
-        size_type rowPitch,
+        size_type rowPitch=0,
         void* host_ptr = nullptr,
         cl_int* err = nullptr)
     {
@@ -5537,8 +5534,8 @@ public:
         size_type arraySize,
         size_type width,
         size_type height,
-        size_type rowPitch,
-        size_type slicePitch,
+        size_type rowPitch=0,
+        size_type slicePitch=0,
         void* host_ptr = nullptr,
         cl_int* err = nullptr)
     {
