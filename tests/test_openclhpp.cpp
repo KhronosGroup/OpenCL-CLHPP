@@ -408,6 +408,9 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+    cl::pfn_clCommandCopyBufferKHR = ::clCommandCopyBufferKHR;
+    cl::pfn_clCommandCopyBufferRectKHR = ::clCommandCopyBufferRectKHR;
+    cl::pfn_clCommandBarrierWithWaitListKHR = ::clCommandBarrierWithWaitListKHR;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
@@ -485,6 +488,9 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+    cl::pfn_clCommandCopyBufferKHR = nullptr;
+    cl::pfn_clCommandCopyBufferRectKHR = nullptr;
+    cl::pfn_clCommandBarrierWithWaitListKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -3556,6 +3562,297 @@ void testCommandBufferInfoKHRNumQueues(void)
 
     cl_uint num = commandBufferKhrPool[0].getInfo<CL_COMMAND_BUFFER_NUM_QUEUES_KHR>();
     TEST_ASSERT_EQUAL_HEX(expected, num);
+#endif
+}
+
+// Stub for clCommandCopyBufferKHR
+static cl_int clCommandCopyBufferKHR_testCommandCopyBufferKHR(
+    cl_command_buffer_khr command_buffer,
+    cl_command_queue command_queue,
+    cl_mem src_buffer,
+    cl_mem dst_buffer,
+    size_t src_offset,
+    size_t dst_offset,
+    size_t size,
+    cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list,
+    cl_sync_point_khr* sync_point,
+    cl_mutable_command_khr* mutable_handle,
+    cl_int cmock_to_return)
+{
+    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), src_buffer);
+    TEST_ASSERT_EQUAL_PTR(make_mem(1), dst_buffer);
+    TEST_ASSERT_EQUAL_INT(10, src_offset);
+    TEST_ASSERT_EQUAL_INT(20, dst_offset);
+    TEST_ASSERT_EQUAL_INT(16, size);
+
+    switch(cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        TEST_ASSERT_EQUAL(3, num_sync_points_in_wait_list);
+        return CL_SUCCESS;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+        TEST_ASSERT_EQUAL(0, num_sync_points_in_wait_list);
+        TEST_ASSERT_EQUAL_PTR(nullptr, sync_point_wait_list);
+        return CL_INVALID_COMMAND_QUEUE;
+    }
+    case 2:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        TEST_ASSERT_EQUAL_PTR(nullptr, sync_point);
+        return CL_INVALID_SYNC_POINT_WAIT_LIST_KHR;
+    }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testCommandCopyBufferKHR(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl::Buffer src_buffer(make_mem(0));
+    cl::Buffer dst_buffer(make_mem(1));
+    size_t src_offset{ 10 };
+    size_t dst_offset{ 20 };
+    std::vector<cl_sync_point_khr> sync_points_vec { 0, 1, 2 };
+
+    clCommandCopyBufferKHR_StubWithCallback(clCommandCopyBufferKHR_testCommandCopyBufferKHR);
+
+    cl_int result = commandBufferKhrPool[0].commandCopyBuffer(
+        src_buffer,
+        dst_buffer,
+        src_offset,
+        dst_offset,
+        16,
+        &sync_points_vec,
+        nullptr,
+        nullptr,
+        nullptr);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, result);
+
+    result = commandBufferKhrPool[0].commandCopyBuffer(
+        src_buffer,
+        dst_buffer,
+        src_offset,
+        dst_offset,
+        16,
+        0,
+        nullptr,
+        nullptr,
+        &commandQueuePool[0]);
+    TEST_ASSERT_EQUAL(CL_INVALID_COMMAND_QUEUE, result);
+
+    result = commandBufferKhrPool[0].commandCopyBuffer(
+        src_buffer,
+        dst_buffer,
+        src_offset,
+        dst_offset,
+        16,
+        nullptr,
+        nullptr,
+        nullptr,
+        nullptr);
+    TEST_ASSERT_EQUAL(CL_INVALID_SYNC_POINT_WAIT_LIST_KHR, result);
+
+    src_buffer() = nullptr;
+    dst_buffer() = nullptr;
+#endif
+}
+
+// Stub for clCommandCopyBufferRectKHR
+static cl_int clCommandCopyBufferRectKHR_testCommandCopyBufferRectKHR(
+    cl_command_buffer_khr command_buffer,
+    cl_command_queue command_queue,
+    cl_mem src_buffer,
+    cl_mem dst_buffer,
+    const size_t* src_origin,
+    const size_t* dst_origin,
+    const size_t* region,
+    size_t src_row_pitch,
+    size_t src_slice_pitch,
+    size_t dst_row_pitch,
+    size_t dst_slice_pitch,
+    cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list,
+    cl_sync_point_khr* sync_point,
+    cl_mutable_command_khr* mutable_handle,
+    cl_int cmock_to_return)
+{
+    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), src_buffer);
+    TEST_ASSERT_EQUAL_PTR(make_mem(1), dst_buffer);
+
+    TEST_ASSERT_EQUAL(0, src_row_pitch);
+    TEST_ASSERT_EQUAL(1, src_slice_pitch);
+    TEST_ASSERT_EQUAL(2, dst_row_pitch);
+    TEST_ASSERT_EQUAL(3, dst_slice_pitch);
+
+    TEST_ASSERT_EQUAL(1, src_origin[0]);
+    TEST_ASSERT_EQUAL(2, src_origin[1]);
+    TEST_ASSERT_EQUAL(3, src_origin[2]);
+
+    TEST_ASSERT_EQUAL(1, dst_origin[0]);
+    TEST_ASSERT_EQUAL(2, dst_origin[1]);
+    TEST_ASSERT_EQUAL(3, dst_origin[2]);
+
+    TEST_ASSERT_EQUAL(10, region[0]);
+    TEST_ASSERT_EQUAL(20, region[1]);
+    TEST_ASSERT_EQUAL(30, region[2]);
+
+    switch (cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        TEST_ASSERT_EQUAL(3, num_sync_points_in_wait_list);
+        return CL_SUCCESS;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+        TEST_ASSERT_EQUAL(0, num_sync_points_in_wait_list);
+        TEST_ASSERT_EQUAL_PTR(nullptr, sync_point_wait_list);
+        return CL_INVALID_COMMAND_QUEUE;
+    }
+    case 2:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        TEST_ASSERT_EQUAL_PTR(nullptr, sync_point);
+        return CL_INVALID_SYNC_POINT_WAIT_LIST_KHR;
+    }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testCommandCopyBufferRectKHR(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl::Buffer src_buffer(make_mem(0));
+    cl::Buffer dst_buffer(make_mem(1));
+    cl::array<cl::size_type, 3> src_origin{ 1, 2, 3 };
+    cl::array<cl::size_type, 3> dst_origin{ 1, 2, 3 };
+    cl::array<cl::size_type, 3> region{10, 20, 30};
+    cl::size_type src_row_pitch{ 0 };
+    cl::size_type src_slice_pitch{ 1 };
+    cl::size_type dst_row_pitch{ 2 };
+    cl::size_type dst_slice_pitch{ 3 };
+    std::vector<cl_sync_point_khr> sync_points_vec{ 0, 1, 2 };
+
+    clCommandCopyBufferRectKHR_StubWithCallback(clCommandCopyBufferRectKHR_testCommandCopyBufferRectKHR);
+
+    cl_int result = commandBufferKhrPool[0].commandCopyBufferRect(
+        src_buffer,
+        dst_buffer,
+        src_origin,
+        dst_origin,
+        region,
+        src_row_pitch,
+        src_slice_pitch,
+        dst_row_pitch,
+        dst_slice_pitch,
+        &sync_points_vec,
+        nullptr,
+        nullptr,
+        nullptr);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, result);
+
+    result = commandBufferKhrPool[0].commandCopyBufferRect(
+        src_buffer,
+        dst_buffer,
+        src_origin,
+        dst_origin,
+        region,
+        src_row_pitch,
+        src_slice_pitch,
+        dst_row_pitch,
+        dst_slice_pitch,
+        0,
+        nullptr,
+        nullptr,
+        &commandQueuePool[0]);
+    TEST_ASSERT_EQUAL(CL_INVALID_COMMAND_QUEUE, result);
+
+    result = commandBufferKhrPool[0].commandCopyBufferRect(
+        src_buffer,
+        dst_buffer,
+        src_origin,
+        dst_origin,
+        region,
+        src_row_pitch,
+        src_slice_pitch,
+        dst_row_pitch,
+        dst_slice_pitch,
+        &sync_points_vec,
+        nullptr,
+        nullptr,
+        nullptr);
+    TEST_ASSERT_EQUAL(CL_INVALID_SYNC_POINT_WAIT_LIST_KHR, result);
+
+    src_buffer() = nullptr;
+    dst_buffer() = nullptr;
+#endif
+}
+
+// Stub for clCommandBarrierWithWaitListKHR
+static cl_int clCommandBarrierWithWaitListKHR_testCommandBarrierWithWaitList(
+    cl_command_buffer_khr command_buffer,
+    cl_command_queue command_queue,
+    cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list,
+    cl_sync_point_khr* sync_point,
+    cl_mutable_command_khr* mutable_handle,
+    cl_int cmock_to_return)
+{
+    TEST_ASSERT_EQUAL_PTR(make_command_buffer_khr(0), command_buffer);
+    //TEST_ASSERT_EQUAL(3, num_sync_points_in_wait_list);
+
+    switch (cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        TEST_ASSERT_EQUAL(3, num_sync_points_in_wait_list);
+        return CL_SUCCESS;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+        TEST_ASSERT_EQUAL(0, num_sync_points_in_wait_list);
+        TEST_ASSERT_EQUAL_PTR(nullptr, sync_point_wait_list);
+        return CL_INVALID_COMMAND_QUEUE;
+    }
+    }
+
+    return CL_SUCCESS;
+}
+
+void testCommandBarrierWithWaitList(void)
+{
+#if defined(cl_khr_command_buffer)
+    std::vector<cl_sync_point_khr> sync_points_vec{ 0, 1, 2 };
+
+    clCommandBarrierWithWaitListKHR_StubWithCallback(clCommandBarrierWithWaitListKHR_testCommandBarrierWithWaitList);
+
+    cl_int result = commandBufferKhrPool[0].commandBarrierWithWaitList(
+        &sync_points_vec,
+        nullptr,
+        nullptr,
+        nullptr);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, result);
+
+    result = commandBufferKhrPool[0].commandBarrierWithWaitList(
+        0,
+        nullptr,
+        nullptr,
+        &commandQueuePool[0]);
+    TEST_ASSERT_EQUAL(CL_INVALID_COMMAND_QUEUE, result);
 #endif
 }
 
