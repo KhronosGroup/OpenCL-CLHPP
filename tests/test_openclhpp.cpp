@@ -13,6 +13,7 @@ extern "C"
 #include <cmock.h>
 #include "Mockcl.h"
 #include "Mockcl_ext.h"
+#include "Mockcl_gl.h"
 #include <string.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -1200,8 +1201,7 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
-    TEST_ASSERT_BITS(CL_MEM_COPY_HOST_PTR, flags, !CL_MEM_COPY_HOST_PTR);
-    TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
+    TEST_ASSERT_EQUAL(flags, CL_MEM_READ_ONLY);
     TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
     TEST_ASSERT_NULL(host_ptr);
     if (errcode_ret)
@@ -1789,7 +1789,7 @@ void testKernelSetArgLocal(void)
     kernelPool[0].setArg(2, cl::Local(123));
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
+void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     std::unique_ptr<int> buffer(new int(1000));
@@ -1798,7 +1798,7 @@ void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
 #endif
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
+void testKernelSetArgBySetKernelArgSVMPointerWithVectorType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     VECTOR_CLASS<int> vec(1000);
@@ -1807,7 +1807,7 @@ void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
 #endif
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithPointerType()
+void testKernelSetArgBySetKernelArgSVMPointerWithPointerType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl_mem *memory = &bufferPool[1]();
@@ -1854,12 +1854,12 @@ cl_int clSetKernelExecInfo_setSVMPointers(cl_kernel kernel,
     return CL_SUCCESS;
 }
 
-void testKernelSetSVMPointers()
+void testKernelSetSVMPointers(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_setSVMPointers);
   
-    cl::vector<void *> vec = { (void *)0xaabbccdd, (void *)0xddccbbaa };
+    cl::vector<void *> vec = { (void *)(size_t)0xaabbccdd, (void *)(size_t)0xddccbbaa };
     cl_int ret = kernelPool[0].setSVMPointers(vec);
 
     cl_int expected = CL_SUCCESS;
@@ -1880,7 +1880,7 @@ cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
 
     return CL_SUCCESS;
 }
-void testKernelEnableFineGrainedSystemSVM()
+void testKernelEnableFineGrainedSystemSVM(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_EnableFineGrainedSystemSVM);
@@ -3622,7 +3622,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceVendorID()
+void testDevice_GetInfo_CLDeviceVendorID(void)
 {
     cl_uint expected = 0xABCD;
     clGetDeviceInfo_StubWithCallback(
@@ -3647,7 +3647,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceImageSupport(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceImageSupport()
+void testDevice_GetInfo_CLDeviceImageSupport(void)
 {
     cl_bool expected = true;
     clGetDeviceInfo_StubWithCallback(
@@ -3675,7 +3675,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceName(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceName()
+void testDevice_GetInfo_CLDeviceName(void)
 {
     cl::string expected = "testDeviceName";
     clGetDeviceInfo_StubWithCallback(clGetInfo_testDeviceGetInfoCLDeviceName);
@@ -4164,7 +4164,7 @@ static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
     return CL_INVALID_OPERATION;
 }
 
-void testTemplateGetSemaphoreHandleForTypeKHR()
+void testTemplateGetSemaphoreHandleForTypeKHR(void)
 {
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -4346,7 +4346,7 @@ void clSVMFree_stubForMemoryAllocation(cl_context context, void *svm_pointer,
     TEST_ASSERT_EQUAL_PTR(svm_pointer, testMemory);
     delete[] (int*) svm_pointer; 
 }
-void testSVMMemoryAllocation()
+void testSVMMemoryAllocation(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAllocator;
@@ -4427,7 +4427,7 @@ static cl_int clGetImageRequirementsInfoEXT_GetInfo(
     return CL_INVALID_OPERATION;
 }
 
-void testTemplateGetImageRequirementsInfo()
+void testTemplateGetImageRequirementsInfo(void)
 {
     cl::Context context(make_context(0));
     cl_device_id device_expect = make_device_id(0);
@@ -4472,4 +4472,49 @@ void testTemplateGetImageRequirementsInfo()
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
 
+static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
+                                                     cl_mem_flags flags,
+                                                     cl_GLuint bufobj,
+                                                     cl_int *errcode_ret,
+                                                     int num_calls)
+{
+    TEST_ASSERT_EQUAL(0, bufobj);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL(0, flags);
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
+                                                  cl_gl_object_type *type,
+                                                  cl_GLuint *gl_object_name,
+                                                  int num)
+{
+    TEST_ASSERT_EQUAL(memobj, make_mem(0));
+    *type = CL_GL_OBJECT_BUFFER;
+
+    *gl_object_name = 0;
+    return CL_SUCCESS;
+}
+
+void testgetObjectInfo() {
+    cl_mem_flags flags = 0;
+    cl_int err = 0;
+    cl_GLuint bufobj = 0;
+    cl_mem memobj = make_mem(0);
+    cl_gl_object_type type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+    clGetGLObjectInfo_StubWithCallback(clGetGLObjectInfo_testgetObjectInfo);
+    clCreateFromGLBuffer_StubWithCallback(
+        clCreateFromGLBuffer_testgetObjectInfo);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
+    cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
+    TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
+    TEST_ASSERT_EQUAL(bufobj, 0);
+}
 } // extern "C"

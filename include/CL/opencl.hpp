@@ -4105,8 +4105,12 @@ public:
         if (map && !(SVMTrait::getSVMMemFlags() & CL_MEM_SVM_FINE_GRAIN_BUFFER)) {
             cl_int err = enqueueMapSVM(retValue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size*sizeof(T));
             if (err != CL_SUCCESS) {
+                clSVMFree(context_(), retValue);
+                retValue = nullptr;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
                 std::bad_alloc excep;
                 throw excep;
+#endif
             }
         }
 
