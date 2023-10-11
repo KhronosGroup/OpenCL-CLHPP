@@ -3998,6 +3998,7 @@ void testSemaphoreGetInfoPayload(void)
     TEST_ASSERT_EQUAL(1, ret);
 }
 
+#if defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     cl_semaphore_khr sema_object,
     cl_semaphore_info_khr param_name,
@@ -4042,6 +4043,9 @@ void testSemaphoreGetInfoDevicesList(void)
     TEST_ASSERT_EQUAL(make_device_id(0), ret[0]());
     TEST_ASSERT_EQUAL(make_device_id(1), ret[1]());
 }
+#else
+void testSemaphoreGetInfoDevicesList(void) {}
+#endif
 
 void testSemaphoreRetain(void)
 {
