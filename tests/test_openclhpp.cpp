@@ -3627,7 +3627,7 @@ cl_int clCommandFillBufferKHR_testcommandFillBuffer(cl_command_buffer_khr comman
     return 0;
 }
 
-void testcommandFillBuffer(void)
+void testCommandFillBuffer(void)
 {
 #if defined(cl_khr_command_buffer)
     cl_int ret = CL_INVALID_CONTEXT;
@@ -3662,7 +3662,7 @@ const size_t* origin, const size_t* region, cl_uint num_sync_points_in_wait_list
     return 0;
 }
 
-void testcommandFillImage(void)
+void testCommandFillImage(void)
 {
 #if defined(cl_khr_command_buffer)
     cl_int ret = CL_INVALID_CONTEXT;
