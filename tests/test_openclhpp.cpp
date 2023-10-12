@@ -408,6 +408,7 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+    cl::pfn_clCommandNDRangeKernelKHR = ::clCommandNDRangeKernelKHR;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
@@ -485,6 +486,7 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+    cl::pfn_clCommandNDRangeKernelKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -3604,6 +3606,87 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+static cl_int clCommandNDRangeKernelKHR_testCommandNDRangeKernel(cl_command_buffer_khr command_buffer,
+    cl_command_queue command_queue,
+    const cl_ndrange_kernel_command_properties_khr* properties,
+    cl_kernel kernel,
+    cl_uint work_dim,
+    const size_t* global_work_offset,
+    const size_t* global_work_size,
+    const size_t* local_work_size,
+    cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list,
+    cl_sync_point_khr* sync_point,
+    cl_mutable_command_khr* mutable_handle,
+    cl_int cmock_to_return)
+{
+    TEST_ASSERT_EQUAL(0, properties[0]);
+    TEST_ASSERT_EQUAL(1, properties[1]);
+    TEST_ASSERT_EQUAL(2, properties[2]);
+
+    TEST_ASSERT_EQUAL(3, sync_point_wait_list[0]);
+    TEST_ASSERT_EQUAL(2, sync_point_wait_list[1]);
+    TEST_ASSERT_EQUAL(1, sync_point_wait_list[2]);
+
+    TEST_ASSERT_NOT_NULL(sync_point);
+    TEST_ASSERT_EQUAL_PTR(nullptr, mutable_handle);
+    switch (cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        return CL_SUCCESS;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL_PTR(commandQueuePool[0](), command_queue);
+        return CL_INVALID_COMMAND_QUEUE;
+    }
+    }
+    return CL_SUCCESS;
+}
+
+void testCommandNDRangeKernel(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl::vector<cl_ndrange_kernel_command_properties_khr> properties{ 0,1,2 };
+    cl::Kernel kernel;
+    cl::NDRange offset;
+    cl::NDRange global;
+    cl::NDRange local = cl::NullRange;
+    std::vector<cl_sync_point_khr> sync_points_vec{ 3,2,1 };
+    cl_sync_point_khr sync_point{ 2 };
+    cl::MutableCommandKhr* mutable_handle = nullptr;
+    cl::CommandQueue* command_queue = nullptr;
+
+    clCommandNDRangeKernelKHR_StubWithCallback(clCommandNDRangeKernelKHR_testCommandNDRangeKernel);
+    cl_int ret = commandBufferKhrPool[0].commandNDRangeKernel(
+        properties,
+        kernel,
+        offset,
+        global,
+        local,
+        &sync_points_vec,
+        &sync_point,
+        mutable_handle,
+        command_queue);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+
+    ret = commandBufferKhrPool[0].commandNDRangeKernel(
+        properties,
+        kernel,
+        offset,
+        global,
+        local,
+        &sync_points_vec,
+        &sync_point,
+        mutable_handle,
+        &commandQueuePool[0]);
+    TEST_ASSERT_EQUAL(ret, CL_INVALID_COMMAND_QUEUE);
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
