@@ -3604,6 +3604,40 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+static cl_int clFinalizeCommandBufferKHR_testFinalizeCommandBuffer(cl_command_buffer_khr command_buffer,
+    cl_int cmock_to_return)
+{
+    switch (cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+        return CL_SUCCESS;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL(command_buffer, nullptr);
+        return CL_INVALID_COMMAND_BUFFER_KHR;
+    }
+    }
+    return CL_SUCCESS;
+}
+
+void testFinalizeCommandBuffer(void)
+{
+#if defined(cl_khr_command_buffer)
+
+    clFinalizeCommandBufferKHR_StubWithCallback(clFinalizeCommandBufferKHR_testFinalizeCommandBuffer);
+    cl_int ret = commandBufferKhrPool[0].finalizeCommandBuffer();
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+
+    cl::CommandBufferKhr notValidCommandBuffer;
+    ret = notValidCommandBuffer.finalizeCommandBuffer();
+    TEST_ASSERT_EQUAL(ret, CL_INVALID_COMMAND_BUFFER_KHR);
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
