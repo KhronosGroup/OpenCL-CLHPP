@@ -409,6 +409,9 @@ void setUp(void)
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
 #endif
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+    cl::pfn_clUpdateMutableCommandsKHR = ::clUpdateMutableCommandsKHR;
+#endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
     cl::pfn_clReleaseSemaphoreKHR = ::clReleaseSemaphoreKHR;
@@ -485,6 +488,9 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+#endif
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+    cl::pfn_clUpdateMutableCommandsKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -3604,6 +3610,44 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+static cl_int clUpdateMutableCommandsKHR_testUpdateMutableCommands(cl_command_buffer_khr command_buffer,
+    const cl_mutable_base_config_khr* mutable_config,
+    cl_int cmock_to_return)
+{
+    switch (cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL_PTR(nullptr, mutable_config);
+        return CL_INVALID_VALUE;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL(CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR, mutable_config->type);
+        TEST_ASSERT_EQUAL_PTR(nullptr, mutable_config->next);
+        TEST_ASSERT_EQUAL(1, mutable_config->num_mutable_dispatch);
+        return CL_SUCCESS;
+    }
+    }
+    return CL_SUCCESS;
+}
+
+void testUpdateMutableCommands(void)
+{
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+    cl_mutable_dispatch_config_khr mutable_dispatch_list;
+    cl_mutable_base_config_khr mutable_config{ CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR, nullptr, 1, &mutable_dispatch_list };
+
+    clUpdateMutableCommandsKHR_StubWithCallback(clUpdateMutableCommandsKHR_testUpdateMutableCommands);
+    cl_int ret = commandBufferKhrPool[0].updateMutableCommands(nullptr);
+    TEST_ASSERT_EQUAL(ret, CL_INVALID_VALUE);
+
+    ret = commandBufferKhrPool[0].updateMutableCommands(&mutable_config);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
