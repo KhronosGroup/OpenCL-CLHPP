@@ -408,6 +408,9 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+    cl::pfn_clCommandCopyImageToBufferKHR = ::clCommandCopyImageToBufferKHR;
+    cl::pfn_clCommandCopyImageKHR = ::clCommandCopyImageKHR;
+    cl::pfn_clCommandCopyBufferToImageKHR = ::clCommandCopyBufferToImageKHR;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
@@ -485,6 +488,9 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+    cl::pfn_clCommandCopyImageToBufferKHR = nullptr;
+    cl::pfn_clCommandCopyImageKHR = nullptr;
+    cl::pfn_clCommandCopyBufferToImageKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -3604,6 +3610,124 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+static cl_int clcommandCopyImageToBufferKHR_testcommandCopyImageToBuffer(cl_command_buffer_khr command_buffer, cl_command_queue command_queue, cl_mem src_image,
+cl_mem dst_buffer, const size_t* src_origin, const size_t* region, size_t dst_offset, cl_uint num_sync_points_in_wait_list, 
+const cl_sync_point_khr* sync_point_wait_list, cl_sync_point_khr* sync_point, cl_mutable_command_khr* mutable_handle, int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL_PTR(command_queue,nullptr);
+    TEST_ASSERT_EQUAL(src_image, image2DPool[0]());
+    TEST_ASSERT_EQUAL(dst_buffer, bufferPool[0]());
+    TEST_ASSERT_EQUAL(src_origin[0], 16);
+    TEST_ASSERT_EQUAL(region[0], 512);
+    TEST_ASSERT_EQUAL(dst_offset, 0);
+    TEST_ASSERT_EQUAL(num_sync_points_in_wait_list, 1);
+    TEST_ASSERT_EQUAL(*sync_point_wait_list, 0);
+    TEST_ASSERT_EQUAL_PTR(mutable_handle, nullptr);
+    TEST_ASSERT_NOT_EQUAL(sync_point, nullptr);
+    return 0;
+}
+
+void testCommandCopyImageToBuffer(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl_int ret = CL_INVALID_CONTEXT;
+
+    const std::array<cl::size_type, 3> origin = {16, 32, 0};
+    const std::array<cl::size_type, 3> region = {512, 512, 0};
+    cl::size_type dst_offset = 0;
+    cl_sync_point_khr sync_point = 0;
+    const cl::vector<cl_sync_point_khr> sync_points_vec = {sync_point};
+    cl::MutableCommandKhr* mutable_handle = nullptr;
+    const cl::CommandQueue* command_queue = nullptr;
+
+    clCommandCopyImageToBufferKHR_StubWithCallback(clcommandCopyImageToBufferKHR_testcommandCopyImageToBuffer);
+    ret = commandBufferKhrPool[0].commandCopyImageToBuffer(image2DPool[0], bufferPool[0], origin, region, dst_offset, &sync_points_vec,
+                                                           &sync_point, mutable_handle, command_queue);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+#endif
+}
+
+static cl_int clCommandCopyImageKHR_testcommandCopyImage(cl_command_buffer_khr command_buffer, cl_command_queue command_queue, cl_mem src_image, cl_mem dst_image, 
+const size_t* src_origin, const size_t* dst_origin, const size_t* region, cl_uint num_sync_points_in_wait_list, 
+const cl_sync_point_khr* sync_point_wait_list, cl_sync_point_khr* sync_point, cl_mutable_command_khr* mutable_handle, int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL_PTR(command_queue,nullptr);
+    TEST_ASSERT_EQUAL(src_image, image2DPool[0]());
+    TEST_ASSERT_EQUAL(dst_image, image2DPool[1]());
+    TEST_ASSERT_EQUAL(src_origin[0], 16);
+    TEST_ASSERT_EQUAL(dst_origin[0], 16);
+    TEST_ASSERT_EQUAL(region[0], 512);
+    TEST_ASSERT_EQUAL(num_sync_points_in_wait_list, 1);
+    TEST_ASSERT_EQUAL(*sync_point_wait_list, 0);
+    TEST_ASSERT_EQUAL_PTR(mutable_handle, nullptr);
+    TEST_ASSERT_NOT_EQUAL(sync_point, nullptr);
+    return 0;
+}
+
+void testCommandCopyImage(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl_int ret = CL_INVALID_CONTEXT;
+
+    const std::array<cl::size_type, 3> origin = {16, 32, 0};
+    const std::array<cl::size_type, 3> dst_origin = {16, 32, 0};
+    const std::array<cl::size_type, 3> region = {512, 512, 0};
+    cl_sync_point_khr sync_point = 0;
+    const cl::vector<cl_sync_point_khr> sync_points_vec = {sync_point};
+    cl::MutableCommandKhr* mutable_handle = nullptr;
+    const cl::CommandQueue* command_queue = nullptr;
+
+    clCommandCopyImageKHR_StubWithCallback(clCommandCopyImageKHR_testcommandCopyImage);
+    ret = commandBufferKhrPool[0].commandCopyImage(image2DPool[0], image2DPool[1], origin, dst_origin, region, &sync_points_vec,
+                                                           &sync_point, mutable_handle, command_queue);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+#endif
+}
+
+static cl_int clCommandCopyBufferToImageKHR_testcommandCopyBufferToImage(cl_command_buffer_khr command_buffer, cl_command_queue command_queue,
+cl_mem src_buffer, cl_mem dst_image, size_t src_offset, const size_t* dst_origin, const size_t* region, cl_uint num_sync_points_in_wait_list,
+const cl_sync_point_khr* sync_point_wait_list, cl_sync_point_khr* sync_point, cl_mutable_command_khr* mutable_handle, int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL_PTR(command_queue,nullptr);
+    TEST_ASSERT_EQUAL(src_buffer, image2DPool[0]());
+    TEST_ASSERT_EQUAL(dst_image, bufferPool[0]());
+    TEST_ASSERT_EQUAL(dst_origin[0], 16);
+    TEST_ASSERT_EQUAL(region[0], 512);
+    TEST_ASSERT_EQUAL(src_offset, 0);
+    TEST_ASSERT_EQUAL(num_sync_points_in_wait_list, 1);
+    TEST_ASSERT_EQUAL(*sync_point_wait_list, 0);
+    TEST_ASSERT_EQUAL_PTR(mutable_handle, nullptr);
+    TEST_ASSERT_NOT_EQUAL(sync_point, nullptr);
+    return 0;
+}
+
+void testCommandCopyBufferToImage(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl_int ret = CL_INVALID_CONTEXT;
+
+    const std::array<cl::size_type, 3> origin = {16, 32, 0};
+    const std::array<cl::size_type, 3> region = {512, 512, 0};
+    cl::size_type src_offset = 0;
+    cl_sync_point_khr sync_point = 0;
+    const cl::vector<cl_sync_point_khr> sync_points_vec = {sync_point};
+    cl::MutableCommandKhr* mutable_handle = nullptr;
+    const cl::CommandQueue* command_queue = nullptr;
+
+    clCommandCopyBufferToImageKHR_StubWithCallback(clCommandCopyBufferToImageKHR_testcommandCopyBufferToImage);
+    ret = commandBufferKhrPool[0].commandCopyBufferToImage(bufferPool[0], image2DPool[0], src_offset, origin, region, &sync_points_vec,
+                                                           &sync_point, mutable_handle, command_queue);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
