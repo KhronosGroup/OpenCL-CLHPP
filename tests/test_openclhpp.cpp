@@ -3593,6 +3593,10 @@ static cl_int clCommandCopyBufferKHR_testCommandCopyBufferKHR(
     {
         TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
         TEST_ASSERT_EQUAL(3, num_sync_points_in_wait_list);
+        if (sync_point != nullptr)
+        {
+            *sync_point = 5;
+        }
         return CL_SUCCESS;
     }
     case 1:
@@ -3621,6 +3625,7 @@ void testCommandCopyBufferKHR(void)
     size_t src_offset{ 10 };
     size_t dst_offset{ 20 };
     std::vector<cl_sync_point_khr> sync_points_vec { 0, 1, 2 };
+    cl_sync_point_khr sync_point{ 3 };
 
     clCommandCopyBufferKHR_StubWithCallback(clCommandCopyBufferKHR_testCommandCopyBufferKHR);
 
@@ -3631,10 +3636,11 @@ void testCommandCopyBufferKHR(void)
         dst_offset,
         16,
         &sync_points_vec,
-        nullptr,
+        &sync_point,
         nullptr,
         nullptr);
     TEST_ASSERT_EQUAL(CL_SUCCESS, result);
+    TEST_ASSERT_EQUAL(5, sync_point);
 
     result = commandBufferKhrPool[0].commandCopyBuffer(
         src_buffer,
@@ -3711,6 +3717,10 @@ static cl_int clCommandCopyBufferRectKHR_testCommandCopyBufferRectKHR(
     {
         TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
         TEST_ASSERT_EQUAL(3, num_sync_points_in_wait_list);
+        if (sync_point != nullptr)
+        {
+            *sync_point = 5;
+        }
         return CL_SUCCESS;
     }
     case 1:
@@ -3744,6 +3754,7 @@ void testCommandCopyBufferRectKHR(void)
     cl::size_type dst_row_pitch{ 2 };
     cl::size_type dst_slice_pitch{ 3 };
     std::vector<cl_sync_point_khr> sync_points_vec{ 0, 1, 2 };
+    cl_sync_point_khr sync_point{ 3 };
 
     clCommandCopyBufferRectKHR_StubWithCallback(clCommandCopyBufferRectKHR_testCommandCopyBufferRectKHR);
 
@@ -3758,10 +3769,11 @@ void testCommandCopyBufferRectKHR(void)
         dst_row_pitch,
         dst_slice_pitch,
         &sync_points_vec,
-        nullptr,
+        &sync_point,
         nullptr,
         nullptr);
     TEST_ASSERT_EQUAL(CL_SUCCESS, result);
+    TEST_ASSERT_EQUAL(5, sync_point);
 
     result = commandBufferKhrPool[0].commandCopyBufferRect(
         src_buffer,
