@@ -3631,11 +3631,20 @@ static cl_int clCommandNDRangeKernelKHR_testCommandNDRangeKernel(cl_command_buff
 
     TEST_ASSERT_NOT_NULL(sync_point);
     TEST_ASSERT_EQUAL_PTR(nullptr, mutable_handle);
+
+    TEST_ASSERT_EQUAL_PTR(kernelPool[0](), kernel);
+    TEST_ASSERT_EQUAL(2, global_work_offset[0]);
+    TEST_ASSERT_EQUAL(5, global_work_size[0]);
+
     switch (cmock_to_return)
     {
     case 0:
     {
         TEST_ASSERT_EQUAL_PTR(nullptr, command_queue);
+        if (sync_point != nullptr)
+        {
+            *sync_point = 15;
+        }
         return CL_SUCCESS;
     }
     case 1:
@@ -3652,8 +3661,8 @@ void testCommandNDRangeKernel(void)
 #if defined(cl_khr_command_buffer)
     cl::vector<cl_ndrange_kernel_command_properties_khr> properties{ 0,1,2 };
     cl::Kernel kernel;
-    cl::NDRange offset;
-    cl::NDRange global;
+    cl::NDRange offset{ 2 };
+    cl::NDRange global{ 5 };
     cl::NDRange local = cl::NullRange;
     std::vector<cl_sync_point_khr> sync_points_vec{ 3,2,1 };
     cl_sync_point_khr sync_point{ 2 };
@@ -3663,7 +3672,7 @@ void testCommandNDRangeKernel(void)
     clCommandNDRangeKernelKHR_StubWithCallback(clCommandNDRangeKernelKHR_testCommandNDRangeKernel);
     cl_int ret = commandBufferKhrPool[0].commandNDRangeKernel(
         properties,
-        kernel,
+        kernelPool[0],
         offset,
         global,
         local,
@@ -3672,10 +3681,11 @@ void testCommandNDRangeKernel(void)
         mutable_handle,
         command_queue);
     TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(15, sync_point);
 
     ret = commandBufferKhrPool[0].commandNDRangeKernel(
         properties,
-        kernel,
+        kernelPool[0],
         offset,
         global,
         local,
