@@ -3617,19 +3617,26 @@ static cl_int clEnqueueCommandBufferKHR_testEnqueueCommandBuffer(
     cl_int cmock_to_return)
 {
     TEST_ASSERT_EQUAL_PTR(queues[0], commandQueuePool[0]());
-    TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
-    TEST_ASSERT_EQUAL_PTR(nullptr, event);
 
     switch (cmock_to_return)
     {
     case 0:
     {
         TEST_ASSERT_EQUAL_PTR(command_buffer, commandBufferKhrPool[0]());
+        TEST_ASSERT_EQUAL(1, num_queues);
+        TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+        TEST_ASSERT_NOT_NULL(event_wait_list);
+        TEST_ASSERT_NOT_NULL(event);
+        *event = make_event(1);
+
         return CL_SUCCESS;
     }
     case 1:
     {
         TEST_ASSERT_EQUAL(command_buffer, nullptr);
+        TEST_ASSERT_EQUAL(2, num_queues);
+        TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
+        TEST_ASSERT_EQUAL_PTR(nullptr, event);
         return CL_INVALID_COMMAND_BUFFER_KHR;
     }
     }
@@ -3642,15 +3649,27 @@ void testEnqueueCommandBuffer(void)
     std::vector<cl::CommandQueue> command_queues;
     command_queues.emplace_back(commandQueuePool[0]());
 
+    std::vector<cl::Event> events;
+    events.emplace_back(make_event(1));
+
+    cl::Event event;
+
     clEnqueueCommandBufferKHR_StubWithCallback(clEnqueueCommandBufferKHR_testEnqueueCommandBuffer);
-    cl_int ret = commandBufferKhrPool[0].enqueueCommandBuffer(command_queues, nullptr, nullptr);
+    
+    cl_int ret = commandBufferKhrPool[0].enqueueCommandBuffer(command_queues, &events, &event);
     TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
 
     cl::CommandBufferKhr notValidCommandBuffer;
+    command_queues.emplace_back(commandQueuePool[1]());
+
     ret = notValidCommandBuffer.enqueueCommandBuffer(command_queues, nullptr, nullptr);
     TEST_ASSERT_EQUAL(ret, CL_INVALID_COMMAND_BUFFER_KHR);
 
     command_queues[0]() = nullptr;
+    command_queues[1]() = nullptr;
+    events[0]() = nullptr;
+    event() = nullptr;
 #endif
 }
 
