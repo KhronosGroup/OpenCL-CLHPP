@@ -3660,7 +3660,6 @@ void testCommandNDRangeKernel(void)
 {
 #if defined(cl_khr_command_buffer)
     cl::vector<cl_ndrange_kernel_command_properties_khr> properties{ 0,1,2 };
-    cl::Kernel kernel;
     cl::NDRange offset{ 2 };
     cl::NDRange global{ 5 };
     cl::NDRange local = cl::NullRange;
