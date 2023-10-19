@@ -4562,11 +4562,11 @@ void testcompile() {
 
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_testcompile);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
-    clCompileProgram_StubWithCallback(clCompileProgram_testcompile);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
-    clGetProgramBuildInfo_StubWithCallback(
-        clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_testcompile);
+
     ret = programPool[0].compile(options, notifyFptr, data);
     TEST_ASSERT_EQUAL(ret, CL_COMPILE_PROGRAM_FAILURE);
 }
