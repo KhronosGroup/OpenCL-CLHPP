@@ -4517,7 +4517,7 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
-cl_int clEnqueueWriteImage_testenqueueWriteImage(
+static cl_int clEnqueueWriteImage_testenqueueWriteImage(
     cl_command_queue command_queue, cl_mem image, cl_bool blocking_write,
     const size_t *origin, const size_t *region, size_t input_row_pitch,
     size_t input_slice_pitch, const void *ptr, cl_uint num_events_in_wait_list,
@@ -4536,7 +4536,7 @@ cl_int clEnqueueWriteImage_testenqueueWriteImage(
     TEST_ASSERT_EQUAL(nullptr, num_calls);
     return CL_SUCCESS;
 }
-cl_int clEnqueueReadImage_testenqueueWriteImage(
+static cl_int clEnqueueReadImage_testenqueueWriteImage(
     cl_command_queue command_queue, cl_mem image, cl_bool blocking_read,
     const size_t *origin, const size_t *region, size_t row_pitch,
     size_t slice_pitch, void *ptr, cl_uint num_events_in_wait_list,
