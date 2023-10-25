@@ -353,10 +353,6 @@ MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcou
 MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
 #if defined(cl_khr_command_buffer)
 MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCommandBufferKHR, commandBufferKhrRefcounts)
-// Deactivated because unused for now.
-#if 0
-MAKE_REFCOUNT_STUBS(cl_mutable_command_khr, clUpdateMutableCommandsKHR, clGetMutableCommandInfoKHR)
-#endif
 #endif
 
 /* The indirection through MAKE_MOVE_TESTS2 with a prefix parameter is to
@@ -3747,6 +3743,7 @@ void testMutableCommandKhrGetInfoPropertiesArray()
 
     cl::vector<cl_ndrange_kernel_command_properties_khr> kernel_properties = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR>(&err);
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(3, kernel_properties.size());
     for (int i = 0; i < kernel_properties.size(); i++)
     {
         TEST_ASSERT_EQUAL(i + 1, kernel_properties[i]);
