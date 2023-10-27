@@ -5333,9 +5333,6 @@ public:
 
     /*! \brief Constructs a Image2D with specified properties.
      *
-     *  Requires OpenCL 2.0 or newer or OpenCL 1.2 and the
-     *  cl_khr_image2d_from_buffer extension.
-     *
      *  Wraps clCreateImageWithProperties().
      *
      *  \param properties Optional list of properties for the image object and
