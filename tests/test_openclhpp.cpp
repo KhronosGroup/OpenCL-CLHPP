@@ -3998,6 +3998,7 @@ void testSemaphoreGetInfoPayload(void)
     TEST_ASSERT_EQUAL(1, ret);
 }
 
+#if defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     cl_semaphore_khr sema_object,
     cl_semaphore_info_khr param_name,
@@ -4010,7 +4011,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     static const cl_device_id test_devices[] =
         {make_device_id(0), make_device_id(1)};
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
-    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_HANDLE_LIST_KHR, param_name);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(test_devices));
     if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(test_devices);
@@ -4035,13 +4036,16 @@ void testSemaphoreGetInfoDevicesList(void)
 
     cl_int err = CL_INVALID_OPERATION;
 
-    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_DEVICE_HANDLE_LIST_KHR>(&err);
+    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR>(&err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(2, ret.size());
     TEST_ASSERT_EQUAL(make_device_id(0), ret[0]());
     TEST_ASSERT_EQUAL(make_device_id(1), ret[1]());
 }
+#else
+void testSemaphoreGetInfoDevicesList(void) {}
+#endif
 
 void testSemaphoreRetain(void)
 {
