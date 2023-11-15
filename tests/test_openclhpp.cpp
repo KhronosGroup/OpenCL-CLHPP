@@ -4571,4 +4571,25 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
+                                              cl_ulong *host_timestamp,
+                                              int num_calls) {
+    TEST_ASSERT_EQUAL_PTR(devicePool[0](), device);
+    TEST_ASSERT_EQUAL(0, num_calls);
+    *host_timestamp = 1;
+    return 0;
+}
+
+void testgetHostTimer() {
+    cl_ulong retVal = 0;
+    cl_int *error = nullptr;
+
+    clGetHostTimer_StubWithCallback(clGetHostTimer_testgetHostTimer);
+    retVal = devicePool[0].getHostTimer(error);
+    TEST_ASSERT_EQUAL(retVal, 1);
+}
+#else
+void testgetHostTimer() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 } // extern "C"
