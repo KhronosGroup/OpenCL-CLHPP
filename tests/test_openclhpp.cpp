@@ -4524,8 +4524,10 @@ static cl_int clEnqueueAcquireGLObjects_testenqueueAcquireGLObjects(
     (void)command_queue;
     TEST_ASSERT_EQUAL(1, num_objects);
     TEST_ASSERT_NOT_NULL(mem_objects);
+    TEST_ASSERT_EQUAL(make_mem(0), *mem_objects);
     TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
     TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(make_event(0), event_wait_list[0]);
     TEST_ASSERT_EQUAL(0, num_calls);
     if (event != nullptr) {
             *event = make_event(1);
@@ -4534,10 +4536,11 @@ static cl_int clEnqueueAcquireGLObjects_testenqueueAcquireGLObjects(
 }
 
 void testenqueueAcquireGLObjects() {
-    cl::Memory obj;
-    cl::vector<cl::Memory> mem_objects = {obj};
+    cl::vector<cl::Memory> mem_objects;
+    mem_objects.emplace_back(make_mem(0), false);
     cl::Event event;
-    cl::vector<cl::Event> events = {event};
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
     cl_int ret = CL_INVALID_COMMAND_QUEUE;
 
     clEnqueueAcquireGLObjects_StubWithCallback(
