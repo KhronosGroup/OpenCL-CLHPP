@@ -4528,30 +4528,36 @@ static void *clEnqueueMapBuffer_testenqueueMapBuffer(
     TEST_ASSERT_EQUAL(CL_MAP_WRITE, map_flags);
     TEST_ASSERT_EQUAL(0, offset);
     TEST_ASSERT_EQUAL(sizeof(int) * 1024, size);
-    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
-    TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
-    TEST_ASSERT_NOT_NULL(event);
-    TEST_ASSERT_NOT_EQUAL(nullptr, errcode_ret);
+    TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+    TEST_ASSERT_EQUAL(make_event(0), event_wait_list[0]);
+    if (event != nullptr)
+    {
+        *event = make_event(1);
+    }
+    if (errcode_ret != nullptr)
+    {
+        *errcode_ret = CL_SUCCESS;
+    }
     TEST_ASSERT_EQUAL(0, num_calls);
     return make_mem(0);
 }
 void testenqueueMapBuffer() {
-    cl_bool blocking = CL_TRUE;
-    cl_map_flags flags = CL_MAP_WRITE;
-    cl::size_type offset = 0;
-    cl::size_type size = sizeof(int) * 1024;
-    cl::Event event_data(make_event(0), false);
-    cl::Event *event = &event_data;
-    const cl::vector<cl::Event> *events = nullptr;
-    cl_int *err = nullptr;
+    cl::Event event;
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
+    cl_int err = CL_INVALID_VALUE;
     void *ret = nullptr;
 
     clEnqueueMapBuffer_StubWithCallback(
         clEnqueueMapBuffer_testenqueueMapBuffer);
-    ret = enqueueMapBuffer(bufferPool[0], blocking, flags, offset, size, events,
-                           event, err);
+    ret = enqueueMapBuffer(bufferPool[0], CL_TRUE, CL_MAP_WRITE, 0, sizeof(int) * 1024, &events,
+                           &event, &err);
 
     TEST_ASSERT_EQUAL_PTR(make_mem(0), ret);
-    event_data() = nullptr;
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    event() = nullptr;
+    events[0]() = nullptr;
 }
 } // extern "C"
