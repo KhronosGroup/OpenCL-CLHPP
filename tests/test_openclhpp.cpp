@@ -4521,11 +4521,21 @@ void testgetObjectInfo() {
 static cl_mem clCreateSubBuffer_testCreateSubBuffer(
     cl_mem buffer, cl_mem_flags flags, cl_buffer_create_type buffer_create_type,
     const void *buffer_create_info, cl_int *errcode_ret, int num_calls) {
-    (void)errcode_ret;
+    if (errcode_ret != nullptr)
+    {
+        *errcode_ret = CL_SUCCESS;
+    }
     TEST_ASSERT_EQUAL(make_mem(0), buffer);
-    TEST_ASSERT_EQUAL(0, flags);
-    TEST_ASSERT_EQUAL(0, buffer_create_type);
-    TEST_ASSERT_EQUAL_PTR(nullptr, buffer_create_info);
+    TEST_ASSERT_EQUAL(CL_MEM_READ_ONLY, flags);
+    TEST_ASSERT_EQUAL(CL_BUFFER_CREATE_TYPE_REGION, buffer_create_type);
+    //TEST_ASSERT_EQUAL_PTR(nullptr, buffer_create_info);
+    TEST_ASSERT_NOT_NULL(buffer_create_info);
+    if (buffer_create_info != nullptr)
+    {
+        cl_buffer_region* buffer_region = (cl_buffer_region*)buffer_create_info;
+        TEST_ASSERT_EQUAL(512, buffer_region->origin);
+        TEST_ASSERT_EQUAL(1024, buffer_region->size);
+    }
     TEST_ASSERT_EQUAL(0, num_calls);
 
     return make_mem(1);
@@ -4533,17 +4543,16 @@ static cl_mem clCreateSubBuffer_testCreateSubBuffer(
 
 void testCreateSubBuffer() {
 #ifndef CL_HPP_ENABLE_EXCEPTIONS
-    cl_mem_flags flags = 0;
-    cl_buffer_create_type buffer_create_type = 0;
     const void *buffer_create_info = nullptr;
-    cl_int *err = nullptr;
-    static cl::Buffer ret;
+    cl_buffer_region buffer_region{ 512, 1024 };
+    cl_int err = CL_INVALID_VALUE;
 
     clCreateSubBuffer_StubWithCallback(clCreateSubBuffer_testCreateSubBuffer);
-    ret = bufferPool[0].createSubBuffer(flags, buffer_create_type,
-                                        buffer_create_info, err);
+    cl::Buffer ret = bufferPool[0].createSubBuffer(CL_MEM_READ_ONLY, CL_BUFFER_CREATE_TYPE_REGION,
+        (void *)&buffer_region, &err);
 
     TEST_ASSERT_EQUAL_PTR(make_mem(1), ret());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     ret() = nullptr;
 #endif
 }
