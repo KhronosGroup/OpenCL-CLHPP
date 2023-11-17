@@ -1100,6 +1100,12 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetImageRequirementsInfoEXT);
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetImageRequirementsInfoEXT pfn_clGetImageRequirementsInfoEXT  = nullptr;
 #endif
 
+#if defined(cl_ext_device_fission)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateSubDevicesEXT);
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateSubDevicesEXT
+    pfn_clCreateSubDevicesEXT = nullptr;
+#endif
+
 namespace detail {
 
 // Generic getInfoHelper. The final parameter is used to guide overload
@@ -1535,13 +1541,13 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 #define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(F) \
     F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr)
 
+// Note: the query for CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR is handled specially!
 #define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(F) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_CONTEXT_KHR, cl::Context) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_REFERENCE_COUNT_KHR, cl_uint) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_PROPERTIES_KHR, cl::vector<cl_semaphore_properties_khr>) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_TYPE_KHR, cl_semaphore_type_khr) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_PAYLOAD_KHR, cl_semaphore_payload_khr) \
-    F(cl_semaphore_info_khr, CL_DEVICE_HANDLE_LIST_KHR, cl::vector<cl::Device>) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_TYPES_KHR,  cl::vector<cl_semaphore_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_TYPES_KHR,      cl::vector<cl_semaphore_type_khr>) \
 
@@ -1549,7 +1555,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>) \
     F(cl_platform_info, CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>)
 
-#define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(F) \
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_(F) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR,  cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,  cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
@@ -1682,14 +1688,17 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(CL_HPP_DECLARE_PARAM_TRAIT
 
 #if defined(cl_khr_semaphore)
 CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // cl_khr_semaphore
+#if defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_semaphore_info_khr, CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, cl::vector<cl::Device>)
+#endif // defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
+#endif // defined(cl_khr_semaphore)
 
 #ifdef cl_khr_external_memory
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_memory
 
 #if defined(cl_khr_external_semaphore)
-CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore
 
 #if defined(cl_khr_external_semaphore_dx_fence)
@@ -3045,13 +3054,6 @@ inline cl_int Device::createSubDevices(const cl_device_partition_property* prope
 inline cl_int Device::createSubDevices(const cl_device_partition_property_ext* properties,
                         vector<Device>* devices)
 {
-    typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clCreateSubDevicesEXT)(
-        cl_device_id /*in_device*/,
-        const cl_device_partition_property_ext* /* properties */,
-        cl_uint /*num_entries*/, cl_device_id* /*out_devices*/,
-        cl_uint* /*num_devices*/) CL_API_SUFFIX__VERSION_1_1;
-
-    static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = nullptr;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl::Device device(object_);
     cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
@@ -4105,8 +4107,12 @@ public:
         if (map && !(SVMTrait::getSVMMemFlags() & CL_MEM_SVM_FINE_GRAIN_BUFFER)) {
             cl_int err = enqueueMapSVM(retValue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size*sizeof(T));
             if (err != CL_SUCCESS) {
+                clSVMFree(context_(), retValue);
+                retValue = nullptr;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
                 std::bad_alloc excep;
                 throw excep;
+#endif
             }
         }
 
