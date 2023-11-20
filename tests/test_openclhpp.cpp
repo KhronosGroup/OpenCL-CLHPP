@@ -4515,8 +4515,7 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
-
-void *some_memory;
+}
 
 static cl_int clEnqueueReadBuffer_testEnqueueReadBuffer(
     cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_read,
@@ -4527,29 +4526,28 @@ static cl_int clEnqueueReadBuffer_testEnqueueReadBuffer(
     TEST_ASSERT_EQUAL(false, blocking_read);
     TEST_ASSERT_EQUAL(0, offset);
     TEST_ASSERT_EQUAL(0, size);
-    TEST_ASSERT_EQUAL_PTR(some_memory, ptr);
+    TEST_ASSERT_EQUAL(make_mem(1), ptr);
     TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
     TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(event_wait_list[0], make_event(0));
     TEST_ASSERT_EQUAL(0, num_calls);
-    if (event != nullptr) {
-            *event = make_event(1);
+    if (event != nullptr)
+    {
+        *event = make_event(1);
     }
     return CL_SUCCESS;
 }
 
 void testEnqueueReadBuffer() {
-    cl_bool blocking = false;
-    size_t offset = 0;
-    size_t size = 0;
-    void *ptr = some_memory;
+    void* ptr = make_mem(1);
     cl::Event event;
-    cl::vector<cl::Event> events = {event};
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
     cl_int ret = CL_INVALID_COMMAND_QUEUE;
 
     clEnqueueReadBuffer_StubWithCallback(
         clEnqueueReadBuffer_testEnqueueReadBuffer);
-    ret = commandQueuePool[0].enqueueReadBuffer(bufferPool[0], blocking, offset,
-                                                size, ptr, &events, &event);
+    ret = commandQueuePool[0].enqueueReadBuffer(bufferPool[0], false, 0, 0, ptr, &events, &event);
     TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
     TEST_ASSERT_EQUAL_PTR(make_event(1), event());
 
