@@ -4579,7 +4579,8 @@ static cl_int clCreateKernelsInProgram_testcreateKernels(
     case 0:
             TEST_ASSERT_EQUAL(make_program(0), program);
             TEST_ASSERT_EQUAL(0, num_kernels);
-            if (num_kernels_ret != nullptr) {
+            if (num_kernels_ret != nullptr)
+            {
                 *num_kernels_ret = 3;
             }
             return CL_SUCCESS;
@@ -4596,14 +4597,20 @@ static cl_int clCreateKernelsInProgram_testcreateKernels(
             TEST_ASSERT_EQUAL(make_program(1), program);
             TEST_ASSERT_EQUAL(0, num_kernels);
             TEST_ASSERT_NOT_NULL(num_kernels_ret);
-            *num_kernels_ret = 0;
+            if (num_kernels_ret != nullptr)
+            {
+                *num_kernels_ret = 0;
+            }
 
             return CL_INVALID_PROGRAM_EXECUTABLE;
     case 3:
             TEST_ASSERT_EQUAL(nullptr, program);
             TEST_ASSERT_EQUAL(0, num_kernels);
             TEST_ASSERT_NOT_NULL(num_kernels_ret);
-            *num_kernels_ret = 0;
+            if (num_kernels_ret != nullptr)
+            {
+                *num_kernels_ret = 0;
+            }
 
             return CL_INVALID_PROGRAM;
     default:
