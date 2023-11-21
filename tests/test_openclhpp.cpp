@@ -4579,6 +4579,7 @@ static cl_int clEnqueueBarrierWithWaitList_testEnqueueBarrierWithWaitList(
     TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
     TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
     TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(event_wait_list[0], make_event(0));
     TEST_ASSERT_EQUAL(0, num_calls);
     if (event != nullptr) {
             *event = make_event(1);
@@ -4589,7 +4590,8 @@ static cl_int clEnqueueBarrierWithWaitList_testEnqueueBarrierWithWaitList(
 void testEnqueueBarrierWithWaitList() {
     cl_int ret = CL_DEVICE_NOT_FOUND;
     cl::Event event;
-    cl::vector<cl::Event> events = {event};
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
 
     clEnqueueBarrierWithWaitList_StubWithCallback(
         clEnqueueBarrierWithWaitList_testEnqueueBarrierWithWaitList);
