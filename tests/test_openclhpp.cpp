@@ -429,6 +429,10 @@ void setUp(void)
     cl::pfn_clGetImageRequirementsInfoEXT = ::clGetImageRequirementsInfoEXT;
 #endif
 
+#if defined(cl_ext_device_fission)
+    cl::pfn_clCreateSubDevicesEXT = ::clCreateSubDevicesEXT;
+#endif
+
     /* We reach directly into the objects rather than using assignment to
      * avoid the reference counting functions from being called.
      */
@@ -3681,7 +3685,53 @@ void testDevice_GetInfo_CLDeviceName(void)
     clGetDeviceInfo_StubWithCallback(clGetInfo_testDeviceGetInfoCLDeviceName);
     cl::string deviceName = devicePool[0].getInfo<CL_DEVICE_NAME>();
     TEST_ASSERT_EQUAL_STRING(expected.c_str(), deviceName.c_str());
-} 
+}
+
+#if defined(cl_ext_device_fission)
+static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
+    cl_device_id device_in, const cl_device_partition_property_ext *properties,
+    cl_uint n, cl_device_id *out_devices, cl_uint *num, int num_calls) {
+  cl_int ret = CL_SUCCESS;
+
+  TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_EQUALLY_EXT, *properties);
+  if(nullptr != out_devices){
+    out_devices[0] = make_device_id(0);
+  }
+  if (nullptr != num)
+  {
+      *num = 1;
+  }
+  if (device_in == make_device_id(0)) {
+    return CL_SUCCESS;
+  } else if (device_in == make_device_id(1)) {
+    return CL_INVALID_DEVICE;
+  } else {
+    return CL_SUCCESS;
+  }
+}
+
+void testDevice_createSubDevices() {
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+  const cl_device_partition_property_ext properties =
+      CL_DEVICE_PARTITION_EQUALLY_EXT;
+  std::vector<cl::Device> devices(1);
+
+  clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+  clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+
+  clCreateSubDevicesEXT_StubWithCallback(
+      clCreateSubDevicesEXT_testDevice_createSubDevices);
+
+  cl_int ret = devicePool[0].createSubDevices(&properties, &devices);
+  TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+  ret = devicePool[1].createSubDevices(&properties, &devices);
+  TEST_ASSERT_EQUAL(CL_INVALID_DEVICE , ret);
+  ret = devicePool[2].createSubDevices(&properties, &devices);
+  TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+  TEST_ASSERT_EQUAL(devices[0].get(), make_device_id(0));
+#endif /*CL_HPP_ENABLE_EXCEPTIONS*/
+}
+#endif /*cl_ext_device_fission*/
 
 /****************************************************************************
  * Tests for cl::Semaphore
@@ -3998,6 +4048,7 @@ void testSemaphoreGetInfoPayload(void)
     TEST_ASSERT_EQUAL(1, ret);
 }
 
+#if defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     cl_semaphore_khr sema_object,
     cl_semaphore_info_khr param_name,
@@ -4010,7 +4061,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     static const cl_device_id test_devices[] =
         {make_device_id(0), make_device_id(1)};
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
-    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_HANDLE_LIST_KHR, param_name);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(test_devices));
     if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(test_devices);
@@ -4035,13 +4086,16 @@ void testSemaphoreGetInfoDevicesList(void)
 
     cl_int err = CL_INVALID_OPERATION;
 
-    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_DEVICE_HANDLE_LIST_KHR>(&err);
+    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR>(&err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(2, ret.size());
     TEST_ASSERT_EQUAL(make_device_id(0), ret[0]());
     TEST_ASSERT_EQUAL(make_device_id(1), ret[1]());
 }
+#else
+void testSemaphoreGetInfoDevicesList(void) {}
+#endif
 
 void testSemaphoreRetain(void)
 {
@@ -4517,6 +4571,7 @@ void testgetObjectInfo() {
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
 static cl_int clEnqueueBarrierWithWaitList_testEnqueueBarrierWithWaitList(
     cl_command_queue command_queue, cl_uint num_events_in_wait_list,
@@ -4547,4 +4602,26 @@ void testEnqueueBarrierWithWaitList() {
 #else
 void testEnqueueBarrierWithWaitList() {}
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
+                                              cl_ulong *host_timestamp,
+                                              int num_calls) {
+    TEST_ASSERT_EQUAL_PTR(devicePool[0](), device);
+    TEST_ASSERT_EQUAL(0, num_calls);
+    *host_timestamp = 1;
+    return 0;
+}
+
+void testgetHostTimer() {
+    cl_ulong retVal = 0;
+    cl_int *error = nullptr;
+
+    clGetHostTimer_StubWithCallback(clGetHostTimer_testgetHostTimer);
+    retVal = devicePool[0].getHostTimer(error);
+    TEST_ASSERT_EQUAL(retVal, 1);
+}
+#else
+void testgetHostTimer() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 } // extern "C"
