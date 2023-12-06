@@ -160,3 +160,26 @@ foreach(VERSION 120 200 210 220 300)
     add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
   endforeach(OPTION)
 endforeach(VERSION)
+
+if(NOT TARGET OpenCL::openCL)
+  find_package(OpenCLICDLoader)
+endif()
+if(TARGET OpenCL::OpenCL)
+  # TODO enable testing for OpenCL 1.0 and 1.1
+  foreach(MINVERSION 120 200 210 220 300)
+    foreach(TARGETVERSION 120 200 210 220 300)
+      if(NOT (${MINVERSION} GREATER ${TARGETVERSION}))
+        set(TEST_EXE test_openclhpp_version_min_${MINVERSION}_target_${TARGETVERSION})
+        add_executable(${TEST_EXE} test_versions.cpp)
+        target_compile_definitions(${TEST_EXE} PUBLIC
+          CL_HPP_MINIMUM_OPENCL_VERSION=${MINVERSION}
+          CL_HPP_TARGET_OPENCL_VERSION=${TARGETVERSION})
+        target_link_libraries(${TEST_EXE} PRIVATE
+          OpenCL::HeadersCpp
+          OpenCL::Headers
+          OpenCL::OpenCL)
+        add_test(NAME ${TEST_EXE} COMMAND ${TEST_EXE})
+      endif()
+    endforeach()
+  endforeach()
+endif()
