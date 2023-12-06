@@ -1,4 +1,4 @@
-prefix=@CMAKE_INSTALL_PREFIX@
+prefix=@PKGCONFIG_PREFIX@
 includedir=@OPENCLHPP_INCLUDEDIR_PC@
 
 Name: OpenCL-CLHPP

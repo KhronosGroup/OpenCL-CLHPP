@@ -152,6 +152,14 @@ foreach(VERSION 120 200 210 220 300)
     target_compile_definitions(${TEST_EXE}
         PUBLIC -DCL_HPP_TARGET_OPENCL_VERSION=${VERSION} ${DEFINE_OPTION}
     )
+    if(MSVC AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang"))
+      # This is quite hacky, but the definition noreturn in Clang's
+      # stdnoreturn.h is not compatible with stdlib.h in the Windows SDK.
+      # This could normally be resolved by changing the order of include
+      # files, but not possible in this project due to the generated nature
+      # of the source files.
+      target_compile_definitions(${TEST_EXE} PRIVATE __STDNORETURN_H UNITY_NORETURN=_Noreturn)
+    endif()
     add_dependencies(${TEST_EXE}
         strip_cl_defines
         mock_cl_header

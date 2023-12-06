@@ -3206,10 +3206,10 @@ private:
 
         ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* properties, const ImageFormat* format, const cl_image_desc* desc)
         {
-            flags = f;
-            properties = properties;
-            image_format = format;
-            image_desc = desc;
+            this->flags = f;
+            this->properties = properties;
+            this->image_format = format;
+            this->image_desc = desc;
         }
 
         cl_mem_flags flags = 0;
