@@ -729,11 +729,15 @@ namespace cl {
     class Buffer;
     class Pipe;
 #ifdef cl_khr_semaphore
+namespace khr{
     class Semaphore;
+}
 #endif
 #if defined(cl_khr_command_buffer)
-    class CommandBufferKhr;
-    class MutableCommandKhr;
+    namespace khr {
+    class CommandBuffer;
+    class MutableCommand;
+    } // namespace khr
 #endif // cl_khr_command_buffer
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
@@ -1860,7 +1864,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPE
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBufferKhr)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, cl::khr::CommandBuffer)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR, cl::vector<cl_ndrange_kernel_command_properties_khr>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_KERNEL_KHR, cl_kernel)
@@ -9181,13 +9185,13 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
 
 #ifdef cl_khr_semaphore
     cl_int enqueueWaitSemaphores(
-        const vector<Semaphore> &sema_objects,
+        const vector<khr::Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr> &sema_payloads = {},
         const vector<Event>* events_wait_list = nullptr,
         Event *event = nullptr) const;
 
     cl_int enqueueSignalSemaphores(
-        const vector<Semaphore> &sema_objects,
+        const vector<khr::Semaphore> &sema_objects,
         const vector<cl_semaphore_payload_khr>& sema_payloads = {},
         const vector<Event>* events_wait_list = nullptr,
         Event* event = nullptr);
@@ -10778,6 +10782,7 @@ enum ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 };
 #endif // cl_khr_external_semaphore
 
+namespace khr {
 class Semaphore : public detail::Wrapper<cl_semaphore_khr>
 {
 public:
@@ -10934,11 +10939,12 @@ private:
     }
 
 };
+} // namespace khr
 
-CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag Semaphore::ext_init_;
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag khr::Semaphore::ext_init_;
 
 inline cl_int CommandQueue::enqueueWaitSemaphores(
-    const vector<Semaphore> &sema_objects,
+    const vector<khr::Semaphore> &sema_objects,
     const vector<cl_semaphore_payload_khr> &sema_payloads,
     const vector<Event>* events_wait_list,
     Event *event) const
@@ -10966,7 +10972,7 @@ inline cl_int CommandQueue::enqueueWaitSemaphores(
 }
 
 inline cl_int CommandQueue::enqueueSignalSemaphores(
-    const vector<Semaphore> &sema_objects,
+    const vector<khr::Semaphore> &sema_objects,
     const vector<cl_semaphore_payload_khr>& sema_payloads,
     const vector<Event>* events_wait_list,
     Event* event)
@@ -10996,16 +11002,17 @@ inline cl_int CommandQueue::enqueueSignalSemaphores(
 #endif // cl_khr_semaphore
 
 #if defined(cl_khr_command_buffer)
-/*! \class CommandBufferKhr
- * \brief CommandBufferKhr interface for cl_command_buffer_khr.
+/*! \class CommandBuffer
+ * \brief CommandBuffer interface for cl_command_buffer_khr.
  */
-class CommandBufferKhr : public detail::Wrapper<cl_command_buffer_khr>
+namespace khr {
+class CommandBuffer : public detail::Wrapper<cl_command_buffer_khr>
 {
 public:
     //! \brief Default constructor - initializes to nullptr.
-    CommandBufferKhr() : detail::Wrapper<cl_type>() { }
+    CommandBuffer() : detail::Wrapper<cl_type>() { }
 
-    explicit CommandBufferKhr(const vector<CommandQueue> &queues,
+    explicit CommandBuffer(const vector<CommandQueue> &queues,
         cl_command_buffer_properties_khr properties = 0,
         cl_int* errcode_ret = nullptr)
     {
@@ -11034,10 +11041,10 @@ public:
         }
     }
 
-    explicit CommandBufferKhr(const cl_command_buffer_khr& commandBufferKhr, bool retainObject = false) :
-        detail::Wrapper<cl_type>(commandBufferKhr, retainObject) { }
+    explicit CommandBuffer(const cl_command_buffer_khr& commandBuffer, bool retainObject = false) :
+        detail::Wrapper<cl_type>(commandBuffer, retainObject) { }
 
-    CommandBufferKhr& operator=(const cl_command_buffer_khr& rhs)
+    CommandBuffer& operator=(const cl_command_buffer_khr& rhs)
     {
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
@@ -11096,7 +11103,7 @@ public:
 
     cl_int commandBarrierWithWaitList(const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandBarrierWithWaitListKHR == nullptr) {
@@ -11127,7 +11134,7 @@ public:
         size_type size,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandCopyBufferKHR == nullptr) {
@@ -11167,7 +11174,7 @@ public:
         size_type dst_slice_pitch,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandCopyBufferRectKHR == nullptr) {
@@ -11207,7 +11214,7 @@ public:
         const array<size_type, 3>& region,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandCopyBufferToImageKHR == nullptr) {
@@ -11243,7 +11250,7 @@ public:
         const array<size_type, 3>& region,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandCopyImageKHR == nullptr) {
@@ -11279,7 +11286,7 @@ public:
         size_type dst_offset,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandCopyImageToBufferKHR == nullptr) {
@@ -11315,7 +11322,7 @@ public:
         size_type size,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandFillBufferKHR == nullptr) {
@@ -11350,7 +11357,7 @@ public:
         const array<size_type, 3>& region,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandFillImageKHR == nullptr) {
@@ -11385,7 +11392,7 @@ public:
         const NDRange& local = NullRange,
         const vector<cl_sync_point_khr>* sync_points_vec = nullptr,
         cl_sync_point_khr* sync_point = nullptr,
-        MutableCommandKhr* mutable_handle = nullptr,
+        MutableCommand* mutable_handle = nullptr,
         const CommandQueue* command_queue = nullptr)
     {
         if (pfn_clCommandNDRangeKernelKHR == nullptr) {
@@ -11498,24 +11505,26 @@ private:
             detail::errHandler(CL_INVALID_VALUE, __CREATE_COMMAND_BUFFER_KHR_ERR);
         }
     }
-}; // CommandBufferKhr
+}; // CommandBuffer
+} // namespace khr
 
-CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag CommandBufferKhr::ext_init_;
+CL_HPP_DEFINE_STATIC_MEMBER_ std::once_flag cl::khr::CommandBuffer::ext_init_;
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
-/*! \class MutableCommandKhr
- * \brief MutableCommandKhr interface for cl_mutable_command_khr.
+/*! \class MutableCommand
+ * \brief MutableCommand interface for cl_mutable_command_khr.
  */
-class MutableCommandKhr : public detail::Wrapper<cl_mutable_command_khr>
+namespace khr {
+class MutableCommand : public detail::Wrapper<cl_mutable_command_khr>
 {
 public:
     //! \brief Default constructor - initializes to nullptr.
-    MutableCommandKhr() : detail::Wrapper<cl_type>() { }
+    MutableCommand() : detail::Wrapper<cl_type>() { }
 
-    explicit MutableCommandKhr(const cl_mutable_command_khr& mutableCommandKhr, bool retainObject = false) :
-        detail::Wrapper<cl_type>(mutableCommandKhr, retainObject) { }
+    explicit MutableCommand(const cl_mutable_command_khr& mutableCommand, bool retainObject = false) :
+        detail::Wrapper<cl_type>(mutableCommand, retainObject) { }
 
-    MutableCommandKhr& operator=(const cl_mutable_command_khr& rhs)
+    MutableCommand& operator=(const cl_mutable_command_khr& rhs)
     {
         detail::Wrapper<cl_type>::operator=(rhs);
         return *this;
@@ -11545,7 +11554,8 @@ public:
         }
         return param;
     }
-}; // MutableCommandKhr
+}; // MutableCommand
+} // namespace khr
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
 #endif // cl_khr_command_buffer

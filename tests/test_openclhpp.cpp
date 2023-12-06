@@ -84,10 +84,10 @@ static cl::Image3D image3DPool[POOL_MAX];
 static cl::Kernel kernelPool[POOL_MAX];
 static cl::Program programPool[POOL_MAX];
 #if defined(cl_khr_command_buffer)
-static cl::CommandBufferKhr commandBufferKhrPool[POOL_MAX];
+static cl::khr::CommandBuffer commandBufferKhrPool[POOL_MAX];
 #endif
 #if defined(cl_khr_semaphore)
-static cl::Semaphore semaphorePool[POOL_MAX];
+static cl::khr::Semaphore semaphorePool[POOL_MAX];
 #endif
 static cl::Device devicePool[POOL_MAX];
 
@@ -372,8 +372,8 @@ MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCo
         pool[0] = std::move(pool[1]); \
         TEST_ASSERT_EQUAL_PTR(makeFunc(1), pool[0]()); \
         TEST_ASSERT_NULL(pool[1]()); \
-    } \
-    \
+    }
+#define MAKE_MOVE_TESTS_CL(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveConstruct ## type ## NonNull(void) \
     { \
         cl::type tmp(std::move(pool[0])); \
@@ -389,15 +389,39 @@ MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCo
         TEST_ASSERT_NULL(tmp()); \
         TEST_ASSERT_NULL(empty()); \
     }
+#define MAKE_MOVE_TESTS_KHR2(prefix, type, makeFunc, releaseFunc, pool) \
+    void prefix ## MoveConstruct ## type ## NonNull(void) \
+    { \
+        cl::khr::type tmp(std::move(pool[0])); \
+        TEST_ASSERT_EQUAL_PTR(makeFunc(0), tmp()); \
+        TEST_ASSERT_NULL(pool[0]()); \
+        tmp() = nullptr; \
+    } \
+    \
+    void prefix ## MoveConstruct ## type ## Null(void) \
+    { \
+        cl::khr::type empty; \
+        cl::khr::type tmp(std::move(empty)); \
+        TEST_ASSERT_NULL(tmp()); \
+        TEST_ASSERT_NULL(empty()); \
+    }
 #else
 #define MAKE_MOVE_TESTS2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveAssign ## type ## NonNull(void) {} \
-    void prefix ## MoveAssign ## type ## Null(void) {} \
+    void prefix ## MoveAssign ## type ## Null(void) {} 
+#define MAKE_MOVE_TESTS_CL(prefix, type, makeFunc, releaseFunc, pool) \
+    void prefix ## MoveConstruct ## type ## NonNull(void) {} \
+    void prefix ## MoveConstruct ## type ## Null(void) {}
+#define MAKE_MOVE_TESTS_KHR2(prefix, type, makeFunc, releaseFunc, pool) \
     void prefix ## MoveConstruct ## type ## NonNull(void) {} \
     void prefix ## MoveConstruct ## type ## Null(void) {}
 #endif // !TEST_RVALUE_REFERENCES
 #define MAKE_MOVE_TESTS(type, makeFunc, releaseFunc, pool) \
-    MAKE_MOVE_TESTS2(test, type, makeFunc, releaseFunc, pool)
+    MAKE_MOVE_TESTS2(test, type, makeFunc, releaseFunc, pool) \
+    MAKE_MOVE_TESTS_CL(test, type, makeFunc, releaseFunc, pool)
+#define MAKE_MOVE_TESTS_KHR(type, makeFunc, releaseFunc, pool) \
+    MAKE_MOVE_TESTS2(test, type, makeFunc, releaseFunc, pool) \
+    MAKE_MOVE_TESTS_KHR2(test, type, makeFunc, releaseFunc, pool)
 
 void setUp(void)
 {
@@ -3517,19 +3541,19 @@ void testGetPlatformVersion_3_0(void)
 }
 
 /****************************************************************************
- * Tests for cl::CommandBufferKhr
+ * Tests for cl::khr::CommandBuffer
  ****************************************************************************/
 #if defined(cl_khr_command_buffer)
-void testMoveAssignCommandBufferKhrNonNull(void);
-void testMoveAssignCommandBufferKhrNull(void);
-void testMoveConstructCommandBufferKhrNonNull(void);
-void testMoveConstructCommandBufferKhrNull(void);
-MAKE_MOVE_TESTS(CommandBufferKhr, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
+void testMoveAssignCommandBufferNonNull(void);
+void testMoveAssignCommandBufferNull(void);
+void testMoveConstructCommandBufferNonNull(void);
+void testMoveConstructCommandBufferNull(void);
+MAKE_MOVE_TESTS_KHR(CommandBuffer, make_command_buffer_khr, clReleaseCommandBufferKHR, commandBufferKhrPool)
 #else
-void testMoveAssignCommandBufferKhrNonNull(void) {}
-void testMoveAssignCommandBufferKhrNull(void) {}
-void testMoveConstructCommandBufferKhrNonNull(void) {}
-void testMoveConstructCommandBufferKhrNull(void) {}
+void testMoveAssignCommandBufferNonNull(void) {}
+void testMoveAssignCommandBufferNull(void) {}
+void testMoveConstructCommandBufferNonNull(void) {}
+void testMoveConstructCommandBufferNull(void) {}
 #endif
 
 // Stub for clGetCommandBufferInfoKHR that returns 1
@@ -3734,14 +3758,14 @@ void testDevice_createSubDevices() {
 #endif /*cl_ext_device_fission*/
 
 /****************************************************************************
- * Tests for cl::Semaphore
+ * Tests for cl::khr::Semaphore
  ****************************************************************************/
 #if defined(cl_khr_semaphore)
 void testMoveAssignSemaphoreNonNull(void);
 void testMoveAssignSemaphoreNull(void);
 void testMoveConstructSemaphoreNonNull(void);
 void testMoveConstructSemaphoreNull(void);
-MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
+MAKE_MOVE_TESTS_KHR(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
 #else
 void testMoveAssignSemaphoreNonNull(void) {}
 void testMoveAssignSemaphoreNull(void) {}
@@ -3781,7 +3805,7 @@ void testEnqueueWaitSemaphores(void)
 {
     clEnqueueWaitSemaphoresKHR_StubWithCallback(clEnqueueWaitSemaphoresKHR_testEnqueueWaitSemaphores);
 
-    VECTOR_CLASS<cl::Semaphore> sema_objects;
+    VECTOR_CLASS<cl::khr::Semaphore> sema_objects;
     sema_objects.emplace_back(make_semaphore_khr(1));
     VECTOR_CLASS<cl_semaphore_payload_khr> sema_payloads(1);
     cl::Event event;
@@ -3826,7 +3850,7 @@ void testEnqueueSignalSemaphores(void)
 {
     clEnqueueSignalSemaphoresKHR_StubWithCallback(clEnqueueSignalSemaphoresKHR_testEnqueueSignalSemaphores);
 
-    VECTOR_CLASS<cl::Semaphore> sema_objects;
+    VECTOR_CLASS<cl::khr::Semaphore> sema_objects;
     sema_objects.emplace_back(make_semaphore_khr(2));
     VECTOR_CLASS<cl_semaphore_payload_khr> sema_payloads(1);
     cl::Event event;
@@ -3869,7 +3893,7 @@ void testSemaphoreWithProperties(void)
 
     VECTOR_CLASS<cl_semaphore_properties_khr> sema_props{CL_SEMAPHORE_TYPE_KHR};
     cl_int err = CL_INVALID_OPERATION;
-    cl::Semaphore sem(contextPool[0], sema_props, &err);
+    cl::khr::Semaphore sem(contextPool[0], sema_props, &err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL_PTR(make_semaphore_khr(1), sem());
@@ -4228,7 +4252,7 @@ void testTemplateGetSemaphoreHandleForTypeKHR(void)
 
     clGetSemaphoreHandleForTypeKHR_StubWithCallback(clGetSemaphoreHandleForTypeKHR_GetHandles);
 
-    cl::Semaphore semaphore;
+    cl::khr::Semaphore semaphore;
 #if defined(cl_khr_external_semaphore_dx_fence)
     {
         auto handle0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::D3D12Fence>(device);
