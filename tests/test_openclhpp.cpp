@@ -3710,7 +3710,7 @@ static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
   }
 }
 
-void testDevice_createSubDevices() {
+void testDevice_createSubDevices(void) {
 #ifndef CL_HPP_ENABLE_EXCEPTIONS
   const cl_device_partition_property_ext properties =
       CL_DEVICE_PARTITION_EQUALLY_EXT;
@@ -4552,7 +4552,7 @@ static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
     return CL_SUCCESS;
 }
 
-void testgetObjectInfo() {
+void testgetObjectInfo(void) {
     cl_mem_flags flags = 0;
     cl_int err = 0;
     cl_GLuint bufobj = 0;
@@ -4581,7 +4581,7 @@ static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
     return 0;
 }
 
-void testgetHostTimer() {
+void testgetHostTimer(void) {
     cl_ulong retVal = 0;
     cl_int *error = nullptr;
 
@@ -4590,6 +4590,6 @@ void testgetHostTimer() {
     TEST_ASSERT_EQUAL(retVal, 1);
 }
 #else
-void testgetHostTimer() {}
+void testgetHostTimer(void) {}
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 } // extern "C"
