@@ -3258,7 +3258,7 @@ static cl_int clGetDeviceInfo_uuid_pci_bus_info(
                 (param_name == CL_DEVICE_UUID_KHR) ? 1 :
                 (param_name == CL_DRIVER_UUID_KHR) ? 2 :
                 0;
-            for (int i = 0; i < CL_UUID_SIZE_KHR; i++) {
+            for (cl_uchar i = 0; i < CL_UUID_SIZE_KHR; i++) {
                 pUUID[i] = i + start;
             }
         }
@@ -3282,7 +3282,7 @@ static cl_int clGetDeviceInfo_uuid_pci_bus_info(
         if (param_value_size == CL_LUID_SIZE_KHR && param_value) {
             cl_uchar* pLUID = static_cast<cl_uchar*>(param_value);
             cl_uchar start = 3;
-            for (int i = 0; i < CL_LUID_SIZE_KHR; i++) {
+            for (cl_uchar i = 0; i < CL_LUID_SIZE_KHR; i++) {
                 pLUID[i] = i + start;
             }
         }
