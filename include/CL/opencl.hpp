@@ -2095,7 +2095,8 @@ struct ReferenceHandler<cl_mutable_command_khr>
 #endif // cl_khr_command_buffer
 
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+#if (CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120) || \
+    (CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200)
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
 static cl_uint getVersion(const vector<char> &versionInfo)
 {
@@ -2145,7 +2146,7 @@ static cl_uint getContextPlatformVersion(cl_context context)
     clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices.data(), nullptr);
     return getDevicePlatformVersion(devices[0]);
 }
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 200
+#endif // CL_HPP_TARGET_OPENCL_VERSION && CL_HPP_MINIMUM_OPENCL_VERSION
 
 template <typename T>
 class Wrapper
@@ -2254,18 +2255,16 @@ protected:
     static bool isReferenceCountable(cl_device_id device)
     {
         bool retVal = false;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120
-#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
         if (device != nullptr) {
             int version = getDevicePlatformVersion(device);
             if(version > ((1 << 16) + 1)) {
                 retVal = true;
             }
         }
-#else // CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 120
         retVal = true;
-#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+#endif // CL_HPP_TARGET_OPENCL_VERSION
         (void)device;
         return retVal;
     }

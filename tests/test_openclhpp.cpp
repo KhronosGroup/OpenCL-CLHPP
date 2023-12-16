@@ -289,11 +289,11 @@ private:
 public:
     RefcountTable() : n(0), objects(nullptr), refcounts(nullptr) {}
 
-    void init(size_t n, void * const *objects, int *refcounts)
+    void init(size_t n_, void * const *objects_, int *refcounts_)
     {
-        this->n = n;
-        this->objects = objects;
-        this->refcounts = refcounts;
+        n = n_;
+        objects = objects_;
+        refcounts = refcounts_;
     }
 
     void reset()
@@ -2688,7 +2688,6 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     }
     else {
         TEST_ABORT();
-        return CL_INVALID_OPERATION;
     }
 }
 #endif
@@ -3690,28 +3689,30 @@ void testDevice_GetInfo_CLDeviceName(void)
 #if defined(cl_ext_device_fission)
 static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
     cl_device_id device_in, const cl_device_partition_property_ext *properties,
-    cl_uint n, cl_device_id *out_devices, cl_uint *num, int num_calls) {
-  cl_int ret = CL_SUCCESS;
+    cl_uint num_entries, cl_device_id *out_devices, cl_uint *num_devices, int cmock_num_calls)
+{
+    (void)cmock_num_calls;
 
-  TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_EQUALLY_EXT, *properties);
-  if(nullptr != out_devices){
-    out_devices[0] = make_device_id(0);
-  }
-  if (nullptr != num)
-  {
-      *num = 1;
-  }
-  if (device_in == make_device_id(0)) {
-    return CL_SUCCESS;
-  } else if (device_in == make_device_id(1)) {
-    return CL_INVALID_DEVICE;
-  } else {
-    return CL_SUCCESS;
-  }
+    TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_EQUALLY_EXT, *properties);
+    if (nullptr != out_devices && num_entries > 0) {
+        out_devices[0] = make_device_id(0);
+    }
+    if (nullptr != num_devices)
+    {
+        *num_devices = 1;
+    }
+    if (device_in == make_device_id(0)) {
+        return CL_SUCCESS;
+    }
+    else if (device_in == make_device_id(1)) {
+        return CL_INVALID_DEVICE;
+    }
+    else {
+        return CL_SUCCESS;
+    }
 }
 
 void testDevice_createSubDevices(void) {
-#ifndef CL_HPP_ENABLE_EXCEPTIONS
   const cl_device_partition_property_ext properties =
       CL_DEVICE_PARTITION_EQUALLY_EXT;
   std::vector<cl::Device> devices(1);
@@ -3724,12 +3725,13 @@ void testDevice_createSubDevices(void) {
 
   cl_int ret = devicePool[0].createSubDevices(&properties, &devices);
   TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
   ret = devicePool[1].createSubDevices(&properties, &devices);
   TEST_ASSERT_EQUAL(CL_INVALID_DEVICE , ret);
+#endif /*CL_HPP_ENABLE_EXCEPTIONS*/
   ret = devicePool[2].createSubDevices(&properties, &devices);
   TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
   TEST_ASSERT_EQUAL(devices[0].get(), make_device_id(0));
-#endif /*CL_HPP_ENABLE_EXCEPTIONS*/
 }
 #endif /*cl_ext_device_fission*/
 
@@ -4530,8 +4532,10 @@ static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
                                                      cl_mem_flags flags,
                                                      cl_GLuint bufobj,
                                                      cl_int *errcode_ret,
-                                                     int num_calls)
+                                                     int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL(0, bufobj);
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
     TEST_ASSERT_EQUAL(0, flags);
@@ -4543,8 +4547,10 @@ static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
 static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
                                                   cl_gl_object_type *type,
                                                   cl_GLuint *gl_object_name,
-                                                  int num)
+                                                  int cmock_num_calls)
 {
+    (void) cmock_num_calls;
+
     TEST_ASSERT_EQUAL(memobj, make_mem(0));
     *type = CL_GL_OBJECT_BUFFER;
 
@@ -4552,22 +4558,23 @@ static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
     return CL_SUCCESS;
 }
 
-void testgetObjectInfo(void) {
-    cl_mem_flags flags = 0;
-    cl_int err = 0;
-    cl_GLuint bufobj = 0;
-    cl_mem memobj = make_mem(0);
-    cl_gl_object_type type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+void testgetObjectInfo(void)
+{
     clGetGLObjectInfo_StubWithCallback(clGetGLObjectInfo_testgetObjectInfo);
     clCreateFromGLBuffer_StubWithCallback(
         clCreateFromGLBuffer_testgetObjectInfo);
     clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
-    cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
 
+    cl_mem_flags flags = 0;
+    cl_GLuint bufobj = 0;
+    cl_int err = 0;
+    cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
     TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
 
-    TEST_ASSERT_EQUAL(buffer.getObjectInfo(&type, &bufobj), CL_SUCCESS);
+    cl_gl_object_type type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+    err = buffer.getObjectInfo(&type, &bufobj);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
