@@ -6703,6 +6703,9 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_int compile(
         const char* options = nullptr,
+        cl_uint num_input_headers = 0,
+        const cl_program* input_headers = nullptr,
+        const char** header_include_names = nullptr,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
     {
@@ -6711,9 +6714,9 @@ public:
             0,
             nullptr,
             options,
-            0,
-            nullptr,
-            nullptr,
+            num_input_headers,
+            input_headers,
+            header_include_names,
             notifyFptr,
             data);
         return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
