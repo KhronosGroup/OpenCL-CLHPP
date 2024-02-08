@@ -6703,9 +6703,6 @@ public:
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_int compile(
         const char* options = nullptr,
-        cl_uint num_input_headers = 0,
-        const cl_program* input_headers = nullptr,
-        const char** header_include_names = nullptr,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
     {
@@ -6714,9 +6711,58 @@ public:
             0,
             nullptr,
             options,
-            num_input_headers,
-            input_headers,
-            header_include_names,
+            0,
+            nullptr,
+            nullptr,
+            notifyFptr,
+            data);
+        return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int compile(
+        const char* options,
+        const vector<Program>& inputHeaders,
+        const vector<string>& headerIncludeNames,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        vector<const char*> headerIncludeNamesCStr;
+        for(string name: headerIncludeNames) {
+            headerIncludeNamesCStr.push_back(name.c_str());
+        }
+        cl_int error = ::clCompileProgram(
+            object_,
+            0,
+            nullptr,
+            options,
+            static_cast<cl_uint>(inputHeaders.size()),
+            reinterpret_cast<const cl_program*>(inputHeaders.data()),
+            reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
+            notifyFptr,
+            data);
+        return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int compile(
+        const char* options,
+        const vector<Device>& deviceList,
+        const vector<Program>& inputHeaders = vector<Program>(),
+        const vector<string>& headerIncludeNames = vector<string>(),
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        vector<const char*> headerIncludeNamesCStr;
+        for(string name: headerIncludeNames) {
+            headerIncludeNamesCStr.push_back(name.c_str());
+        }
+        cl_int error = ::clCompileProgram(
+            object_,
+            static_cast<cl_uint>(deviceList.size()),
+            reinterpret_cast<const cl_device_id*>(deviceList.data()),
+            options,
+            static_cast<cl_uint>(inputHeaders.size()),
+            reinterpret_cast<const cl_program*>(inputHeaders.data()),
+            reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
             notifyFptr,
             data);
         return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
