@@ -6720,7 +6720,7 @@ public:
     }
 
     cl_int compile(
-        const char* options,
+        const string options,
         const vector<Program>& inputHeaders,
         const vector<string>& headerIncludeNames,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
@@ -6734,7 +6734,7 @@ public:
             object_,
             0,
             nullptr,
-            options,
+            options.c_str(),
             static_cast<cl_uint>(inputHeaders.size()),
             reinterpret_cast<const cl_program*>(inputHeaders.data()),
             reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
@@ -6744,7 +6744,7 @@ public:
     }
 
     cl_int compile(
-        const char* options,
+        const string options,
         const vector<Device>& deviceList,
         const vector<Program>& inputHeaders = vector<Program>(),
         const vector<string>& headerIncludeNames = vector<string>(),
@@ -6759,7 +6759,7 @@ public:
             object_,
             static_cast<cl_uint>(deviceList.size()),
             reinterpret_cast<const cl_device_id*>(deviceList.data()),
-            options,
+            options.c_str(),
             static_cast<cl_uint>(inputHeaders.size()),
             reinterpret_cast<const cl_program*>(inputHeaders.data()),
             reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
