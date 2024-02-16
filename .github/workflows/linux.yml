@@ -81,16 +81,13 @@ jobs:
 
     - name: Configure
       shell: bash
-      # no -Werror during configuration because:
-      # warning: ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]
-      # warning: unused parameter [-Wunused-parameter]
       run: 
         $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D BUILD_TESTING=ON
         -D BUILD_EXAMPLES=ON
         -D CMAKE_BUILD_TYPE=${{matrix.CONFIG}}
-        -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
+        -D CMAKE_CXX_FLAGS="-Werror -Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}}
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
@@ -251,14 +248,11 @@ jobs:
 
     - name: Configure
       shell: bash
-      # no -Werror during configuration because:
-      # warning: ISO C forbids assignment between function pointer and ‘void *’ [-Wpedantic]
-      # warning: unused parameter [-Wunused-parameter]
       run: $CMAKE_EXE
         -G "${{matrix.GEN}}"
         -D BUILD_TESTING=ON
         -D BUILD_EXAMPLES=ON
-        -D CMAKE_CXX_FLAGS="-Wall -Wextra -pedantic -m${{matrix.BIN}}"
+        -D CMAKE_CXX_FLAGS="-Werror -Wall -Wextra -pedantic -m${{matrix.BIN}}"
         -D CMAKE_CXX_COMPILER=g++-${{matrix.VER}}
         -D CMAKE_CXX_STANDARD=${{matrix.STD}}
         -D CMAKE_CXX_EXTENSIONS=${{matrix.EXT}}
