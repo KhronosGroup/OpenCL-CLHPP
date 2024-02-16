@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2023 The Khronos Group Inc.
+// Copyright (c) 2008-2024 The Khronos Group Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -3204,10 +3204,10 @@ private:
 #if defined(cl_ext_image_requirements_info)
     struct ImageRequirementsInfo {
 
-        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* properties, const ImageFormat* format, const cl_image_desc* desc)
+        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* mem_properties, const ImageFormat* format, const cl_image_desc* desc)
         {
             flags = f;
-            properties = properties;
+            properties = mem_properties;
             image_format = format;
             image_desc = desc;
         }
