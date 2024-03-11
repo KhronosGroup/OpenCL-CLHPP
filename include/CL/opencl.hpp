@@ -6720,14 +6720,16 @@ public:
     }
 
     cl_int compile(
-        const string options,
+        const string& options,
         const vector<Program>& inputHeaders,
         const vector<string>& headerIncludeNames,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
     {
+        static_assert(sizeof(cl::Program) == sizeof(cl_program),
+            "Size of cl::Program must be equal to size of cl_program");
         vector<const char*> headerIncludeNamesCStr;
-        for(string name: headerIncludeNames) {
+        for(const string& name: headerIncludeNames) {
             headerIncludeNamesCStr.push_back(name.c_str());
         }
         cl_int error = ::clCompileProgram(
@@ -6744,21 +6746,27 @@ public:
     }
 
     cl_int compile(
-        const string options,
+        const string& options,
         const vector<Device>& deviceList,
         const vector<Program>& inputHeaders = vector<Program>(),
         const vector<string>& headerIncludeNames = vector<string>(),
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
     {
+        static_assert(sizeof(cl::Program) == sizeof(cl_program),
+            "Size of cl::Program must be equal to size of cl_program");
         vector<const char*> headerIncludeNamesCStr;
-        for(string name: headerIncludeNames) {
+        for(const string& name: headerIncludeNames) {
             headerIncludeNamesCStr.push_back(name.c_str());
+        }
+        vector<const cl_device_id*> deviceIDList;
+        for(const Device& device: deviceList) {
+            deviceIDList.push_back(device());
         }
         cl_int error = ::clCompileProgram(
             object_,
             static_cast<cl_uint>(deviceList.size()),
-            reinterpret_cast<const cl_device_id*>(deviceList.data()),
+            reinterpret_cast<const cl_device_id*>(deviceIDList.data()),
             options.c_str(),
             static_cast<cl_uint>(inputHeaders.size()),
             reinterpret_cast<const cl_program*>(inputHeaders.data()),
