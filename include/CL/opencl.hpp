@@ -6759,7 +6759,7 @@ public:
         for(const string& name: headerIncludeNames) {
             headerIncludeNamesCStr.push_back(name.c_str());
         }
-        vector<const cl_device_id*> deviceIDList;
+        vector<cl_device_id> deviceIDList;
         for(const Device& device: deviceList) {
             deviceIDList.push_back(device());
         }
