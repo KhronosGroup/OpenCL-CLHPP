@@ -2207,12 +2207,10 @@ void testCompileProgramBasic(void)
 
     // Compiling the program queries the program build log:
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
-    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
-    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
     clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
@@ -2267,12 +2265,10 @@ void testCompileProgramHeaders(void)
 
     // Compiling the program queries the program build log:
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
-    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
-    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
     clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
@@ -2293,6 +2289,11 @@ void testCompileProgramHeaders(void)
     cl_int errcode = prog.compile("", inputHeaders, headerIncludeNames);
 
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    // Clean up in a defined order
+    prog = nullptr;
+    inputHeaders[0] = nullptr;
+    inputHeaders[1] = nullptr;
 }
 
 static cl_int clCompileProgram_devices(
@@ -2335,12 +2336,10 @@ void testCompileProgramDevices(void)
 
     // Compiling the program queries the program build log:
     clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
-    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
-    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
     clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
     clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
@@ -2357,6 +2356,11 @@ void testCompileProgramDevices(void)
     cl_int errcode = prog.compile("", deviceList);
 
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    // Clean up in a defined order
+    prog = nullptr;
+    deviceList[0] = nullptr;
+    deviceList[1] = nullptr;
 }
 
 /**
