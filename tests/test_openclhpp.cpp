@@ -2149,6 +2149,221 @@ void testBuildProgramSingleDevice(void)
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
 }
 
+static cl_int clGetProgramInfo_forBuildLog(
+    cl_program         program,
+    cl_program_info    param_name,
+    size_t             param_value_size,
+    void *             param_value,
+    size_t *           param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_DEVICES);
+    if (param_value_size) {
+        TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_device_id));
+        TEST_ASSERT_NOT_EQUAL(param_value, nullptr);
+        *(cl_device_id*)param_value = make_device_id(0);
+    }
+    if (param_value_size_ret) {
+        *param_value_size_ret = sizeof(cl_device_id);
+    }
+    return CL_SUCCESS;
+}
+
+static cl_int clCompileProgram_basic(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_headers,
+    const cl_program *   input_headers,
+    const char **        header_include_names,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program,
+                                    void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(options, nullptr);
+    TEST_ASSERT_EQUAL(num_input_headers, 0);
+    TEST_ASSERT_EQUAL(input_headers, nullptr);
+    TEST_ASSERT_EQUAL(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    return CL_SUCCESS;
+}
+
+void testCompileProgramBasic(void)
+{
+    cl_program program = make_program(0);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_basic);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile();
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+}
+
+static cl_int clCompileProgram_headers(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_headers,
+    const cl_program *   input_headers,
+    const char **        header_include_names,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program,
+                                    void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL_STRING(options, "");
+    TEST_ASSERT_EQUAL(num_input_headers, 2);
+    TEST_ASSERT_NOT_EQUAL(input_headers, nullptr);
+    TEST_ASSERT_NOT_EQUAL(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(input_headers[0], make_program(1));
+    TEST_ASSERT_EQUAL(input_headers[1], make_program(2));
+    TEST_ASSERT_EQUAL_STRING(header_include_names[0], "name0");
+    TEST_ASSERT_EQUAL_STRING(header_include_names[1], "name1");
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    return CL_SUCCESS;
+}
+
+void testCompileProgramHeaders(void)
+{
+    cl_program program = make_program(0);
+    cl_program header0 = make_program(1);
+    cl_program header1 = make_program(2);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_headers);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(header0, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(header1, CL_SUCCESS);
+
+    std::vector<cl::Program> inputHeaders;
+    inputHeaders.push_back(cl::Program(header0));
+    inputHeaders.push_back(cl::Program(header1));
+
+    std::vector<cl::string> headerIncludeNames;
+    headerIncludeNames.push_back("name0");
+    headerIncludeNames.push_back("name1");
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile("", inputHeaders, headerIncludeNames);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    // Clean up in a defined order
+    prog = nullptr;
+    inputHeaders[0] = nullptr;
+    inputHeaders[1] = nullptr;
+}
+
+static cl_int clCompileProgram_devices(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_headers,
+    const cl_program *   input_headers,
+    const char **        header_include_names,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program,
+                                    void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 2);
+    TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(device_list[0], make_device_id(0));
+    TEST_ASSERT_EQUAL(device_list[1], make_device_id(1));
+    TEST_ASSERT_EQUAL_STRING(options, "");
+    TEST_ASSERT_EQUAL(num_input_headers, 0);
+    TEST_ASSERT_EQUAL(input_headers, nullptr);
+    TEST_ASSERT_EQUAL(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    return CL_SUCCESS;
+}
+
+void testCompileProgramDevices(void)
+{
+    cl_program program = make_program(0);
+    cl_device_id device0 = make_device_id(0);
+    cl_device_id device1 = make_device_id(1);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_devices);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    std::vector<cl::Device> deviceList;
+    deviceList.push_back(cl::Device(device0));
+    deviceList.push_back(cl::Device(device1));
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile("", deviceList);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    // Clean up in a defined order
+    prog = nullptr;
+    deviceList[0] = nullptr;
+    deviceList[1] = nullptr;
+}
+
 /**
 * Stub implementation of clGetCommandQueueInfo that returns first one image then none
 */
