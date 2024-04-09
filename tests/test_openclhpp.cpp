@@ -2159,6 +2159,7 @@ static cl_int clGetProgramInfo_forBuildLog(
 {
     (void) num_calls;
 
+    TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_DEVICES);
     if (param_value_size) {
         TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_device_id));
