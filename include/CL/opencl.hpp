@@ -1143,7 +1143,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector<vector<unsigned char>>*
         }
     }
 
-
     return CL_SUCCESS;
 }
 
@@ -5918,6 +5917,7 @@ Local(size_type size)
 class Kernel : public detail::Wrapper<cl_kernel>
 {
 public:
+    inline Kernel(const Program& program, const string& name, cl_int* err = nullptr);
     inline Kernel(const Program& program, const char* name, cl_int* err = nullptr);
 
     //! \brief Default constructor - initializes to nullptr.
@@ -6396,7 +6396,6 @@ public:
         }
     }
 
-
 #if defined(CL_HPP_USE_IL_KHR) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL.
@@ -6546,7 +6545,6 @@ public:
             return;
         }
 
-
         vector<size_type> lengths(numDevices);
         vector<const unsigned char*> images(numDevices);
 #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
@@ -6560,7 +6558,7 @@ public:
             lengths[i] = binaries[(int)i].second;
         }
 #endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
-        
+
         vector<cl_device_id> deviceIDs(numDevices);
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
@@ -6569,7 +6567,7 @@ public:
         if(binaryStatus) {
             binaryStatus->resize(numDevices);
         }
-        
+
         object_ = ::clCreateProgramWithBinary(
             context(), (cl_uint) devices.size(),
             deviceIDs.data(),
@@ -6636,6 +6634,14 @@ public:
         return *this;
     }
 
+    cl_int build(
+        const vector<Device>& devices,
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return build(devices, options.c_str(), notifyFptr, data);
+    }
 
     cl_int build(
         const vector<Device>& devices,
@@ -6645,7 +6651,7 @@ public:
     {
         size_type numDevices = devices.size();
         vector<cl_device_id> deviceIDs(numDevices);
-        
+
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -6660,6 +6666,15 @@ public:
             data);
 
         return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int build(
+        const Device& device,
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return build(device, options.c_str(), notifyFptr, data);
     }
 
     cl_int build(
@@ -6684,6 +6699,14 @@ public:
     }
 
     cl_int build(
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return build(options.c_str(), notifyFptr, data);
+    }
+
+    cl_int build(
         const char* options = nullptr,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
@@ -6700,6 +6723,14 @@ public:
     }
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int compile(
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return compile(options.c_str(), notifyFptr, data);
+    }
+
     cl_int compile(
         const char* options = nullptr,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
@@ -6725,6 +6756,16 @@ public:
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
     {
+        return compile(options.c_str(), inputHeaders, headerIncludeNames, notifyFptr, data);
+    }
+
+    cl_int compile(
+        const char* options,
+        const vector<Program>& inputHeaders,
+        const vector<string>& headerIncludeNames,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
         static_assert(sizeof(cl::Program) == sizeof(cl_program),
             "Size of cl::Program must be equal to size of cl_program");
         vector<const char*> headerIncludeNamesCStr;
@@ -6735,7 +6776,7 @@ public:
             object_,
             0,
             nullptr,
-            options.c_str(),
+            options,
             static_cast<cl_uint>(inputHeaders.size()),
             reinterpret_cast<const cl_program*>(inputHeaders.data()),
             reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
@@ -6746,6 +6787,17 @@ public:
 
     cl_int compile(
         const string& options,
+        const vector<Device>& deviceList,
+        const vector<Program>& inputHeaders = vector<Program>(),
+        const vector<string>& headerIncludeNames = vector<string>(),
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return compile(options.c_str(), deviceList, inputHeaders, headerIncludeNames, notifyFptr, data);
+    }
+
+    cl_int compile(
+        const char* options,
         const vector<Device>& deviceList,
         const vector<Program>& inputHeaders = vector<Program>(),
         const vector<string>& headerIncludeNames = vector<string>(),
@@ -6766,7 +6818,7 @@ public:
             object_,
             static_cast<cl_uint>(deviceList.size()),
             reinterpret_cast<const cl_device_id*>(deviceIDList.data()),
-            options.c_str(),
+            options,
             static_cast<cl_uint>(inputHeaders.size()),
             reinterpret_cast<const cl_program*>(inputHeaders.data()),
             reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
@@ -6990,6 +7042,17 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
+    const Program& input1,
+    const Program& input2,
+    const string& options,
+    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+    void* data = nullptr,
+    cl_int* err = nullptr)
+{
+    return linkProgram(input1, input2, options.c_str(), notifyFptr, data, err);
+}
+
+inline Program linkProgram(
     const vector<Program>& inputPrograms,
     const char* options = nullptr,
     void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
@@ -7026,6 +7089,16 @@ inline Program linkProgram(
     }
 
     return Program(prog);
+}
+
+inline Program linkProgram(
+    const vector<Program>& inputPrograms,
+    const string& options,
+    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+    void* data = nullptr,
+    cl_int* err = nullptr)
+{
+    return linkProgram(inputPrograms, options.c_str(), notifyFptr, data, err);
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
@@ -7085,6 +7158,18 @@ inline cl_int cl::Program::setSpecializationConstant(cl_uint index, const bool &
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 220
 
+inline Kernel::Kernel(const Program& program, const string& name, cl_int* err)
+{
+    cl_int error;
+
+    object_ = ::clCreateKernel(program(), name.c_str(), &error);
+    detail::errHandler(error, __CREATE_KERNEL_ERR);
+
+    if (err != nullptr) {
+        *err = error;
+    }
+}
+
 inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 {
     cl_int error;
@@ -7095,7 +7180,6 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
     if (err != nullptr) {
         *err = error;
     }
-
 }
 
 #ifdef cl_khr_external_memory

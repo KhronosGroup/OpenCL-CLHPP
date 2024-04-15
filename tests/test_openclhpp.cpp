@@ -1765,6 +1765,51 @@ MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool)
 static cl_int scalarArg;
 static cl_int3 vectorArg;
 
+static cl_kernel clCreateKernel_constructor(
+    cl_program program,
+    const char* kernel_name,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL_STRING(kernel_name, "test");
+    if (errcode_ret != nullptr)
+        *errcode_ret = CL_SUCCESS;
+
+    return make_kernel(0);
+}
+
+void testKernelConstructor(void)
+{
+    clCreateKernel_StubWithCallback(clCreateKernel_constructor);
+
+    cl_int errorCode;
+    cl::Program program(make_program(0));
+    cl::Kernel kernel(program, "test", &errorCode);
+    TEST_ASSERT_EQUAL(kernel(), make_kernel(0));
+    TEST_ASSERT_EQUAL(errorCode, CL_SUCCESS);
+
+    program() = nullptr;
+    kernel() = nullptr;
+}
+
+void testKernelStringConstructor(void)
+{
+    clCreateKernel_StubWithCallback(clCreateKernel_constructor);
+
+    cl_int errorCode;
+    cl::string kernelName("test");
+    cl::Program program(make_program(0));
+    cl::Kernel kernel(program, kernelName, &errorCode);
+    TEST_ASSERT_EQUAL(kernel(), make_kernel(0));
+    TEST_ASSERT_EQUAL(errorCode, CL_SUCCESS);
+
+    program() = nullptr;
+    kernel() = nullptr;
+}
+
 void testKernelSetArgScalar(void)
 {
     scalarArg = 0xcafebabe;
@@ -2090,7 +2135,7 @@ void testGetBuildInfo(void)
     cl::Device dev(fakeDevice);
     
     cl_int err;
-    std::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
+    cl::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
 
     prog() = nullptr;
     dev() = nullptr;
@@ -2110,7 +2155,9 @@ static cl_int clBuildProgram_testBuildProgram(
     TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_NOT_EQUAL(num_devices, 0);
     TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
-    TEST_ASSERT_EQUAL(options, nullptr);
+    if (options) {
+        TEST_ASSERT_EQUAL_STRING(options, "-cl-program-build-options");
+    }
     TEST_ASSERT_EQUAL(pfn_notify, nullptr);
     TEST_ASSERT_EQUAL(user_data, nullptr);
 
@@ -2145,6 +2192,63 @@ void testBuildProgramSingleDevice(void)
     cl::Device dev(device_id);
 
     cl_int errcode = prog.build(dev);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+}
+
+void testBuildProgramSingleDeviceWithOptions(void)
+{
+    cl_program program = make_program(0);
+    cl_device_id device_id = make_device_id(0);
+
+    // Creating a device queries the platform version:
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    clBuildProgram_StubWithCallback(clBuildProgram_testBuildProgram);
+
+    // Building the program queries the program build log:
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::Device dev(device_id);
+
+    cl_int errcode = prog.build(dev, "-cl-program-build-options");
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+}
+
+void testBuildProgramSingleDeviceWithStringOptions(void)
+{
+    cl_program program = make_program(0);
+    cl_device_id device_id = make_device_id(0);
+
+    // Creating a device queries the platform version:
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    clBuildProgram_StubWithCallback(clBuildProgram_testBuildProgram);
+
+    // Building the program queries the program build log:
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::Device dev(device_id);
+
+    cl::string options("-cl-program-build-options");
+    cl_int errcode = prog.build(dev, options);
 
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
 }
@@ -2190,7 +2294,9 @@ static cl_int clCompileProgram_basic(
     TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_EQUAL(num_devices, 0);
     TEST_ASSERT_EQUAL(device_list, nullptr);
-    TEST_ASSERT_EQUAL(options, nullptr);
+    if (options) {
+        TEST_ASSERT_EQUAL_STRING(options, "-cl-program-compile-options");
+    }
     TEST_ASSERT_EQUAL(num_input_headers, 0);
     TEST_ASSERT_EQUAL(input_headers, nullptr);
     TEST_ASSERT_EQUAL(header_include_names, nullptr);
@@ -2202,6 +2308,7 @@ static cl_int clCompileProgram_basic(
 
 void testCompileProgramBasic(void)
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_program program = make_program(0);
 
     clCompileProgram_StubWithCallback(clCompileProgram_basic);
@@ -2222,6 +2329,60 @@ void testCompileProgramBasic(void)
     cl_int errcode = prog.compile();
 
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+#endif
+}
+
+void testCompileProgramWithOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_basic);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile("-cl-program-compile-options");
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+#endif
+}
+
+void testCompileProgramWithStringOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_basic);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::string options("-cl-program-compile-options");
+    cl_int errcode = prog.compile(options);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+#endif
 }
 
 static cl_int clCompileProgram_headers(
@@ -2258,6 +2419,7 @@ static cl_int clCompileProgram_headers(
 
 void testCompileProgramHeaders(void)
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_program program = make_program(0);
     cl_program header0 = make_program(1);
     cl_program header1 = make_program(2);
@@ -2295,6 +2457,7 @@ void testCompileProgramHeaders(void)
     prog = nullptr;
     inputHeaders[0] = nullptr;
     inputHeaders[1] = nullptr;
+#endif
 }
 
 static cl_int clCompileProgram_devices(
@@ -2329,6 +2492,7 @@ static cl_int clCompileProgram_devices(
 
 void testCompileProgramDevices(void)
 {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_program program = make_program(0);
     cl_device_id device0 = make_device_id(0);
     cl_device_id device1 = make_device_id(1);
@@ -2362,6 +2526,7 @@ void testCompileProgramDevices(void)
     prog = nullptr;
     deviceList[0] = nullptr;
     deviceList[1] = nullptr;
+#endif
 }
 
 /**
@@ -3620,7 +3785,9 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     TEST_ASSERT_EQUAL_PTR(context, make_context(0));
     TEST_ASSERT_EQUAL(num_devices, 0);
     TEST_ASSERT_EQUAL(device_list, nullptr);
-    TEST_ASSERT_EQUAL(options, nullptr);
+    if (options) {
+        TEST_ASSERT_EQUAL_STRING(options, "-cl-program-link-options");
+    }
     TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
     for (int i=0; i<(int)num_input_programs; i++)
         TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
@@ -3649,6 +3816,61 @@ void testLinkProgram(void)
 
     cl::Program prog = cl::linkProgram(cl::Program(make_program(0)), cl::Program(make_program(1)),
         nullptr, nullptr, nullptr, &errcode);
+
+    TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    prog() = nullptr;
+#endif
+}
+
+void testLinkProgramWithOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int errcode;
+    int refcount[] = {1,1};
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
+    clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
+
+    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    prepare_programRefcounts(2, reinterpret_cast<cl_program *>(programPool), refcount);
+
+    cl::Program prog = cl::linkProgram(
+        cl::Program(make_program(0)), cl::Program(make_program(1)),
+        "-cl-program-link-options", nullptr, nullptr, &errcode);
+
+    TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    prog() = nullptr;
+#endif
+}
+
+void testLinkProgramWithStringOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int errcode;
+    int refcount[] = {1,1};
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
+    clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
+
+    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    prepare_programRefcounts(2, reinterpret_cast<cl_program *>(programPool), refcount);
+
+    cl::string options("-cl-program-link-options");
+    cl::Program prog = cl::linkProgram(
+        cl::Program(make_program(0)), cl::Program(make_program(1)),
+        options, nullptr, nullptr, &errcode);
 
     TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
