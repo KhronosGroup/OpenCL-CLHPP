@@ -1870,6 +1870,10 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GL
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR, cl::vector<size_type>)
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
+#if defined(cl_khr_kernel_clock)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR, cl_device_kernel_clock_capabilities_khr)
+#endif /* cl_khr_kernel_clock */
+
 // Convenience functions
 
 template <typename Func, typename T>
