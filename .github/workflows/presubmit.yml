@@ -635,11 +635,12 @@ jobs:
             CXX_NAME: /usr/bin/clang++
           - C_NAME: gcc-11
             CXX_NAME: g++-11
-          - C_NAME: gcc-13
-            CXX_NAME: g++-13
-            # A workaround for a bug in the toolset
-            # See https://forums.developer.apple.com/forums/thread/737707
-            EXTRA_FLAGS: -Wl,-ld_classic
+          # Disabled due to problems with the __API_AVAILABLE macro
+          # - C_NAME: gcc-13
+          #   CXX_NAME: g++-13
+          #   # A workaround for a bug in the toolset
+          #   # See https://forums.developer.apple.com/forums/thread/737707
+          #   EXTRA_FLAGS: -Wl,-ld_classic
         GEN:
         - Xcode
         - Ninja Multi-Config
