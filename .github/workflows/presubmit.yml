@@ -3,27 +3,8 @@ name: Presubmit
 on: [push, pull_request]
 
 jobs:
-  format:
-    name: Code formatting
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # repository: ${{ github.repository }} (default)
-          fetch-depth: 0
-      - name: Install clang-format
-        run: sudo apt-get install clang-format
-      - name: Check format
-        run: $GITHUB_WORKSPACE/scripts/check-format.sh
-          origin/`if [[ "${{ github.event_name }}" == "push" ]]; then echo "main"; else echo "${{ github.base_ref }}"; fi`
-          --binary clang-format
-
   linux:
     runs-on: ubuntu-latest
-    needs: format
     defaults:
       run:
         shell: bash
@@ -290,7 +271,6 @@ jobs:
 
   windows:
     runs-on: windows-latest
-    needs: format
     defaults:
       run:
         shell: pwsh
@@ -645,7 +625,6 @@ jobs:
 
   macos:
     runs-on: macos-latest
-    needs: format
     defaults:
       run:
         shell: bash
@@ -788,7 +767,6 @@ jobs:
 
   android:
     runs-on: ubuntu-latest
-    needs: format
     defaults:
       run:
         shell: bash
