@@ -4229,10 +4229,18 @@ cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Arg
 
     T* tmp = std::allocator_traits<Alloc>::allocate(alloc, copies);
     if (!tmp) {
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
         std::bad_alloc excep;
         throw excep;
+#else
+        return nullptr;
+#endif
     }
-    try {
+
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try
+#endif
+    {
         std::allocator_traits<Alloc>::construct(
             alloc,
             std::addressof(*tmp),
@@ -4240,11 +4248,13 @@ cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Arg
 
         return cl::pointer<T, detail::Deleter<Alloc>>(tmp, detail::Deleter<Alloc>{alloc, copies});
     }
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
     catch (std::bad_alloc&)
     {
         std::allocator_traits<Alloc>::deallocate(alloc, tmp, copies);
         throw;
     }
+#endif
 }
 
 template< class T, class SVMTrait, class... Args >
