@@ -1700,9 +1700,6 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore
 
-#if defined(cl_khr_external_semaphore_dx_fence)
-CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // cl_khr_external_semaphore_dx_fence
 #if defined(cl_khr_external_semaphore_opaque_fd)
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore_opaque_fd
@@ -7197,12 +7194,6 @@ enum class ExternalMemoryType : cl_external_memory_handle_type_khr
     OpaqueWin32 = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR,
     OpaqueWin32Kmt = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR,
 #endif // cl_khr_external_memory_win32
-#ifdef cl_khr_external_memory_dx
-    D3D11Texture = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR,
-    D3D11TextureKmt = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR,
-    D3D12Heap = CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR,
-    D3D12Resource = CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR,
-#endif // cl_khr_external_memory_dx
 #ifdef cl_khr_external_memory_dma_buf
     DmaBuf = CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR,
 #endif // cl_khr_external_memory_dma_buf
@@ -10910,9 +10901,6 @@ namespace compatibility {
 enum ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 {
     None = 0,
-#ifdef cl_khr_external_semaphore_dx_fence
-    D3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
-#endif // cl_khr_external_semaphore_dx_fence
 #ifdef cl_khr_external_semaphore_opaque_fd
     OpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
 #endif // cl_khr_external_semaphore_opaque_fd
