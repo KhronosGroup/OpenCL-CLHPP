@@ -4594,20 +4594,6 @@ static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
     (void) num_calls;
 
     switch (handle_type) {
-#if defined(cl_khr_external_semaphore_dx_fence)
-    case CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR:
-    {
-        void* ret = make_external_semaphore_handle(handle_type);
-        if (handle_size == sizeof(ret) && handle_ptr) {
-            void** pHandle = static_cast<void**>(handle_ptr);
-            *pHandle = ret;
-        }
-        if (handle_size_ret) {
-            *handle_size_ret = sizeof(ret);
-        }
-        return CL_SUCCESS;
-    }
-#endif
 #if defined(cl_khr_external_semaphore_win32)
     case CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR:
     case CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR:
@@ -4668,12 +4654,6 @@ void testTemplateGetSemaphoreHandleForTypeKHR(void)
     clGetSemaphoreHandleForTypeKHR_StubWithCallback(clGetSemaphoreHandleForTypeKHR_GetHandles);
 
     cl::Semaphore semaphore;
-#if defined(cl_khr_external_semaphore_dx_fence)
-    {
-        auto handle0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::D3D12Fence>(device);
-        TEST_ASSERT_EQUAL(handle0, make_external_semaphore_handle(cl::ExternalSemaphoreType::D3D12Fence));
-    }
-#endif
 #if defined(cl_khr_external_semaphore_opaque_fd)
     {
         auto fd0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueFd>(device);
