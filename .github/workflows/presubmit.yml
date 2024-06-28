@@ -295,7 +295,10 @@ jobs:
       UseMultiToolTask: true # Better parallel MSBuild execution
       EnforceProcessCountAcrossBuilds: 'true' # -=-
       MultiProcMaxCount: '3'                  # -=-
-      CFLAGS: /W4 /WX
+      # C4152: nonstandard extension, function/data pointer conversion in expression
+      # C4201: nonstandard extension used: nameless struct/union
+      # C4310: cast truncates constant value
+      CFLAGS: /W4 /WX /wd4152 /wd4201 /wd4310
       CXXFLAGS: /W4 /WX
 
     steps:
