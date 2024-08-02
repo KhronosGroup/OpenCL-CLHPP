@@ -4840,6 +4840,42 @@ public:
     //! \brief Default constructor - initializes to nullptr.
     Image1D() { }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image1D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            void *host_ptr = nullptr, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D;
+      desc.image_width = width;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -4900,6 +4936,43 @@ public:
 
     Image1DBuffer() { }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1DBuffer with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param buffer Refer to a valid buffer or image memory object.
+     */
+    Image1DBuffer(const Context &context,
+                  const vector<cl_mem_properties> &properties,
+                  cl_mem_flags flags, ImageFormat format, size_type width,
+                  const Buffer &buffer, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+      desc.image_width = width;
+      desc.buffer = buffer();
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, nullptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, nullptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -4915,9 +4988,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
 };
 
 /*! \class Image1DArray
@@ -4959,7 +5029,47 @@ public:
     }
 
     Image1DArray() { }
-  
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1DArray with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image1DArray(const Context &context,
+                 const vector<cl_mem_properties> &properties,
+                 cl_mem_flags flags, ImageFormat format, size_type arraySize,
+                 size_type width, size_type rowPitch = 0,
+                 void *host_ptr = nullptr, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
+      desc.image_width = width;
+      desc.image_array_size = arraySize;
+      desc.image_row_pitch = rowPitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -5162,6 +5272,83 @@ public:
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image2D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image2D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            size_type height, size_type row_pitch = 0, void *host_ptr = nullptr,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_row_pitch = row_pitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+
+    /*! \brief Constructs a Image2D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param buffer Refer to a valid buffer or image memory object.
+     */
+    Image2D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, const Buffer &buffer,
+            size_type width, size_type height, size_type row_pitch = 0,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_row_pitch = row_pitch;
+      desc.buffer = buffer();
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, nullptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, nullptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     //! \brief Default constructor - initializes to nullptr.
     Image2D() { }
 
@@ -5184,10 +5371,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
-
 };
 
 
@@ -5304,6 +5487,49 @@ public:
         }
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image2DArray with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image2DArray(const Context &context,
+                 const vector<cl_mem_properties> &properties,
+                 cl_mem_flags flags, ImageFormat format, size_type arraySize,
+                 size_type width, size_type height, size_type rowPitch = 0,
+                 size_type slicePitch = 0, void *host_ptr = nullptr,
+                 cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_array_size = arraySize;
+      desc.image_row_pitch = rowPitch;
+      desc.image_slice_pitch = slicePitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     Image2DArray() { }
     
     /*! \brief Constructor from cl_mem - takes ownership.
@@ -5403,6 +5629,48 @@ public:
         }
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image3D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image3D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            size_type height, size_type depth, size_type row_pitch = 0,
+            size_type slice_pitch = 0, void *host_ptr = nullptr,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_depth = depth;
+      desc.image_row_pitch = row_pitch;
+      desc.image_slice_pitch = slice_pitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
     //! \brief Default constructor - initializes to nullptr.
     Image3D() : Image() { }
