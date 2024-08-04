@@ -636,8 +636,10 @@ jobs:
         COMPILER:
           - C_NAME: /usr/bin/clang
             CXX_NAME: /usr/bin/clang++
-          - C_NAME: gcc-11
-            CXX_NAME: g++-11
+          # Disabled due to problems with __has_cpp_attribute
+          # See https://gcc.gnu.org/bugzilla/show_bug.cgi?id=114007
+          #- C_NAME: gcc-11
+          #  CXX_NAME: g++-11
           # Disabled due to problems with the __API_AVAILABLE macro
           # - C_NAME: gcc-13
           #   CXX_NAME: g++-13
