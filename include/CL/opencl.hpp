@@ -1855,7 +1855,12 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPE
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBufferKhr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
+
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR, cl::vector<cl_command_properties_khr>)
+#else
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR, cl::vector<cl_ndrange_kernel_command_properties_khr>)
+#endif
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_KERNEL_KHR, cl_kernel)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_DIMENSIONS_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR, cl::vector<size_type>)
@@ -11519,6 +11524,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandBarrierWithWaitListKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
                 (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
@@ -11550,6 +11558,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_offset,
@@ -11590,6 +11601,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferRectKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11630,6 +11644,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferToImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_offset,
@@ -11666,6 +11683,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11702,6 +11722,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageToBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11738,6 +11761,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandFillBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 buffer(),
                 static_cast<void*>(&pattern),
                 sizeof(PatternType),
@@ -11773,6 +11799,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandFillImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 image(),
                 static_cast<void*>(&fillColor),
                 origin.data(),
@@ -11789,7 +11818,12 @@ public:
         return error;
     }
 
-    cl_int commandNDRangeKernel(const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+    cl_int commandNDRangeKernel(
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+            const cl::vector<cl_command_properties_khr> &properties,
+#else
+            const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+#endif
         const Kernel& kernel,
         const NDRange& offset,
         const NDRange& global,
