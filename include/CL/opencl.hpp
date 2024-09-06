@@ -11827,6 +11827,8 @@ public:
     }
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
     cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
     {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
@@ -11836,6 +11838,21 @@ public:
         return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
                         __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
+#else
+    template <int ArrayLength>
+    cl_int updateMutableCommands(std::array<cl_command_buffer_update_type_khr,
+                                            ArrayLength> &config_types,
+                                 std::array<void *, ArrayLength> &configs) {
+        if (pfn_clUpdateMutableCommandsKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+        }
+        return detail::errHandler(
+            pfn_clUpdateMutableCommandsKHR(object_, configs.length(),
+                                           config_types.data().configs.data()),
+            __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+    }
+#endif /* CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION */
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
 private:
