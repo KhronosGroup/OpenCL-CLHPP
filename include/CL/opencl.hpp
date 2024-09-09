@@ -11419,6 +11419,20 @@ public:
         return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
                         __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
+#else
+    template <int ArrayLength>
+    cl_int updateMutableCommands(std::array<cl_command_buffer_update_type_khr,
+                                            ArrayLength> &config_types,
+                                 std::array<const void *, ArrayLength> &configs) {
+        if (pfn_clUpdateMutableCommandsKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+        }
+        return detail::errHandler(
+            pfn_clUpdateMutableCommandsKHR(object_, configs.size(),
+                                           config_types.data(), configs.data()),
+            __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+    }
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
 private:
