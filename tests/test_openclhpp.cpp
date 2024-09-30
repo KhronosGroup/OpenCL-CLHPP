@@ -408,6 +408,8 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+    cl::pfn_clCommandFillBufferKHR = ::clCommandFillBufferKHR;
+    cl::pfn_clCommandFillImageKHR = ::clCommandFillImageKHR;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
@@ -489,6 +491,8 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+    cl::pfn_clCommandFillBufferKHR = nullptr;
+    cl::pfn_clCommandFillImageKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -4143,6 +4147,83 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+static cl_int clCommandFillBufferKHR_testcommandFillBuffer(cl_command_buffer_khr command_buffer, cl_command_queue command_queue, cl_mem buffer,
+    const void* pattern, size_t pattern_size, size_t offset, size_t size, cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list, cl_sync_point_khr* sync_point, cl_mutable_command_khr* mutable_handle, int num_calls)
+{
+    TEST_ASSERT_EQUAL(512, size);
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer,commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL(buffer, bufferPool[0]());
+    TEST_ASSERT_EQUAL(pattern_size, sizeof(float));
+    TEST_ASSERT_EQUAL(offset, 0);
+    TEST_ASSERT_EQUAL(num_sync_points_in_wait_list, 2);
+    TEST_ASSERT_EQUAL(*(float*)pattern, 256);
+    TEST_ASSERT_EQUAL(sync_point_wait_list[0], 1);
+    TEST_ASSERT_EQUAL(sync_point_wait_list[1], 2);
+    TEST_ASSERT_EQUAL_PTR(mutable_handle, nullptr);
+    TEST_ASSERT_NOT_EQUAL(sync_point, nullptr);
+    *sync_point = 5;
+
+    return CL_SUCCESS;
+}
+
+void testCommandFillBuffer(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl_int ret = CL_INVALID_CONTEXT;
+    float pattern = 256;
+    size_t  offset = 0;
+    size_t size = 512;
+    cl_sync_point_khr sync_point = 0;
+    cl::vector<cl_sync_point_khr> sync_points_vec = {1, 2};
+    
+    clCommandFillBufferKHR_StubWithCallback(clCommandFillBufferKHR_testcommandFillBuffer);
+    ret = commandBufferKhrPool[0].commandFillBuffer(bufferPool[0], pattern, offset, size, &sync_points_vec,
+                                                           &sync_point, nullptr, nullptr);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(5, sync_point);
+#endif
+}
+
+static cl_int clcommandFillImageKHR_testcommandFillImage(cl_command_buffer_khr command_buffer, cl_command_queue command_queue, cl_mem image, const void* fill_color, 
+    const size_t* origin, const size_t* region, cl_uint num_sync_points_in_wait_list,
+    const cl_sync_point_khr* sync_point_wait_list, cl_sync_point_khr* sync_point, cl_mutable_command_khr* mutable_handle, int num_calls)
+{
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL_PTR(command_queue,nullptr);
+    TEST_ASSERT_EQUAL(origin[0], 16);
+    TEST_ASSERT_EQUAL(region[0], 512);
+    TEST_ASSERT_EQUAL(num_sync_points_in_wait_list, 2);
+    TEST_ASSERT_EQUAL(sync_point_wait_list[0], 1);
+    TEST_ASSERT_EQUAL(sync_point_wait_list[1], 4);
+    TEST_ASSERT_EQUAL_PTR(mutable_handle, nullptr);
+    TEST_ASSERT_NOT_EQUAL(sync_point, nullptr);
+    *sync_point = 5;
+
+    return CL_SUCCESS;
+}
+
+void testCommandFillImage(void)
+{
+#if defined(cl_khr_command_buffer)
+    cl_int ret = CL_INVALID_CONTEXT;
+    cl_float4 Color = { 0.5f, 0.75f, 1.0f, 1.0f };
+    const std::array<cl::size_type, 3> origin = {16, 32, 0};
+    const std::array<cl::size_type, 3> region = {512, 512, 0};
+    cl_sync_point_khr sync_point = 0;
+    const cl::vector<cl_sync_point_khr> sync_points_vec = {1, 4};
+    
+    clCommandFillImageKHR_StubWithCallback(clcommandFillImageKHR_testcommandFillImage);
+    ret = commandBufferKhrPool[0].commandFillImage(image2DPool[0], Color, origin, region, &sync_points_vec,
+                                                           &sync_point, nullptr, nullptr);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(5, sync_point);
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
