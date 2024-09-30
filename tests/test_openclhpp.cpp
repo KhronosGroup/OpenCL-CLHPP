@@ -408,6 +408,7 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+    cl::pfn_clEnqueueCommandBufferKHR = ::clEnqueueCommandBufferKHR;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
@@ -489,6 +490,7 @@ void tearDown(void)
     cl::pfn_clRetainCommandBufferKHR = nullptr;
     cl::pfn_clReleaseCommandBufferKHR = nullptr;
     cl::pfn_clGetCommandBufferInfoKHR = nullptr;
+    cl::pfn_clEnqueueCommandBufferKHR = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = nullptr;
@@ -4143,6 +4145,73 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+static cl_int clEnqueueCommandBufferKHR_testEnqueueCommandBuffer(
+    cl_uint num_queues,
+    cl_command_queue* queues,
+    cl_command_buffer_khr command_buffer,
+    cl_uint num_events_in_wait_list,
+    const cl_event* event_wait_list,
+    cl_event* event,
+    cl_int cmock_to_return)
+{
+    TEST_ASSERT_EQUAL_PTR(queues[0], commandQueuePool[0]());
+
+    switch (cmock_to_return)
+    {
+    case 0:
+    {
+        TEST_ASSERT_EQUAL_PTR(command_buffer, commandBufferKhrPool[0]());
+        TEST_ASSERT_EQUAL(1, num_queues);
+        TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+        TEST_ASSERT_NOT_NULL(event_wait_list);
+        TEST_ASSERT_NOT_NULL(event);
+        *event = make_event(1);
+
+        return CL_SUCCESS;
+    }
+    case 1:
+    {
+        TEST_ASSERT_EQUAL(command_buffer, nullptr);
+        TEST_ASSERT_EQUAL(2, num_queues);
+        TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
+        TEST_ASSERT_EQUAL_PTR(nullptr, event);
+        return CL_INVALID_COMMAND_BUFFER_KHR;
+    }
+    }
+    return CL_SUCCESS;
+}
+
+void testEnqueueCommandBuffer(void)
+{
+#if defined(cl_khr_command_buffer)
+    std::vector<cl::CommandQueue> command_queues;
+    command_queues.emplace_back(commandQueuePool[0]());
+
+    std::vector<cl::Event> events;
+    events.emplace_back(make_event(1));
+
+    cl::Event event;
+
+    clEnqueueCommandBufferKHR_StubWithCallback(clEnqueueCommandBufferKHR_testEnqueueCommandBuffer);
+    
+    cl_int ret = commandBufferKhrPool[0].enqueueCommandBuffer(command_queues, &events, &event);
+    TEST_ASSERT_EQUAL(ret, CL_SUCCESS);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+
+    cl::CommandBufferKhr notValidCommandBuffer;
+    command_queues.emplace_back(commandQueuePool[1]());
+
+    ret = notValidCommandBuffer.enqueueCommandBuffer(command_queues, nullptr, nullptr);
+    TEST_ASSERT_EQUAL(ret, CL_INVALID_COMMAND_BUFFER_KHR);
+
+    command_queues[0]() = nullptr;
+    command_queues[1]() = nullptr;
+    events[0]() = nullptr;
+    event() = nullptr;
+#endif
+}
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
