@@ -11882,7 +11882,7 @@ public:
                                       __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
         }
         return detail::errHandler(
-            pfn_clUpdateMutableCommandsKHR(object_, configs.size(),
+            pfn_clUpdateMutableCommandsKHR(object_, static_cast<cl_uint>(configs.size()),
                                            config_types.data(), configs.data()),
             __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
