@@ -412,8 +412,9 @@ void setUp(void)
     cl::pfn_clRetainCommandBufferKHR = ::clRetainCommandBufferKHR;
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
+#endif
+#if defined(cl_khr_command_buffer_mutable_dispatch)
     cl::pfn_clUpdateMutableCommandsKHR = ::clUpdateMutableCommandsKHR;
-    cl::pfn_clUpdateMutableCommandsKHR = clUpdateMutableCommandsKHR;
     cl::pfn_clGetMutableCommandInfoKHR = ::clGetMutableCommandInfoKHR;
 #endif
 #if defined(cl_khr_semaphore)
@@ -4158,6 +4159,8 @@ void testCommandBufferInfoKHRCommandQueues(void)
  ****************************************************************************/
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
 static cl_int clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands(
     cl_command_buffer_khr command_buffer,
     const cl_mutable_base_config_khr *mutable_config, int num_calls) {
@@ -4167,16 +4170,45 @@ static cl_int clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableComman
                       CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR);
     return CL_SUCCESS;
 }
+#else
+static cl_int clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands(
+    cl_command_buffer_khr command_buffer,
+    unsigned int length, const cl_command_buffer_update_type_khr* types, const void** configs,
+    int num_calls) {
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL(length, 1u);
+    TEST_ASSERT_EQUAL(types[0], CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR);
+
+    const void* config = configs[0];
+    cl_mutable_dispatch_config_khr casted_config = *static_cast<const cl_mutable_dispatch_config_khr*>(config);
+    cl_mutable_dispatch_config_khr default_config{};
+
+    TEST_ASSERT_EQUAL(std::memcmp(&casted_config, &default_config, sizeof(cl_mutable_dispatch_config_khr)), 0);
+    return CL_SUCCESS;
+}
+#endif
 
 void testCommandBufferKhrUpdateMutableCommands() {
     cl_int response = CL_INVALID_OPERATION;
-    cl_mutable_dispatch_config_khr dispatch_list;
+    cl_mutable_dispatch_config_khr dispatch_list{};
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
     cl_mutable_base_config_khr config = {
         CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR, &config, 1, &dispatch_list};
-
     clUpdateMutableCommandsKHR_StubWithCallback(
         clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands);
     response = commandBufferKhrPool[0].updateMutableCommands(&config);
+#else
+    cl_uint num_configs = 1;
+    std::array<cl_command_buffer_update_type_khr, 1> config_types = {{
+            CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR
+    }};
+    std::array<const void*, 1> configs = {&dispatch_list};
+    clUpdateMutableCommandsKHR_StubWithCallback(
+        clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands);
+    response = commandBufferKhrPool[0].updateMutableCommands<1>(config_types, configs);
+#endif
     TEST_ASSERT_EQUAL(CL_SUCCESS, response);
 }
 
@@ -4246,26 +4278,36 @@ static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoPropertiesA
     int num_calls)
 {
     TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
+  using properties_type = cl_ndrange_kernel_command_properties_khr;
+  cl_mutable_command_info_khr properties_query = CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR;
+#else
+  using properties_type = cl_command_properties_khr;
+  cl_mutable_command_info_khr properties_query = CL_MUTABLE_COMMAND_PROPERTIES_ARRAY_KHR;
+#endif
     switch (num_calls)
     {
     case 0:
-        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR);
-        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl_ndrange_kernel_command_properties_khr));
+
+        TEST_ASSERT_EQUAL(param_name, properties_query);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(properties_type));
         if (param_value_size_ret != nullptr)
         {
-            *param_value_size_ret = 3 * sizeof(cl_ndrange_kernel_command_properties_khr);
+            *param_value_size_ret = 3 * sizeof(properties_type);
         }
         break;
     case 1:
-        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR);
-        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl_ndrange_kernel_command_properties_khr));
+        TEST_ASSERT_EQUAL(param_name, properties_query);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(properties_type));
         TEST_ASSERT_EQUAL(nullptr, param_value_size_ret);
         if (param_value != nullptr)
         {
-            cl_ndrange_kernel_command_properties_khr properties[] = { 1, 2, 3 };
+            properties_type properties[] = { 1, 2, 3 };
             for (int i = 0; i < 3; i++)
             {
-                *(&static_cast<cl_ndrange_kernel_command_properties_khr*>(param_value)[i]) = properties[i];
+                *(&static_cast<properties_type*>(param_value)[i]) = properties[i];
             }
         }
         break;
@@ -4279,8 +4321,13 @@ void testMutableCommandKhrGetInfoPropertiesArray()
     cl_int err = CL_DEVICE_NOT_FOUND;
 
     clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoPropertiesArray);
-
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
     cl::vector<cl_ndrange_kernel_command_properties_khr> kernel_properties = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR>(&err);
+#else
+    cl::vector<cl_command_properties_khr> kernel_properties = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_COMMAND_PROPERTIES_ARRAY_KHR>(&err);
+#endif
+
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(3, kernel_properties.size());
     for (int i = 0; i < kernel_properties.size(); i++)
