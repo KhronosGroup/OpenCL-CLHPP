@@ -13,6 +13,7 @@ extern "C"
 #include <cmock.h>
 #include "Mockcl.h"
 #include "Mockcl_ext.h"
+#include "Mockcl_gl.h"
 #include <string.h>
 
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
@@ -293,11 +294,11 @@ private:
 public:
     RefcountTable() : n(0), objects(nullptr), refcounts(nullptr) {}
 
-    void init(size_t n, void * const *objects, int *refcounts)
+    void init(size_t n_, void * const *objects_, int *refcounts_)
     {
-        this->n = n;
-        this->objects = objects;
-        this->refcounts = refcounts;
+        n = n_;
+        objects = objects_;
+        refcounts = refcounts_;
     }
 
     void reset()
@@ -433,6 +434,10 @@ void setUp(void)
 
 #if defined(cl_ext_image_requirements_info)
     cl::pfn_clGetImageRequirementsInfoEXT = ::clGetImageRequirementsInfoEXT;
+#endif
+
+#if defined(cl_ext_device_fission)
+    cl::pfn_clCreateSubDevicesEXT = ::clCreateSubDevicesEXT;
 #endif
 
     /* We reach directly into the objects rather than using assignment to
@@ -1209,8 +1214,7 @@ static cl_mem clCreateBuffer_testBufferConstructorContextIterator(
     (void) num_calls;
 
     TEST_ASSERT_EQUAL_PTR(make_context(0), context);
-    TEST_ASSERT_BITS(CL_MEM_COPY_HOST_PTR, flags, !CL_MEM_COPY_HOST_PTR);
-    TEST_ASSERT_BITS(CL_MEM_READ_ONLY, flags, CL_MEM_READ_ONLY);
+    TEST_ASSERT_EQUAL(flags, CL_MEM_READ_ONLY);
     TEST_ASSERT_EQUAL(sizeof(int)*1024, size);
     TEST_ASSERT_NULL(host_ptr);
     if (errcode_ret)
@@ -1634,6 +1638,55 @@ void testCreateImage2D_1_2(void)
     image() = nullptr;
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+static cl_mem clCreateImageWithProperties_testImage2DWithProperties(
+    cl_context context, const cl_mem_properties *properties, cl_mem_flags flags,
+    const cl_image_format *image_format, const cl_image_desc *image_desc,
+    void *host_ptr, cl_int *errcode_ret, int num_calls) {
+  TEST_ASSERT_EQUAL(0, num_calls);
+  TEST_ASSERT_EQUAL_PTR(contextPool[0](), context);
+  TEST_ASSERT_NOT_NULL(properties);
+  TEST_ASSERT_EQUAL(CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, properties[0]);
+  TEST_ASSERT_EQUAL(42, properties[1]);
+  TEST_ASSERT_EQUAL(0, properties[2]);
+  TEST_ASSERT_EQUAL(CL_MEM_READ_WRITE, flags);
+  TEST_ASSERT_NOT_NULL(image_format);
+  TEST_ASSERT_EQUAL(CL_RGBA, image_format->image_channel_order);
+  TEST_ASSERT_EQUAL(CL_UNORM_INT8, image_format->image_channel_data_type);
+  TEST_ASSERT_NOT_NULL(image_desc);
+  TEST_ASSERT_EQUAL(CL_MEM_OBJECT_IMAGE2D, image_desc->image_type);
+  TEST_ASSERT_EQUAL(32, image_desc->image_width);
+  TEST_ASSERT_EQUAL(16, image_desc->image_height);
+  TEST_ASSERT_EQUAL(8, image_desc->image_row_pitch);
+
+  TEST_ASSERT_NULL(host_ptr);
+  if (errcode_ret)
+    *errcode_ret = CL_SUCCESS;
+
+  return make_mem(0);
+}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+
+void testImage2DWithProperties(void) {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+  clCreateImageWithProperties_StubWithCallback(
+      clCreateImageWithProperties_testImage2DWithProperties);
+
+  VECTOR_CLASS<cl_mem_properties> props = {
+      CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, 42, 0};
+  cl_int err;
+  cl::Image2D image(contextPool[0], props, CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_RGBA, CL_UNORM_INT8), 32, 16, 8, nullptr,
+                    &err);
+
+  TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+  TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+  // prevent destructor from interfering with the test
+  image() = nullptr;
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
 /****************************************************************************
  * Tests for cl::Image3D
  ****************************************************************************/
@@ -1758,6 +1811,56 @@ void testCreateImage3D_1_2(void)
     image() = nullptr;
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+static cl_mem clCreateImageWithProperties_testImage3DWithProperties(
+    cl_context context, const cl_mem_properties *properties, cl_mem_flags flags,
+    const cl_image_format *image_format, const cl_image_desc *image_desc,
+    void *host_ptr, cl_int *errcode_ret, int num_calls) {
+  TEST_ASSERT_EQUAL(0, num_calls);
+  TEST_ASSERT_EQUAL_PTR(contextPool[0](), context);
+  TEST_ASSERT_NOT_NULL(properties);
+  TEST_ASSERT_EQUAL(CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, properties[0]);
+  TEST_ASSERT_EQUAL(42, properties[1]);
+  TEST_ASSERT_EQUAL(0, properties[2]);
+  TEST_ASSERT_EQUAL(CL_MEM_READ_WRITE, flags);
+  TEST_ASSERT_NOT_NULL(image_format);
+  TEST_ASSERT_EQUAL(CL_RGBA, image_format->image_channel_order);
+  TEST_ASSERT_EQUAL(CL_UNORM_INT8, image_format->image_channel_data_type);
+  TEST_ASSERT_NOT_NULL(image_desc);
+  TEST_ASSERT_EQUAL(CL_MEM_OBJECT_IMAGE3D, image_desc->image_type);
+  TEST_ASSERT_EQUAL(32, image_desc->image_width);
+  TEST_ASSERT_EQUAL(16, image_desc->image_height);
+  TEST_ASSERT_EQUAL(8, image_desc->image_depth);
+  TEST_ASSERT_EQUAL(4, image_desc->image_row_pitch);
+  TEST_ASSERT_EQUAL(2, image_desc->image_slice_pitch);
+  TEST_ASSERT_NULL(host_ptr);
+  if (errcode_ret)
+    *errcode_ret = CL_SUCCESS;
+
+  return make_mem(0);
+}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+
+void testImage3DWithProperties(void) {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+  clCreateImageWithProperties_StubWithCallback(
+      clCreateImageWithProperties_testImage3DWithProperties);
+
+  VECTOR_CLASS<cl_mem_properties> props = {
+      CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, 42, 0};
+  cl_int err;
+  cl::Image3D image(contextPool[0], props, CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_RGBA, CL_UNORM_INT8), 32, 16, 8, 4, 2,
+                    nullptr, &err);
+
+  TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+  TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+  // prevent destructor from interfering with the test
+  image() = nullptr;
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
 /****************************************************************************
  * Tests for cl::Kernel
  ****************************************************************************/
@@ -1769,6 +1872,51 @@ MAKE_MOVE_TESTS(Kernel, make_kernel, clReleaseKernel, kernelPool)
 
 static cl_int scalarArg;
 static cl_int3 vectorArg;
+
+static cl_kernel clCreateKernel_constructor(
+    cl_program program,
+    const char* kernel_name,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL_STRING(kernel_name, "test");
+    if (errcode_ret != nullptr)
+        *errcode_ret = CL_SUCCESS;
+
+    return make_kernel(0);
+}
+
+void testKernelConstructor(void)
+{
+    clCreateKernel_StubWithCallback(clCreateKernel_constructor);
+
+    cl_int errorCode;
+    cl::Program program(make_program(0));
+    cl::Kernel kernel(program, "test", &errorCode);
+    TEST_ASSERT_EQUAL(kernel(), make_kernel(0));
+    TEST_ASSERT_EQUAL(errorCode, CL_SUCCESS);
+
+    program() = nullptr;
+    kernel() = nullptr;
+}
+
+void testKernelStringConstructor(void)
+{
+    clCreateKernel_StubWithCallback(clCreateKernel_constructor);
+
+    cl_int errorCode;
+    cl::string kernelName("test");
+    cl::Program program(make_program(0));
+    cl::Kernel kernel(program, kernelName, &errorCode);
+    TEST_ASSERT_EQUAL(kernel(), make_kernel(0));
+    TEST_ASSERT_EQUAL(errorCode, CL_SUCCESS);
+
+    program() = nullptr;
+    kernel() = nullptr;
+}
 
 void testKernelSetArgScalar(void)
 {
@@ -1798,7 +1946,7 @@ void testKernelSetArgLocal(void)
     kernelPool[0].setArg(2, cl::Local(123));
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
+void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     std::unique_ptr<int> buffer(new int(1000));
@@ -1807,7 +1955,7 @@ void testKernelSetArgBySetKernelArgSVMPointerWithUniquePtrType()
 #endif
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
+void testKernelSetArgBySetKernelArgSVMPointerWithVectorType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     VECTOR_CLASS<int> vec(1000);
@@ -1816,7 +1964,7 @@ void testKernelSetArgBySetKernelArgSVMPointerWithVectorType()
 #endif
 }
 
-void testKernelSetArgBySetKernelArgSVMPointerWithPointerType()
+void testKernelSetArgBySetKernelArgSVMPointerWithPointerType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl_mem *memory = &bufferPool[1]();
@@ -1863,12 +2011,12 @@ cl_int clSetKernelExecInfo_setSVMPointers(cl_kernel kernel,
     return CL_SUCCESS;
 }
 
-void testKernelSetSVMPointers()
+void testKernelSetSVMPointers(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_setSVMPointers);
   
-    cl::vector<void *> vec = { (void *)0xaabbccdd, (void *)0xddccbbaa };
+    cl::vector<void *> vec = { (void *)(size_t)0xaabbccdd, (void *)(size_t)0xddccbbaa };
     cl_int ret = kernelPool[0].setSVMPointers(vec);
 
     cl_int expected = CL_SUCCESS;
@@ -1889,7 +2037,7 @@ cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
 
     return CL_SUCCESS;
 }
-void testKernelEnableFineGrainedSystemSVM()
+void testKernelEnableFineGrainedSystemSVM(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     clSetKernelExecInfo_StubWithCallback(clSetKernelExecInfo_EnableFineGrainedSystemSVM);
@@ -2095,7 +2243,7 @@ void testGetBuildInfo(void)
     cl::Device dev(fakeDevice);
     
     cl_int err;
-    std::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
+    cl::string log = prog.getBuildInfo<CL_PROGRAM_BUILD_LOG>(dev, &err);
 
     prog() = nullptr;
     dev() = nullptr;
@@ -2115,7 +2263,9 @@ static cl_int clBuildProgram_testBuildProgram(
     TEST_ASSERT_EQUAL(program, make_program(0));
     TEST_ASSERT_NOT_EQUAL(num_devices, 0);
     TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
-    TEST_ASSERT_EQUAL(options, nullptr);
+    if (options) {
+        TEST_ASSERT_EQUAL_STRING(options, "-cl-program-build-options");
+    }
     TEST_ASSERT_EQUAL(pfn_notify, nullptr);
     TEST_ASSERT_EQUAL(user_data, nullptr);
 
@@ -2152,6 +2302,339 @@ void testBuildProgramSingleDevice(void)
     cl_int errcode = prog.build(dev);
 
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+}
+
+void testBuildProgramSingleDeviceWithOptions(void)
+{
+    cl_program program = make_program(0);
+    cl_device_id device_id = make_device_id(0);
+
+    // Creating a device queries the platform version:
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    clBuildProgram_StubWithCallback(clBuildProgram_testBuildProgram);
+
+    // Building the program queries the program build log:
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::Device dev(device_id);
+
+    cl_int errcode = prog.build(dev, "-cl-program-build-options");
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+}
+
+void testBuildProgramSingleDeviceWithStringOptions(void)
+{
+    cl_program program = make_program(0);
+    cl_device_id device_id = make_device_id(0);
+
+    // Creating a device queries the platform version:
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+
+    clBuildProgram_StubWithCallback(clBuildProgram_testBuildProgram);
+
+    // Building the program queries the program build log:
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::Device dev(device_id);
+
+    cl::string options("-cl-program-build-options");
+    cl_int errcode = prog.build(dev, options);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+}
+
+static cl_int clGetProgramInfo_forBuildLog(
+    cl_program         program,
+    cl_program_info    param_name,
+    size_t             param_value_size,
+    void *             param_value,
+    size_t *           param_value_size_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(param_name, CL_PROGRAM_DEVICES);
+    if (param_value_size) {
+        TEST_ASSERT_EQUAL(param_value_size, sizeof(cl_device_id));
+        TEST_ASSERT_NOT_EQUAL(param_value, nullptr);
+        *(cl_device_id*)param_value = make_device_id(0);
+    }
+    if (param_value_size_ret) {
+        *param_value_size_ret = sizeof(cl_device_id);
+    }
+    return CL_SUCCESS;
+}
+
+static cl_int clCompileProgram_basic(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_headers,
+    const cl_program *   input_headers,
+    const char **        header_include_names,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program,
+                                    void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    if (options) {
+        TEST_ASSERT_EQUAL_STRING(options, "-cl-program-compile-options");
+    }
+    TEST_ASSERT_EQUAL(num_input_headers, 0);
+    TEST_ASSERT_EQUAL(input_headers, nullptr);
+    TEST_ASSERT_EQUAL(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    return CL_SUCCESS;
+}
+
+void testCompileProgramBasic(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_basic);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile();
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+#endif
+}
+
+void testCompileProgramWithOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_basic);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile("-cl-program-compile-options");
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+#endif
+}
+
+void testCompileProgramWithStringOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_basic);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+
+    cl::Program prog(program);
+    cl::string options("-cl-program-compile-options");
+    cl_int errcode = prog.compile(options);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+#endif
+}
+
+static cl_int clCompileProgram_headers(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_headers,
+    const cl_program *   input_headers,
+    const char **        header_include_names,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program,
+                                    void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL_STRING(options, "");
+    TEST_ASSERT_EQUAL(num_input_headers, 2);
+    TEST_ASSERT_NOT_EQUAL(input_headers, nullptr);
+    TEST_ASSERT_NOT_EQUAL(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(input_headers[0], make_program(1));
+    TEST_ASSERT_EQUAL(input_headers[1], make_program(2));
+    TEST_ASSERT_EQUAL_STRING(header_include_names[0], "name0");
+    TEST_ASSERT_EQUAL_STRING(header_include_names[1], "name1");
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    return CL_SUCCESS;
+}
+
+void testCompileProgramHeaders(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+    cl_program header0 = make_program(1);
+    cl_program header1 = make_program(2);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_headers);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(header0, CL_SUCCESS);
+    clReleaseProgram_ExpectAndReturn(header1, CL_SUCCESS);
+
+    std::vector<cl::Program> inputHeaders;
+    inputHeaders.push_back(cl::Program(header0));
+    inputHeaders.push_back(cl::Program(header1));
+
+    std::vector<cl::string> headerIncludeNames;
+    headerIncludeNames.push_back("name0");
+    headerIncludeNames.push_back("name1");
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile("", inputHeaders, headerIncludeNames);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    // Clean up in a defined order
+    prog = nullptr;
+    inputHeaders[0] = nullptr;
+    inputHeaders[1] = nullptr;
+#endif
+}
+
+static cl_int clCompileProgram_devices(
+    cl_program           program,
+    cl_uint              num_devices,
+    const cl_device_id * device_list,
+    const char *         options,
+    cl_uint              num_input_headers,
+    const cl_program *   input_headers,
+    const char **        header_include_names,
+    void (CL_CALLBACK *  pfn_notify)(cl_program program,
+                                    void * user_data),
+    void *               user_data,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(program, make_program(0));
+    TEST_ASSERT_EQUAL(num_devices, 2);
+    TEST_ASSERT_NOT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(device_list[0], make_device_id(0));
+    TEST_ASSERT_EQUAL(device_list[1], make_device_id(1));
+    TEST_ASSERT_EQUAL_STRING(options, "");
+    TEST_ASSERT_EQUAL(num_input_headers, 0);
+    TEST_ASSERT_EQUAL(input_headers, nullptr);
+    TEST_ASSERT_EQUAL(header_include_names, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    return CL_SUCCESS;
+}
+
+void testCompileProgramDevices(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_program program = make_program(0);
+    cl_device_id device0 = make_device_id(0);
+    cl_device_id device1 = make_device_id(1);
+
+    clCompileProgram_StubWithCallback(clCompileProgram_devices);
+
+    // Compiling the program queries the program build log:
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_forBuildLog);
+    clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+    clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_2);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clRetainDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clGetProgramBuildInfo_StubWithCallback(clGetProgramBuildInfo_testGetBuildInfo);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+
+    clReleaseProgram_ExpectAndReturn(program, CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(0), CL_SUCCESS);
+    clReleaseDevice_ExpectAndReturn(make_device_id(1), CL_SUCCESS);
+
+    std::vector<cl::Device> deviceList;
+    deviceList.push_back(cl::Device(device0));
+    deviceList.push_back(cl::Device(device1));
+
+    cl::Program prog(program);
+    cl_int errcode = prog.compile("", deviceList);
+
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    // Clean up in a defined order
+    prog = nullptr;
+    deviceList[0] = nullptr;
+    deviceList[1] = nullptr;
+#endif
 }
 
 /**
@@ -2693,7 +3176,6 @@ static cl_int clGetKernelSubGroupInfo_testSubGroups(cl_kernel kernel,
     }
     else {
         TEST_ABORT();
-        return CL_INVALID_OPERATION;
     }
 }
 #endif
@@ -3263,7 +3745,7 @@ static cl_int clGetDeviceInfo_uuid_pci_bus_info(
                 (param_name == CL_DEVICE_UUID_KHR) ? 1 :
                 (param_name == CL_DRIVER_UUID_KHR) ? 2 :
                 0;
-            for (int i = 0; i < CL_UUID_SIZE_KHR; i++) {
+            for (cl_uchar i = 0; i < CL_UUID_SIZE_KHR; i++) {
                 pUUID[i] = i + start;
             }
         }
@@ -3287,7 +3769,7 @@ static cl_int clGetDeviceInfo_uuid_pci_bus_info(
         if (param_value_size == CL_LUID_SIZE_KHR && param_value) {
             cl_uchar* pLUID = static_cast<cl_uchar*>(param_value);
             cl_uchar start = 3;
-            for (int i = 0; i < CL_LUID_SIZE_KHR; i++) {
+            for (cl_uchar i = 0; i < CL_LUID_SIZE_KHR; i++) {
                 pLUID[i] = i + start;
             }
         }
@@ -3411,7 +3893,9 @@ static cl_program clLinkProgram_testLinkProgram(cl_context context,
     TEST_ASSERT_EQUAL_PTR(context, make_context(0));
     TEST_ASSERT_EQUAL(num_devices, 0);
     TEST_ASSERT_EQUAL(device_list, nullptr);
-    TEST_ASSERT_EQUAL(options, nullptr);
+    if (options) {
+        TEST_ASSERT_EQUAL_STRING(options, "-cl-program-link-options");
+    }
     TEST_ASSERT_NOT_EQUAL(num_input_programs, 0);
     for (int i=0; i<(int)num_input_programs; i++)
         TEST_ASSERT_EQUAL_PTR(input_programs[i], make_program(i));
@@ -3440,6 +3924,61 @@ void testLinkProgram(void)
 
     cl::Program prog = cl::linkProgram(cl::Program(make_program(0)), cl::Program(make_program(1)),
         nullptr, nullptr, nullptr, &errcode);
+
+    TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    prog() = nullptr;
+#endif
+}
+
+void testLinkProgramWithOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int errcode;
+    int refcount[] = {1,1};
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
+    clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
+
+    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    prepare_programRefcounts(2, reinterpret_cast<cl_program *>(programPool), refcount);
+
+    cl::Program prog = cl::linkProgram(
+        cl::Program(make_program(0)), cl::Program(make_program(1)),
+        "-cl-program-link-options", nullptr, nullptr, &errcode);
+
+    TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
+    TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
+
+    prog() = nullptr;
+#endif
+}
+
+void testLinkProgramWithStringOptions(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+    cl_int errcode;
+    int refcount[] = {1,1};
+
+    // verify if class cl::Program was not modified
+    TEST_ASSERT_EQUAL(sizeof(cl_program), sizeof(cl::Program));
+
+    clGetProgramInfo_StubWithCallback(clGetProgramInfo_testProgramGetContext);
+    clLinkProgram_StubWithCallback(clLinkProgram_testLinkProgram);
+
+    clRetainContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    clReleaseContext_ExpectAndReturn(make_context(0), CL_SUCCESS);
+    prepare_programRefcounts(2, reinterpret_cast<cl_program *>(programPool), refcount);
+
+    cl::string options("-cl-program-link-options");
+    cl::Program prog = cl::linkProgram(
+        cl::Program(make_program(0)), cl::Program(make_program(1)),
+        options, nullptr, nullptr, &errcode);
 
     TEST_ASSERT_EQUAL_PTR(prog(), make_program(0));
     TEST_ASSERT_EQUAL(errcode, CL_SUCCESS);
@@ -4000,7 +4539,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceVendorID()
+void testDevice_GetInfo_CLDeviceVendorID(void)
 {
     cl_uint expected = 0xABCD;
     clGetDeviceInfo_StubWithCallback(
@@ -4025,7 +4564,7 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceImageSupport(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceImageSupport()
+void testDevice_GetInfo_CLDeviceImageSupport(void)
 {
     cl_bool expected = true;
     clGetDeviceInfo_StubWithCallback(
@@ -4053,13 +4592,62 @@ static cl_int clGetInfo_testDeviceGetInfoCLDeviceName(
     }
     return CL_SUCCESS;
 }
-void testDevice_GetInfo_CLDeviceName()
+void testDevice_GetInfo_CLDeviceName(void)
 {
     cl::string expected = "testDeviceName";
     clGetDeviceInfo_StubWithCallback(clGetInfo_testDeviceGetInfoCLDeviceName);
     cl::string deviceName = devicePool[0].getInfo<CL_DEVICE_NAME>();
     TEST_ASSERT_EQUAL_STRING(expected.c_str(), deviceName.c_str());
-} 
+}
+
+#if defined(cl_ext_device_fission)
+static cl_int clCreateSubDevicesEXT_testDevice_createSubDevices(
+    cl_device_id device_in, const cl_device_partition_property_ext *properties,
+    cl_uint num_entries, cl_device_id *out_devices, cl_uint *num_devices, int cmock_num_calls)
+{
+    (void)cmock_num_calls;
+
+    TEST_ASSERT_EQUAL(CL_DEVICE_PARTITION_EQUALLY_EXT, *properties);
+    if (nullptr != out_devices && num_entries > 0) {
+        out_devices[0] = make_device_id(0);
+    }
+    if (nullptr != num_devices)
+    {
+        *num_devices = 1;
+    }
+    if (device_in == make_device_id(0)) {
+        return CL_SUCCESS;
+    }
+    else if (device_in == make_device_id(1)) {
+        return CL_INVALID_DEVICE;
+    }
+    else {
+        return CL_SUCCESS;
+    }
+}
+
+void testDevice_createSubDevices(void) {
+  const cl_device_partition_property_ext properties =
+      CL_DEVICE_PARTITION_EQUALLY_EXT;
+  std::vector<cl::Device> devices(1);
+
+  clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
+  clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_1_1);
+
+  clCreateSubDevicesEXT_StubWithCallback(
+      clCreateSubDevicesEXT_testDevice_createSubDevices);
+
+  cl_int ret = devicePool[0].createSubDevices(&properties, &devices);
+  TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+  ret = devicePool[1].createSubDevices(&properties, &devices);
+  TEST_ASSERT_EQUAL(CL_INVALID_DEVICE , ret);
+#endif /*CL_HPP_ENABLE_EXCEPTIONS*/
+  ret = devicePool[2].createSubDevices(&properties, &devices);
+  TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+  TEST_ASSERT_EQUAL(devices[0].get(), make_device_id(0));
+}
+#endif /*cl_ext_device_fission*/
 
 /****************************************************************************
  * Tests for cl::Semaphore
@@ -4069,7 +4657,7 @@ void testMoveAssignSemaphoreNonNull(void);
 void testMoveAssignSemaphoreNull(void);
 void testMoveConstructSemaphoreNonNull(void);
 void testMoveConstructSemaphoreNull(void);
-MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool);
+MAKE_MOVE_TESTS(Semaphore, make_semaphore_khr, clReleaseSemaphoreKHR, semaphorePool)
 #else
 void testMoveAssignSemaphoreNonNull(void) {}
 void testMoveAssignSemaphoreNull(void) {}
@@ -4376,6 +4964,7 @@ void testSemaphoreGetInfoPayload(void)
     TEST_ASSERT_EQUAL(1, ret);
 }
 
+#if defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
 static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     cl_semaphore_khr sema_object,
     cl_semaphore_info_khr param_name,
@@ -4388,7 +4977,7 @@ static cl_int clGetSemaphoreInfoKHR_testSemaphoreGetDevices(
     static const cl_device_id test_devices[] =
         {make_device_id(0), make_device_id(1)};
     TEST_ASSERT_EQUAL_PTR(semaphorePool[0](), sema_object);
-    TEST_ASSERT_EQUAL_HEX(CL_DEVICE_HANDLE_LIST_KHR, param_name);
+    TEST_ASSERT_EQUAL_HEX(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, param_name);
     TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(test_devices));
     if (param_value_size_ret != nullptr)
         *param_value_size_ret = sizeof(test_devices);
@@ -4413,13 +5002,16 @@ void testSemaphoreGetInfoDevicesList(void)
 
     cl_int err = CL_INVALID_OPERATION;
 
-    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_DEVICE_HANDLE_LIST_KHR>(&err);
+    VECTOR_CLASS<cl::Device> ret = semaphorePool[0].getInfo<CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR>(&err);
 
     TEST_ASSERT_EQUAL(CL_SUCCESS, err);
     TEST_ASSERT_EQUAL(2, ret.size());
     TEST_ASSERT_EQUAL(make_device_id(0), ret[0]());
     TEST_ASSERT_EQUAL(make_device_id(1), ret[1]());
 }
+#else
+void testSemaphoreGetInfoDevicesList(void) {}
+#endif
 
 void testSemaphoreRetain(void)
 {
@@ -4479,20 +5071,6 @@ static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
     (void) num_calls;
 
     switch (handle_type) {
-#if defined(cl_khr_external_semaphore_dx_fence)
-    case CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR:
-    {
-        void* ret = make_external_semaphore_handle(handle_type);
-        if (handle_size == sizeof(ret) && handle_ptr) {
-            void** pHandle = static_cast<void**>(handle_ptr);
-            *pHandle = ret;
-        }
-        if (handle_size_ret) {
-            *handle_size_ret = sizeof(ret);
-        }
-        return CL_SUCCESS;
-    }
-#endif
 #if defined(cl_khr_external_semaphore_win32)
     case CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR:
     case CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR:
@@ -4542,7 +5120,7 @@ static cl_int clGetSemaphoreHandleForTypeKHR_GetHandles(
     return CL_INVALID_OPERATION;
 }
 
-void testTemplateGetSemaphoreHandleForTypeKHR()
+void testTemplateGetSemaphoreHandleForTypeKHR(void)
 {
     clGetDeviceInfo_StubWithCallback(clGetDeviceInfo_platform);
     clGetPlatformInfo_StubWithCallback(clGetPlatformInfo_version_2_0);
@@ -4553,12 +5131,6 @@ void testTemplateGetSemaphoreHandleForTypeKHR()
     clGetSemaphoreHandleForTypeKHR_StubWithCallback(clGetSemaphoreHandleForTypeKHR_GetHandles);
 
     cl::Semaphore semaphore;
-#if defined(cl_khr_external_semaphore_dx_fence)
-    {
-        auto handle0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::D3D12Fence>(device);
-        TEST_ASSERT_EQUAL(handle0, make_external_semaphore_handle(cl::ExternalSemaphoreType::D3D12Fence));
-    }
-#endif
 #if defined(cl_khr_external_semaphore_opaque_fd)
     {
         auto fd0 = semaphore.getHandleForTypeKHR<cl::ExternalSemaphoreType::OpaqueFd>(device);
@@ -4724,7 +5296,7 @@ void clSVMFree_stubForMemoryAllocation(cl_context context, void *svm_pointer,
     TEST_ASSERT_EQUAL_PTR(svm_pointer, testMemory);
     delete[] (int*) svm_pointer; 
 }
-void testSVMMemoryAllocation()
+void testSVMMemoryAllocation(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
     cl::SVMAllocator<int, cl::SVMTraitCoarse<>> svmAllocator;
@@ -4805,7 +5377,7 @@ static cl_int clGetImageRequirementsInfoEXT_GetInfo(
     return CL_INVALID_OPERATION;
 }
 
-void testTemplateGetImageRequirementsInfo()
+void testTemplateGetImageRequirementsInfo(void)
 {
     cl::Context context(make_context(0));
     cl_device_id device_expect = make_device_id(0);
@@ -4850,4 +5422,75 @@ void testTemplateGetImageRequirementsInfo()
 void testTemplateGetImageRequirementsInfo() {}
 #endif // cl_ext_image_requirements_info
 
+static cl_mem clCreateFromGLBuffer_testgetObjectInfo(cl_context context,
+                                                     cl_mem_flags flags,
+                                                     cl_GLuint bufobj,
+                                                     cl_int *errcode_ret,
+                                                     int cmock_num_calls)
+{
+    (void) cmock_num_calls;
+
+    TEST_ASSERT_EQUAL(0, bufobj);
+    TEST_ASSERT_EQUAL_PTR(make_context(0), context);
+    TEST_ASSERT_EQUAL(0, flags);
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+    return make_mem(0);
+}
+
+static cl_int clGetGLObjectInfo_testgetObjectInfo(cl_mem memobj,
+                                                  cl_gl_object_type *type,
+                                                  cl_GLuint *gl_object_name,
+                                                  int cmock_num_calls)
+{
+    (void) cmock_num_calls;
+
+    TEST_ASSERT_EQUAL(memobj, make_mem(0));
+    *type = CL_GL_OBJECT_BUFFER;
+
+    *gl_object_name = 0;
+    return CL_SUCCESS;
+}
+
+void testgetObjectInfo(void)
+{
+    clGetGLObjectInfo_StubWithCallback(clGetGLObjectInfo_testgetObjectInfo);
+    clCreateFromGLBuffer_StubWithCallback(
+        clCreateFromGLBuffer_testgetObjectInfo);
+    clReleaseMemObject_ExpectAndReturn(make_mem(0), CL_SUCCESS);
+
+    cl_mem_flags flags = 0;
+    cl_GLuint bufobj = 0;
+    cl_int err = 0;
+    cl::BufferGL buffer(contextPool[0], flags, bufobj, &err);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    cl_gl_object_type type = CL_GL_OBJECT_TEXTURE2D_ARRAY;
+    err = buffer.getObjectInfo(&type, &bufobj);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
+    TEST_ASSERT_EQUAL(bufobj, 0);
+}
+#if CL_HPP_TARGET_OPENCL_VERSION >= 210
+static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
+                                              cl_ulong *host_timestamp,
+                                              int num_calls) {
+    TEST_ASSERT_EQUAL_PTR(devicePool[0](), device);
+    TEST_ASSERT_EQUAL(0, num_calls);
+    *host_timestamp = 1;
+    return 0;
+}
+
+void testgetHostTimer(void) {
+    cl_ulong retVal = 0;
+    cl_int *error = nullptr;
+
+    clGetHostTimer_StubWithCallback(clGetHostTimer_testgetHostTimer);
+    retVal = devicePool[0].getHostTimer(error);
+    TEST_ASSERT_EQUAL(retVal, 1);
+}
+#else
+void testgetHostTimer(void) {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 210
 } // extern "C"

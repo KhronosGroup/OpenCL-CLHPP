@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008-2023 The Khronos Group Inc.
+// Copyright (c) 2008-2024 The Khronos Group Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -1100,6 +1100,12 @@ CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clGetImageRequirementsInfoEXT);
 CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clGetImageRequirementsInfoEXT pfn_clGetImageRequirementsInfoEXT  = nullptr;
 #endif
 
+#if defined(cl_ext_device_fission)
+CL_HPP_CREATE_CL_EXT_FCN_PTR_ALIAS_(clCreateSubDevicesEXT);
+CL_HPP_DEFINE_STATIC_MEMBER_ PFN_clCreateSubDevicesEXT
+    pfn_clCreateSubDevicesEXT = nullptr;
+#endif
+
 namespace detail {
 
 // Generic getInfoHelper. The final parameter is used to guide overload
@@ -1136,7 +1142,6 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector<vector<unsigned char>>*
             return err;
         }
     }
-
 
     return CL_SUCCESS;
 }
@@ -1535,13 +1540,13 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 #define CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(F) \
     F(cl_device_info, CL_DEVICE_OPENCL_C_NUMERIC_VERSION_KHR, cl_version_khr)
 
+// Note: the query for CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR is handled specially!
 #define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(F) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_CONTEXT_KHR, cl::Context) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_REFERENCE_COUNT_KHR, cl_uint) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_PROPERTIES_KHR, cl::vector<cl_semaphore_properties_khr>) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_TYPE_KHR, cl_semaphore_type_khr) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_PAYLOAD_KHR, cl_semaphore_payload_khr) \
-    F(cl_semaphore_info_khr, CL_DEVICE_HANDLE_LIST_KHR, cl::vector<cl::Device>) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_TYPES_KHR,  cl::vector<cl_semaphore_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_TYPES_KHR,      cl::vector<cl_semaphore_type_khr>) \
 
@@ -1549,15 +1554,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>) \
     F(cl_platform_info, CL_PLATFORM_EXTERNAL_MEMORY_IMPORT_HANDLE_TYPES_KHR, cl::vector<cl::ExternalMemoryType>)
 
-#define CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(F) \
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_(F) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR,  cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_platform_info, CL_PLATFORM_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,  cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_IMPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_device_info, CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
-
-#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(F) \
-    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR, void*) \
 
 #define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(F) \
     F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR, int) \
@@ -1682,19 +1684,19 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTENDED_VERSIONING_KHRONLY_(CL_HPP_DECLARE_PARAM_TRAIT
 
 #if defined(cl_khr_semaphore)
 CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // cl_khr_semaphore
+#if defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_semaphore_info_khr, CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR, cl::vector<cl::Device>)
+#endif // defined(CL_SEMAPHORE_DEVICE_HANDLE_LIST_KHR)
+#endif // defined(cl_khr_semaphore)
 
 #ifdef cl_khr_external_memory
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_memory
 
 #if defined(cl_khr_external_semaphore)
-CL_HPP_PARAM_NAME_CL_KHR_SEMAPHORE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore
 
-#if defined(cl_khr_external_semaphore_dx_fence)
-CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
-#endif // cl_khr_external_semaphore_dx_fence
 #if defined(cl_khr_external_semaphore_opaque_fd)
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore_opaque_fd
@@ -1841,7 +1843,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_INTEGRATED_MEMORY_NV, cl_
 
 #if defined(cl_khr_command_buffer)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR, cl_device_command_buffer_capabilities_khr)
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR, cl_command_buffer_properties_khr)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR, cl_command_queue_properties)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_QUEUES_KHR, cl::vector<CommandQueue>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_NUM_QUEUES_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR, cl_uint)
@@ -1853,13 +1855,22 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPE
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBufferKhr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
+
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 2)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_PROPERTIES_ARRAY_KHR, cl::vector<cl_command_properties_khr>)
+#else
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR, cl::vector<cl_ndrange_kernel_command_properties_khr>)
+#endif
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_KERNEL_KHR, cl_kernel)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_DIMENSIONS_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR, cl::vector<size_type>)
 #endif /* cl_khr_command_buffer_mutable_dispatch */
+
+#if defined(cl_khr_kernel_clock)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR, cl_device_kernel_clock_capabilities_khr)
+#endif /* cl_khr_kernel_clock */
 
 // Convenience functions
 
@@ -2086,7 +2097,8 @@ struct ReferenceHandler<cl_mutable_command_khr>
 #endif // cl_khr_command_buffer
 
 
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#if (CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120) || \
+    (CL_HPP_TARGET_OPENCL_VERSION >= 200 && CL_HPP_MINIMUM_OPENCL_VERSION < 200)
 // Extracts version number with major in the upper 16 bits, minor in the lower 16
 static cl_uint getVersion(const vector<char> &versionInfo)
 {
@@ -2136,7 +2148,7 @@ static cl_uint getContextPlatformVersion(cl_context context)
     clGetContextInfo(context, CL_CONTEXT_DEVICES, size, devices.data(), nullptr);
     return getDevicePlatformVersion(devices[0]);
 }
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#endif // CL_HPP_TARGET_OPENCL_VERSION && CL_HPP_MINIMUM_OPENCL_VERSION
 
 template <typename T>
 class Wrapper
@@ -2245,18 +2257,16 @@ protected:
     static bool isReferenceCountable(cl_device_id device)
     {
         bool retVal = false;
-#if CL_HPP_TARGET_OPENCL_VERSION >= 120
-#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120 && CL_HPP_MINIMUM_OPENCL_VERSION < 120
         if (device != nullptr) {
             int version = getDevicePlatformVersion(device);
             if(version > ((1 << 16) + 1)) {
                 retVal = true;
             }
         }
-#else // CL_HPP_MINIMUM_OPENCL_VERSION < 120
+#elif CL_HPP_TARGET_OPENCL_VERSION >= 120
         retVal = true;
-#endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
-#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+#endif // CL_HPP_TARGET_OPENCL_VERSION
         (void)device;
         return retVal;
     }
@@ -3045,13 +3055,6 @@ inline cl_int Device::createSubDevices(const cl_device_partition_property* prope
 inline cl_int Device::createSubDevices(const cl_device_partition_property_ext* properties,
                         vector<Device>* devices)
 {
-    typedef CL_API_ENTRY cl_int(CL_API_CALL * PFN_clCreateSubDevicesEXT)(
-        cl_device_id /*in_device*/,
-        const cl_device_partition_property_ext* /* properties */,
-        cl_uint /*num_entries*/, cl_device_id* /*out_devices*/,
-        cl_uint* /*num_devices*/) CL_API_SUFFIX__VERSION_1_1;
-
-    static PFN_clCreateSubDevicesEXT pfn_clCreateSubDevicesEXT = nullptr;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl::Device device(object_);
     cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
@@ -3202,10 +3205,10 @@ private:
 #if defined(cl_ext_image_requirements_info)
     struct ImageRequirementsInfo {
 
-        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* properties, const ImageFormat* format, const cl_image_desc* desc)
+        ImageRequirementsInfo(cl_mem_flags f, const cl_mem_properties* mem_properties, const ImageFormat* format, const cl_image_desc* desc)
         {
             flags = f;
-            properties = properties;
+            properties = mem_properties;
             image_format = format;
             image_desc = desc;
         }
@@ -4105,8 +4108,12 @@ public:
         if (map && !(SVMTrait::getSVMMemFlags() & CL_MEM_SVM_FINE_GRAIN_BUFFER)) {
             cl_int err = enqueueMapSVM(retValue, CL_TRUE, CL_MAP_READ | CL_MAP_WRITE, size*sizeof(T));
             if (err != CL_SUCCESS) {
+                clSVMFree(context_(), retValue);
+                retValue = nullptr;
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
                 std::bad_alloc excep;
                 throw excep;
+#endif
             }
         }
 
@@ -4221,10 +4228,18 @@ cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Arg
 
     T* tmp = std::allocator_traits<Alloc>::allocate(alloc, copies);
     if (!tmp) {
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
         std::bad_alloc excep;
         throw excep;
+#else
+        return nullptr;
+#endif
     }
-    try {
+
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try
+#endif
+    {
         std::allocator_traits<Alloc>::construct(
             alloc,
             std::addressof(*tmp),
@@ -4232,11 +4247,13 @@ cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Arg
 
         return cl::pointer<T, detail::Deleter<Alloc>>(tmp, detail::Deleter<Alloc>{alloc, copies});
     }
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
     catch (std::bad_alloc&)
     {
         std::allocator_traits<Alloc>::deallocate(alloc, tmp, copies);
         throw;
     }
+#endif
 }
 
 template< class T, class SVMTrait, class... Args >
@@ -4828,6 +4845,42 @@ public:
     //! \brief Default constructor - initializes to nullptr.
     Image1D() { }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image1D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            void *host_ptr = nullptr, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D;
+      desc.image_width = width;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -4888,6 +4941,43 @@ public:
 
     Image1DBuffer() { }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1DBuffer with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param buffer Refer to a valid buffer or image memory object.
+     */
+    Image1DBuffer(const Context &context,
+                  const vector<cl_mem_properties> &properties,
+                  cl_mem_flags flags, ImageFormat format, size_type width,
+                  const Buffer &buffer, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+      desc.image_width = width;
+      desc.buffer = buffer();
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, nullptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, nullptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -4903,9 +4993,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
 };
 
 /*! \class Image1DArray
@@ -4947,7 +5034,47 @@ public:
     }
 
     Image1DArray() { }
-  
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1DArray with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image1DArray(const Context &context,
+                 const vector<cl_mem_properties> &properties,
+                 cl_mem_flags flags, ImageFormat format, size_type arraySize,
+                 size_type width, size_type rowPitch = 0,
+                 void *host_ptr = nullptr, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
+      desc.image_width = width;
+      desc.image_array_size = arraySize;
+      desc.image_row_pitch = rowPitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -5150,6 +5277,83 @@ public:
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image2D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image2D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            size_type height, size_type row_pitch = 0, void *host_ptr = nullptr,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_row_pitch = row_pitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+
+    /*! \brief Constructs a Image2D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param buffer Refer to a valid buffer or image memory object.
+     */
+    Image2D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, const Buffer &buffer,
+            size_type width, size_type height, size_type row_pitch = 0,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_row_pitch = row_pitch;
+      desc.buffer = buffer();
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, nullptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, nullptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     //! \brief Default constructor - initializes to nullptr.
     Image2D() { }
 
@@ -5172,10 +5376,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
-
 };
 
 
@@ -5292,6 +5492,49 @@ public:
         }
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image2DArray with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image2DArray(const Context &context,
+                 const vector<cl_mem_properties> &properties,
+                 cl_mem_flags flags, ImageFormat format, size_type arraySize,
+                 size_type width, size_type height, size_type rowPitch = 0,
+                 size_type slicePitch = 0, void *host_ptr = nullptr,
+                 cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_array_size = arraySize;
+      desc.image_row_pitch = rowPitch;
+      desc.image_slice_pitch = slicePitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     Image2DArray() { }
     
     /*! \brief Constructor from cl_mem - takes ownership.
@@ -5391,6 +5634,48 @@ public:
         }
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image3D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image3D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            size_type height, size_type depth, size_type row_pitch = 0,
+            size_type slice_pitch = 0, void *host_ptr = nullptr,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_depth = depth;
+      desc.image_row_pitch = row_pitch;
+      desc.image_slice_pitch = slice_pitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
     //! \brief Default constructor - initializes to nullptr.
     Image3D() : Image() { }
@@ -5913,6 +6198,7 @@ Local(size_type size)
 class Kernel : public detail::Wrapper<cl_kernel>
 {
 public:
+    inline Kernel(const Program& program, const string& name, cl_int* err = nullptr);
     inline Kernel(const Program& program, const char* name, cl_int* err = nullptr);
 
     //! \brief Default constructor - initializes to nullptr.
@@ -6391,7 +6677,6 @@ public:
         }
     }
 
-
 #if defined(CL_HPP_USE_IL_KHR) || CL_HPP_TARGET_OPENCL_VERSION >= 210
     /**
      * Program constructor to allow construction of program from SPIR-V or another IL.
@@ -6541,7 +6826,6 @@ public:
             return;
         }
 
-
         vector<size_type> lengths(numDevices);
         vector<const unsigned char*> images(numDevices);
 #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
@@ -6555,7 +6839,7 @@ public:
             lengths[i] = binaries[(int)i].second;
         }
 #endif // #if !defined(CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY)
-        
+
         vector<cl_device_id> deviceIDs(numDevices);
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
@@ -6564,7 +6848,7 @@ public:
         if(binaryStatus) {
             binaryStatus->resize(numDevices);
         }
-        
+
         object_ = ::clCreateProgramWithBinary(
             context(), (cl_uint) devices.size(),
             deviceIDs.data(),
@@ -6631,6 +6915,14 @@ public:
         return *this;
     }
 
+    cl_int build(
+        const vector<Device>& devices,
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return build(devices, options.c_str(), notifyFptr, data);
+    }
 
     cl_int build(
         const vector<Device>& devices,
@@ -6640,7 +6932,7 @@ public:
     {
         size_type numDevices = devices.size();
         vector<cl_device_id> deviceIDs(numDevices);
-        
+
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
             deviceIDs[deviceIndex] = (devices[deviceIndex])();
         }
@@ -6655,6 +6947,15 @@ public:
             data);
 
         return detail::buildErrHandler(buildError, __BUILD_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int build(
+        const Device& device,
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return build(device, options.c_str(), notifyFptr, data);
     }
 
     cl_int build(
@@ -6679,6 +6980,14 @@ public:
     }
 
     cl_int build(
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return build(options.c_str(), notifyFptr, data);
+    }
+
+    cl_int build(
         const char* options = nullptr,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
@@ -6696,6 +7005,14 @@ public:
 
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
     cl_int compile(
+        const string& options,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return compile(options.c_str(), notifyFptr, data);
+    }
+
+    cl_int compile(
         const char* options = nullptr,
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
         void* data = nullptr) const
@@ -6708,6 +7025,84 @@ public:
             0,
             nullptr,
             nullptr,
+            notifyFptr,
+            data);
+        return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int compile(
+        const string& options,
+        const vector<Program>& inputHeaders,
+        const vector<string>& headerIncludeNames,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return compile(options.c_str(), inputHeaders, headerIncludeNames, notifyFptr, data);
+    }
+
+    cl_int compile(
+        const char* options,
+        const vector<Program>& inputHeaders,
+        const vector<string>& headerIncludeNames,
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        static_assert(sizeof(cl::Program) == sizeof(cl_program),
+            "Size of cl::Program must be equal to size of cl_program");
+        vector<const char*> headerIncludeNamesCStr;
+        for(const string& name: headerIncludeNames) {
+            headerIncludeNamesCStr.push_back(name.c_str());
+        }
+        cl_int error = ::clCompileProgram(
+            object_,
+            0,
+            nullptr,
+            options,
+            static_cast<cl_uint>(inputHeaders.size()),
+            reinterpret_cast<const cl_program*>(inputHeaders.data()),
+            reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
+            notifyFptr,
+            data);
+        return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
+    }
+
+    cl_int compile(
+        const string& options,
+        const vector<Device>& deviceList,
+        const vector<Program>& inputHeaders = vector<Program>(),
+        const vector<string>& headerIncludeNames = vector<string>(),
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        return compile(options.c_str(), deviceList, inputHeaders, headerIncludeNames, notifyFptr, data);
+    }
+
+    cl_int compile(
+        const char* options,
+        const vector<Device>& deviceList,
+        const vector<Program>& inputHeaders = vector<Program>(),
+        const vector<string>& headerIncludeNames = vector<string>(),
+        void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+        void* data = nullptr) const
+    {
+        static_assert(sizeof(cl::Program) == sizeof(cl_program),
+            "Size of cl::Program must be equal to size of cl_program");
+        vector<const char*> headerIncludeNamesCStr;
+        for(const string& name: headerIncludeNames) {
+            headerIncludeNamesCStr.push_back(name.c_str());
+        }
+        vector<cl_device_id> deviceIDList;
+        for(const Device& device: deviceList) {
+            deviceIDList.push_back(device());
+        }
+        cl_int error = ::clCompileProgram(
+            object_,
+            static_cast<cl_uint>(deviceList.size()),
+            reinterpret_cast<const cl_device_id*>(deviceIDList.data()),
+            options,
+            static_cast<cl_uint>(inputHeaders.size()),
+            reinterpret_cast<const cl_program*>(inputHeaders.data()),
+            reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
             notifyFptr,
             data);
         return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
@@ -6928,6 +7323,17 @@ inline Program linkProgram(
 }
 
 inline Program linkProgram(
+    const Program& input1,
+    const Program& input2,
+    const string& options,
+    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+    void* data = nullptr,
+    cl_int* err = nullptr)
+{
+    return linkProgram(input1, input2, options.c_str(), notifyFptr, data, err);
+}
+
+inline Program linkProgram(
     const vector<Program>& inputPrograms,
     const char* options = nullptr,
     void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
@@ -6964,6 +7370,16 @@ inline Program linkProgram(
     }
 
     return Program(prog);
+}
+
+inline Program linkProgram(
+    const vector<Program>& inputPrograms,
+    const string& options,
+    void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
+    void* data = nullptr,
+    cl_int* err = nullptr)
+{
+    return linkProgram(inputPrograms, options.c_str(), notifyFptr, data, err);
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
 
@@ -7023,6 +7439,18 @@ inline cl_int cl::Program::setSpecializationConstant(cl_uint index, const bool &
 }
 #endif // CL_HPP_TARGET_OPENCL_VERSION >= 220
 
+inline Kernel::Kernel(const Program& program, const string& name, cl_int* err)
+{
+    cl_int error;
+
+    object_ = ::clCreateKernel(program(), name.c_str(), &error);
+    detail::errHandler(error, __CREATE_KERNEL_ERR);
+
+    if (err != nullptr) {
+        *err = error;
+    }
+}
+
 inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 {
     cl_int error;
@@ -7033,27 +7461,24 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
     if (err != nullptr) {
         *err = error;
     }
-
 }
 
 #ifdef cl_khr_external_memory
 enum class ExternalMemoryType : cl_external_memory_handle_type_khr
 {
     None = 0,
-
+#ifdef cl_khr_external_memory_opaque_fd
     OpaqueFd = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
+#endif // cl_khr_external_memory_opaque_fd
+#ifdef cl_khr_external_memory_win32
     OpaqueWin32 = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KHR,
     OpaqueWin32Kmt = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_WIN32_KMT_KHR,
-
-    D3D11Texture = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KHR,
-    D3D11TextureKmt = CL_EXTERNAL_MEMORY_HANDLE_D3D11_TEXTURE_KMT_KHR,
-
-    D3D12Heap = CL_EXTERNAL_MEMORY_HANDLE_D3D12_HEAP_KHR,
-    D3D12Resource = CL_EXTERNAL_MEMORY_HANDLE_D3D12_RESOURCE_KHR,
-
+#endif // cl_khr_external_memory_win32
+#ifdef cl_khr_external_memory_dma_buf
     DmaBuf = CL_EXTERNAL_MEMORY_HANDLE_DMA_BUF_KHR,
+#endif // cl_khr_external_memory_dma_buf
 };
-#endif
+#endif // cl_khr_external_memory
 
 enum class QueueProperties : cl_command_queue_properties
 {
@@ -10756,15 +11181,12 @@ namespace compatibility {
 enum ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 {
     None = 0,
-#ifdef cl_khr_external_semaphore_dx_fence
-    D3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
-#endif
 #ifdef cl_khr_external_semaphore_opaque_fd
     OpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
-#endif
+#endif // cl_khr_external_semaphore_opaque_fd
 #ifdef cl_khr_external_semaphore_sync_fd
     SyncFd = CL_SEMAPHORE_HANDLE_SYNC_FD_KHR,
-#endif
+#endif // cl_khr_external_semaphore_sync_fd
 #ifdef cl_khr_external_semaphore_win32
     OpaqueWin32 = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KHR,
     OpaqueWin32Kmt = CL_SEMAPHORE_HANDLE_OPAQUE_WIN32_KMT_KHR,
@@ -11102,6 +11524,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandBarrierWithWaitListKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
                 (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
@@ -11133,6 +11558,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_offset,
@@ -11173,6 +11601,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferRectKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11213,6 +11644,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferToImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_offset,
@@ -11249,6 +11683,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11285,6 +11722,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageToBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11321,6 +11761,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandFillBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 buffer(),
                 static_cast<void*>(&pattern),
                 sizeof(PatternType),
@@ -11356,6 +11799,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandFillImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 image(),
                 static_cast<void*>(&fillColor),
                 origin.data(),
@@ -11372,7 +11818,12 @@ public:
         return error;
     }
 
-    cl_int commandNDRangeKernel(const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+    cl_int commandNDRangeKernel(
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+            const cl::vector<cl_command_properties_khr> &properties,
+#else
+            const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+#endif
         const Kernel& kernel,
         const NDRange& offset,
         const NDRange& global,
@@ -11410,6 +11861,8 @@ public:
     }
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
     cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
     {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
@@ -11433,6 +11886,7 @@ public:
                                            config_types.data(), configs.data()),
             __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
+#endif /* CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION */
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
 private:
