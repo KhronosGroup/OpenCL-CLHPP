@@ -1849,7 +1849,7 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_INTEGRATED_MEMORY_NV, cl_
 
 #if defined(cl_khr_command_buffer)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMMAND_BUFFER_CAPABILITIES_KHR, cl_device_command_buffer_capabilities_khr)
-CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR, cl_command_buffer_properties_khr)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_COMMAND_BUFFER_REQUIRED_QUEUE_PROPERTIES_KHR, cl_command_queue_properties)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_QUEUES_KHR, cl::vector<CommandQueue>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_NUM_QUEUES_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_REFERENCE_COUNT_KHR, cl_uint)
@@ -1861,7 +1861,12 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_command_buffer_info_khr, CL_COMMAND_BUFFER_PROPE
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR, CommandQueue)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR, CommandBufferKhr)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR, cl_command_type)
+
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 2)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_COMMAND_PROPERTIES_ARRAY_KHR, cl::vector<cl_command_properties_khr>)
+#else
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR, cl::vector<cl_ndrange_kernel_command_properties_khr>)
+#endif
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_KERNEL_KHR, cl_kernel)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_DIMENSIONS_KHR, cl_uint)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR, cl::vector<size_type>)
@@ -4233,10 +4238,18 @@ cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Arg
 
     T* tmp = std::allocator_traits<Alloc>::allocate(alloc, copies);
     if (!tmp) {
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
         std::bad_alloc excep;
         throw excep;
+#else
+        return nullptr;
+#endif
     }
-    try {
+
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
+    try
+#endif
+    {
         std::allocator_traits<Alloc>::construct(
             alloc,
             std::addressof(*tmp),
@@ -4244,11 +4257,13 @@ cl::pointer<T, detail::Deleter<Alloc>> allocate_pointer(const Alloc &alloc_, Arg
 
         return cl::pointer<T, detail::Deleter<Alloc>>(tmp, detail::Deleter<Alloc>{alloc, copies});
     }
+#if defined(CL_HPP_ENABLE_EXCEPTIONS)
     catch (std::bad_alloc&)
     {
         std::allocator_traits<Alloc>::deallocate(alloc, tmp, copies);
         throw;
     }
+#endif
 }
 
 template< class T, class SVMTrait, class... Args >
@@ -4840,6 +4855,42 @@ public:
     //! \brief Default constructor - initializes to nullptr.
     Image1D() { }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image1D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            void *host_ptr = nullptr, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D;
+      desc.image_width = width;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -4900,6 +4951,43 @@ public:
 
     Image1DBuffer() { }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1DBuffer with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param buffer Refer to a valid buffer or image memory object.
+     */
+    Image1DBuffer(const Context &context,
+                  const vector<cl_mem_properties> &properties,
+                  cl_mem_flags flags, ImageFormat format, size_type width,
+                  const Buffer &buffer, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+      desc.image_width = width;
+      desc.buffer = buffer();
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, nullptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, nullptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -4915,9 +5003,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
 };
 
 /*! \class Image1DArray
@@ -4959,7 +5044,47 @@ public:
     }
 
     Image1DArray() { }
-  
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image1DArray with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image1DArray(const Context &context,
+                 const vector<cl_mem_properties> &properties,
+                 cl_mem_flags flags, ImageFormat format, size_type arraySize,
+                 size_type width, size_type rowPitch = 0,
+                 void *host_ptr = nullptr, cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
+      desc.image_width = width;
+      desc.image_array_size = arraySize;
+      desc.image_row_pitch = rowPitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     /*! \brief Constructor from cl_mem - takes ownership.
      *
      * \param retainObject will cause the constructor to retain its cl object.
@@ -5162,6 +5287,83 @@ public:
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 200
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image2D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image2D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            size_type height, size_type row_pitch = 0, void *host_ptr = nullptr,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_row_pitch = row_pitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+
+    /*! \brief Constructs a Image2D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param buffer Refer to a valid buffer or image memory object.
+     */
+    Image2D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, const Buffer &buffer,
+            size_type width, size_type height, size_type row_pitch = 0,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_row_pitch = row_pitch;
+      desc.buffer = buffer();
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, nullptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, nullptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     //! \brief Default constructor - initializes to nullptr.
     Image2D() { }
 
@@ -5184,10 +5386,6 @@ public:
         Image::operator=(rhs);
         return *this;
     }
-
-
-
-
 };
 
 
@@ -5304,6 +5502,49 @@ public:
         }
     }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image2DArray with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image2DArray(const Context &context,
+                 const vector<cl_mem_properties> &properties,
+                 cl_mem_flags flags, ImageFormat format, size_type arraySize,
+                 size_type width, size_type height, size_type rowPitch = 0,
+                 size_type slicePitch = 0, void *host_ptr = nullptr,
+                 cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_array_size = arraySize;
+      desc.image_row_pitch = rowPitch;
+      desc.image_slice_pitch = slicePitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+
     Image2DArray() { }
     
     /*! \brief Constructor from cl_mem - takes ownership.
@@ -5403,6 +5644,48 @@ public:
         }
 #endif // CL_HPP_MINIMUM_OPENCL_VERSION < 120
     }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    /*! \brief Constructs a Image3D with specified properties.
+     *
+     *  Wraps clCreateImageWithProperties().
+     *
+     *  \param properties Optional list of properties for the image object and
+     *                    their corresponding values. The non-empty list must
+     *                    end with 0.
+     *  \param host_ptr Storage to be used if the CL_MEM_USE_HOST_PTR flag was
+     *                  specified. Note alignment & exclusivity requirements.
+     */
+    Image3D(const Context &context, const vector<cl_mem_properties> &properties,
+            cl_mem_flags flags, ImageFormat format, size_type width,
+            size_type height, size_type depth, size_type row_pitch = 0,
+            size_type slice_pitch = 0, void *host_ptr = nullptr,
+            cl_int *err = nullptr) {
+      cl_int error;
+
+      cl_image_desc desc = {};
+      desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+      desc.image_width = width;
+      desc.image_height = height;
+      desc.image_depth = depth;
+      desc.image_row_pitch = row_pitch;
+      desc.image_slice_pitch = slice_pitch;
+
+      if (properties.empty()) {
+        object_ = ::clCreateImageWithProperties(
+            context(), nullptr, flags, &format, &desc, host_ptr, &error);
+      } else {
+        object_ =
+            ::clCreateImageWithProperties(context(), properties.data(), flags,
+                                          &format, &desc, host_ptr, &error);
+      }
+
+      detail::errHandler(error, __CREATE_IMAGE_ERR);
+      if (err != nullptr) {
+        *err = error;
+      }
+    }
+#endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
     //! \brief Default constructor - initializes to nullptr.
     Image3D() : Image() { }
@@ -10026,15 +10309,15 @@ inline cl_int copy( const CommandQueue &queue, IteratorType startIterator, Itera
     if( error != CL_SUCCESS ) {
         return error;
     }
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && _MSC_VER < 1920
     std::copy(
-        startIterator, 
-        endIterator, 
+        startIterator,
+        endIterator,
         stdext::checked_array_iterator<DataType*>(
             pointer, length));
 #else
     std::copy(startIterator, endIterator, pointer);
-#endif
+#endif // defined(_MSC_VER) && _MSC_VER < 1920
     Event endEvent;
     error = queue.enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
     // if exceptions enabled, enqueueUnmapMemObject will throw
@@ -11251,6 +11534,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandBarrierWithWaitListKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
                 (sync_points_vec != nullptr && sync_points_vec->size() > 0) ? &sync_points_vec->front() : nullptr,
                 (sync_point != nullptr) ? &tmp_sync_point : nullptr,
@@ -11282,6 +11568,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_offset,
@@ -11322,6 +11611,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferRectKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11362,6 +11654,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyBufferToImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_offset,
@@ -11398,6 +11693,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11434,6 +11732,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandCopyImageToBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 src(),
                 dst(),
                 src_origin.data(),
@@ -11470,6 +11771,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandFillBufferKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 buffer(),
                 static_cast<void*>(&pattern),
                 sizeof(PatternType),
@@ -11505,6 +11809,9 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandFillImageKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+                nullptr, // Properties
+#endif
                 image(),
                 static_cast<void*>(&fillColor),
                 origin.data(),
@@ -11521,7 +11828,12 @@ public:
         return error;
     }
 
-    cl_int commandNDRangeKernel(const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+    cl_int commandNDRangeKernel(
+#if CL_KHR_COMMAND_BUFFER_EXTENSION_VERSION > CL_MAKE_VERSION(0, 9, 4)
+            const cl::vector<cl_command_properties_khr> &properties,
+#else
+            const cl::vector<cl_ndrange_kernel_command_properties_khr> &properties,
+#endif
         const Kernel& kernel,
         const NDRange& offset,
         const NDRange& global,
@@ -11559,6 +11871,8 @@ public:
     }
 
 #if defined(cl_khr_command_buffer_mutable_dispatch)
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
     cl_int updateMutableCommands(const cl_mutable_base_config_khr* mutable_config)
     {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
@@ -11568,6 +11882,21 @@ public:
         return detail::errHandler(pfn_clUpdateMutableCommandsKHR(object_, mutable_config),
                         __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
+#else
+    template <int ArrayLength>
+    cl_int updateMutableCommands(std::array<cl_command_buffer_update_type_khr,
+                                            ArrayLength> &config_types,
+                                 std::array<void *, ArrayLength> &configs) {
+        if (pfn_clUpdateMutableCommandsKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION,
+                                      __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+        }
+        return detail::errHandler(
+            pfn_clUpdateMutableCommandsKHR(object_, configs.length(),
+                                           config_types.data().configs.data()),
+            __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
+    }
+#endif /* CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION */
 #endif /* cl_khr_command_buffer_mutable_dispatch */
 
 private:

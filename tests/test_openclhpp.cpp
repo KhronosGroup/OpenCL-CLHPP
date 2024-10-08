@@ -1629,6 +1629,55 @@ void testCreateImage2D_1_2(void)
     image() = nullptr;
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+static cl_mem clCreateImageWithProperties_testImage2DWithProperties(
+    cl_context context, const cl_mem_properties *properties, cl_mem_flags flags,
+    const cl_image_format *image_format, const cl_image_desc *image_desc,
+    void *host_ptr, cl_int *errcode_ret, int num_calls) {
+  TEST_ASSERT_EQUAL(0, num_calls);
+  TEST_ASSERT_EQUAL_PTR(contextPool[0](), context);
+  TEST_ASSERT_NOT_NULL(properties);
+  TEST_ASSERT_EQUAL(CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, properties[0]);
+  TEST_ASSERT_EQUAL(42, properties[1]);
+  TEST_ASSERT_EQUAL(0, properties[2]);
+  TEST_ASSERT_EQUAL(CL_MEM_READ_WRITE, flags);
+  TEST_ASSERT_NOT_NULL(image_format);
+  TEST_ASSERT_EQUAL(CL_RGBA, image_format->image_channel_order);
+  TEST_ASSERT_EQUAL(CL_UNORM_INT8, image_format->image_channel_data_type);
+  TEST_ASSERT_NOT_NULL(image_desc);
+  TEST_ASSERT_EQUAL(CL_MEM_OBJECT_IMAGE2D, image_desc->image_type);
+  TEST_ASSERT_EQUAL(32, image_desc->image_width);
+  TEST_ASSERT_EQUAL(16, image_desc->image_height);
+  TEST_ASSERT_EQUAL(8, image_desc->image_row_pitch);
+
+  TEST_ASSERT_NULL(host_ptr);
+  if (errcode_ret)
+    *errcode_ret = CL_SUCCESS;
+
+  return make_mem(0);
+}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+
+void testImage2DWithProperties(void) {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+  clCreateImageWithProperties_StubWithCallback(
+      clCreateImageWithProperties_testImage2DWithProperties);
+
+  VECTOR_CLASS<cl_mem_properties> props = {
+      CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, 42, 0};
+  cl_int err;
+  cl::Image2D image(contextPool[0], props, CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_RGBA, CL_UNORM_INT8), 32, 16, 8, nullptr,
+                    &err);
+
+  TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+  TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+  // prevent destructor from interfering with the test
+  image() = nullptr;
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
 /****************************************************************************
  * Tests for cl::Image3D
  ****************************************************************************/
@@ -1751,6 +1800,56 @@ void testCreateImage3D_1_2(void)
 
     context() = nullptr;
     image() = nullptr;
+}
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+static cl_mem clCreateImageWithProperties_testImage3DWithProperties(
+    cl_context context, const cl_mem_properties *properties, cl_mem_flags flags,
+    const cl_image_format *image_format, const cl_image_desc *image_desc,
+    void *host_ptr, cl_int *errcode_ret, int num_calls) {
+  TEST_ASSERT_EQUAL(0, num_calls);
+  TEST_ASSERT_EQUAL_PTR(contextPool[0](), context);
+  TEST_ASSERT_NOT_NULL(properties);
+  TEST_ASSERT_EQUAL(CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, properties[0]);
+  TEST_ASSERT_EQUAL(42, properties[1]);
+  TEST_ASSERT_EQUAL(0, properties[2]);
+  TEST_ASSERT_EQUAL(CL_MEM_READ_WRITE, flags);
+  TEST_ASSERT_NOT_NULL(image_format);
+  TEST_ASSERT_EQUAL(CL_RGBA, image_format->image_channel_order);
+  TEST_ASSERT_EQUAL(CL_UNORM_INT8, image_format->image_channel_data_type);
+  TEST_ASSERT_NOT_NULL(image_desc);
+  TEST_ASSERT_EQUAL(CL_MEM_OBJECT_IMAGE3D, image_desc->image_type);
+  TEST_ASSERT_EQUAL(32, image_desc->image_width);
+  TEST_ASSERT_EQUAL(16, image_desc->image_height);
+  TEST_ASSERT_EQUAL(8, image_desc->image_depth);
+  TEST_ASSERT_EQUAL(4, image_desc->image_row_pitch);
+  TEST_ASSERT_EQUAL(2, image_desc->image_slice_pitch);
+  TEST_ASSERT_NULL(host_ptr);
+  if (errcode_ret)
+    *errcode_ret = CL_SUCCESS;
+
+  return make_mem(0);
+}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
+
+void testImage3DWithProperties(void) {
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+  clCreateImageWithProperties_StubWithCallback(
+      clCreateImageWithProperties_testImage3DWithProperties);
+
+  VECTOR_CLASS<cl_mem_properties> props = {
+      CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR, 42, 0};
+  cl_int err;
+  cl::Image3D image(contextPool[0], props, CL_MEM_READ_WRITE,
+                    cl::ImageFormat(CL_RGBA, CL_UNORM_INT8), 32, 16, 8, 4, 2,
+                    nullptr, &err);
+
+  TEST_ASSERT_EQUAL_PTR(make_mem(0), image());
+  TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+  // prevent destructor from interfering with the test
+  image() = nullptr;
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 300
 }
 
 /****************************************************************************
