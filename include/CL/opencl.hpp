@@ -11876,14 +11876,14 @@ public:
     template <int ArrayLength>
     cl_int updateMutableCommands(std::array<cl_command_buffer_update_type_khr,
                                             ArrayLength> &config_types,
-                                 std::array<void *, ArrayLength> &configs) {
+                                 std::array<const void *, ArrayLength> &configs) {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
                                       __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
         }
         return detail::errHandler(
-            pfn_clUpdateMutableCommandsKHR(object_, configs.length(),
-                                           config_types.data().configs.data()),
+            pfn_clUpdateMutableCommandsKHR(object_, static_cast<cl_uint>(configs.size()),
+                                           config_types.data(), configs.data()),
             __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
 #endif /* CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION */

@@ -60,6 +60,10 @@ static inline cl_command_buffer_khr make_command_buffer_khr(int index)
     return (cl_command_buffer_khr)(size_t)(0x8f8f8f8f + index);
 }
 
+static inline cl_mutable_command_khr make_mutable_command_khr(int index) {
+    return (cl_mutable_command_khr)(size_t)(0x77777777 + index);
+}
+
 static inline cl_event make_event(int index)
 {
     return (cl_event)(size_t)(0xd0d0d0d0 + index);
@@ -85,6 +89,7 @@ static cl::Kernel kernelPool[POOL_MAX];
 static cl::Program programPool[POOL_MAX];
 #if defined(cl_khr_command_buffer)
 static cl::CommandBufferKhr commandBufferKhrPool[POOL_MAX];
+static cl::MutableCommandKhr mutableCommandKhrPool[POOL_MAX];
 #endif
 #if defined(cl_khr_semaphore)
 static cl::Semaphore semaphorePool[POOL_MAX];
@@ -347,8 +352,7 @@ MAKE_REFCOUNT_STUBS(cl_command_queue, clRetainCommandQueue, clReleaseCommandQueu
 MAKE_REFCOUNT_STUBS(cl_device_id, clRetainDevice, clReleaseDevice, deviceRefcounts)
 MAKE_REFCOUNT_STUBS(cl_context, clRetainContext, clReleaseContext, contextRefcounts)
 MAKE_REFCOUNT_STUBS(cl_mem, clRetainMemObject, clReleaseMemObject, memRefcounts)
-// Deactivated because unused for now.
-#if defined(cl_khr_command_buffer) && 0
+#if defined(cl_khr_command_buffer)
 MAKE_REFCOUNT_STUBS(cl_command_buffer_khr, clRetainCommandBufferKHR, clReleaseCommandBufferKHR, commandBufferKhrRefcounts)
 #endif
 
@@ -409,6 +413,10 @@ void setUp(void)
     cl::pfn_clReleaseCommandBufferKHR = ::clReleaseCommandBufferKHR;
     cl::pfn_clGetCommandBufferInfoKHR = ::clGetCommandBufferInfoKHR;
 #endif
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+    cl::pfn_clUpdateMutableCommandsKHR = ::clUpdateMutableCommandsKHR;
+    cl::pfn_clGetMutableCommandInfoKHR = ::clGetMutableCommandInfoKHR;
+#endif
 #if defined(cl_khr_semaphore)
     cl::pfn_clCreateSemaphoreWithPropertiesKHR = ::clCreateSemaphoreWithPropertiesKHR;
     cl::pfn_clReleaseSemaphoreKHR = ::clReleaseSemaphoreKHR;
@@ -449,6 +457,9 @@ void setUp(void)
 #if defined(cl_khr_command_buffer)
         commandBufferKhrPool[i]() = make_command_buffer_khr(i);
 #endif
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+        mutableCommandKhrPool[i]() = make_mutable_command_khr(i);
+#endif
 #if defined(cl_khr_semaphore)
         semaphorePool[i]() = make_semaphore_khr(i);
 #endif
@@ -477,6 +488,7 @@ void tearDown(void)
         devicePool[i]() = nullptr;
 #if defined(cl_khr_command_buffer)
         commandBufferKhrPool[i]() = nullptr;
+        mutableCommandKhrPool[i]() = nullptr;
 #endif
 #if defined(cl_khr_semaphore)
         semaphorePool[i]() = nullptr;
@@ -4143,6 +4155,421 @@ void testCommandBufferInfoKHRCommandQueues(void)
     TEST_ASSERT_EQUAL_PTR(make_command_queue(2), command_queues[2]());
 #endif
 }
+
+/****************************************************************************
+ * Tests for cl::MutableCommand
+ ****************************************************************************/
+
+#if defined(cl_khr_command_buffer_mutable_dispatch)
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
+static cl_int clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands(
+    cl_command_buffer_khr command_buffer,
+    const cl_mutable_base_config_khr *mutable_config, int num_calls) {
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL(mutable_config->type,
+                      CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR);
+    return CL_SUCCESS;
+}
+#else
+static cl_int clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands(
+    cl_command_buffer_khr command_buffer,
+    unsigned int length, const cl_command_buffer_update_type_khr* types, const void** configs,
+    int num_calls) {
+    (void)num_calls;
+    TEST_ASSERT_EQUAL(command_buffer, commandBufferKhrPool[0]());
+    TEST_ASSERT_EQUAL(length, 1u);
+    TEST_ASSERT_EQUAL(types[0], CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR);
+
+    const void* config = configs[0];
+    cl_mutable_dispatch_config_khr casted_config = *static_cast<const cl_mutable_dispatch_config_khr*>(config);
+    cl_mutable_dispatch_config_khr default_config{};
+
+    TEST_ASSERT_EQUAL(std::memcmp(&casted_config, &default_config, sizeof(cl_mutable_dispatch_config_khr)), 0);
+    return CL_SUCCESS;
+}
+#endif
+
+void testCommandBufferKhrUpdateMutableCommands(void) {
+    cl_int response = CL_INVALID_OPERATION;
+    cl_mutable_dispatch_config_khr dispatch_list{};
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
+    cl_mutable_base_config_khr config = {
+        CL_STRUCTURE_TYPE_MUTABLE_BASE_CONFIG_KHR, &config, 1, &dispatch_list};
+    clUpdateMutableCommandsKHR_StubWithCallback(
+        clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands);
+    response = commandBufferKhrPool[0].updateMutableCommands(&config);
+#else
+    constexpr cl_uint num_configs = 1;
+    std::array<cl_command_buffer_update_type_khr, num_configs> config_types = {{
+            CL_STRUCTURE_TYPE_MUTABLE_DISPATCH_CONFIG_KHR
+    }};
+    std::array<const void*, num_configs> configs = {&dispatch_list};
+    clUpdateMutableCommandsKHR_StubWithCallback(
+        clUpdateMutableCommandsKHR_testCommandBufferKhrUpdateMutableCommands);
+    response = commandBufferKhrPool[0].updateMutableCommands<num_configs>(config_types, configs);
+#endif
+    TEST_ASSERT_EQUAL(CL_SUCCESS, response);
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoCommandQueue(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* /*param_value_size_ret*/,
+    int /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_command_queue));
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_command_queue*>(param_value) = make_command_queue(0);
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoCommandQueue(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    int cmd_que_refcount = 1;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoCommandQueue);
+    prepare_commandQueueRefcounts(1, reinterpret_cast<cl_command_queue*>(&commandQueuePool[0]()), &cmd_que_refcount);
+
+    cl::CommandQueue command_queue = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_COMMAND_COMMAND_QUEUE_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(commandQueuePool[0](), command_queue());
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoCommandBuffer(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* /*param_value_size_ret*/,
+    int /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_command_buffer_khr));
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_command_buffer_khr*>(param_value) = make_command_buffer_khr(0);
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoCommandBuffer(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    int cmd_bhr_khr_refcount = 1;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoCommandBuffer);
+    prepare_commandBufferKhrRefcounts(1, reinterpret_cast<cl_command_buffer_khr*>(&commandBufferKhrPool[0]()), &cmd_bhr_khr_refcount);
+
+    cl::CommandBufferKhr command_buffer_khr = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_COMMAND_COMMAND_BUFFER_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(commandBufferKhrPool[0](), command_buffer_khr());
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoPropertiesArray(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
+  using properties_type = cl_ndrange_kernel_command_properties_khr;
+  cl_mutable_command_info_khr properties_query = CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR;
+#else
+  using properties_type = cl_command_properties_khr;
+  cl_mutable_command_info_khr properties_query = CL_MUTABLE_COMMAND_PROPERTIES_ARRAY_KHR;
+#endif
+    switch (num_calls)
+    {
+    case 0:
+
+        TEST_ASSERT_EQUAL(param_name, properties_query);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(properties_type));
+        if (param_value_size_ret != nullptr)
+        {
+            *param_value_size_ret = 3 * sizeof(properties_type);
+        }
+        break;
+    case 1:
+        TEST_ASSERT_EQUAL(param_name, properties_query);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(properties_type));
+        TEST_ASSERT_EQUAL(nullptr, param_value_size_ret);
+        if (param_value != nullptr)
+        {
+            properties_type properties[] = { 1, 2, 3 };
+            for (int i = 0; i < 3; i++)
+            {
+                *(&static_cast<properties_type*>(param_value)[i]) = properties[i];
+            }
+        }
+        break;
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoPropertiesArray(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoPropertiesArray);
+#if CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION <                 \
+    CL_MAKE_VERSION(0, 9, 2)
+    cl::vector<cl_ndrange_kernel_command_properties_khr> kernel_properties = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_PROPERTIES_ARRAY_KHR>(&err);
+#else
+    cl::vector<cl_command_properties_khr> kernel_properties = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_COMMAND_PROPERTIES_ARRAY_KHR>(&err);
+#endif
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(3, kernel_properties.size());
+    for (size_t i = 0; i < kernel_properties.size(); i++)
+    {
+        TEST_ASSERT_EQUAL(i + 1, kernel_properties[i]);
+    }
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoCommandType(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* /*param_value_size_ret*/,
+    int /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_command_type));
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_command_type*>(param_value) = 0xDEAD;
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoCommandType(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoCommandType);
+
+    cl_command_type command_type = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_COMMAND_COMMAND_TYPE_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(0xDEAD, command_type);
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoDispatchKernel(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* /*param_value_size_ret*/,
+    int /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_KERNEL_KHR);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_kernel));
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_kernel*>(param_value) = make_kernel(0);
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoDispatchKernel(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoDispatchKernel);
+
+    cl_kernel kernel = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_KERNEL_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(make_kernel(0), kernel);
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoDispatchDimensions(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* /*param_value_size_ret*/,
+    int /*num_calls*/)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_DIMENSIONS_KHR);
+    TEST_ASSERT(param_value == nullptr || param_value_size >= sizeof(cl_uint));
+    if (param_value != nullptr)
+    {
+        *static_cast<cl_uint*>(param_value) = 3;
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoDispatchDimensions(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoDispatchDimensions);
+
+    cl_uint dimensions = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_DIMENSIONS_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(3, dimensions);
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoGlobalWorkOffset(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    switch (num_calls)
+    {
+    case 0:
+        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR);
+        TEST_ASSERT_EQUAL(nullptr, param_value);
+        if (param_value_size_ret != nullptr)
+        {
+            *param_value_size_ret = 3 * sizeof(cl::size_type);
+        }
+        break;
+    case 1:
+        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl::size_type));
+        TEST_ASSERT_EQUAL(nullptr, param_value_size_ret);
+        TEST_ASSERT_NOT_NULL(param_value);
+        if (param_value != nullptr)
+        {
+            cl::size_type data[] = { 2, 3, 4 };
+            for (int i = 0; i < 3; i++)
+            {
+                *(&(static_cast<cl::size_type*>(param_value)[i])) = data[i];
+            }
+        }
+        break;
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoGlobalWorkOffset(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoGlobalWorkOffset);
+
+    cl::vector<cl::size_type> global_work_offset = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_GLOBAL_WORK_OFFSET_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(3, global_work_offset.size());
+    for (cl::size_type i = 0; i < global_work_offset.size(); i++)
+    {
+        TEST_ASSERT_EQUAL(i + 2, global_work_offset[i]);
+    }
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoGlobalWorkSize(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    switch (num_calls)
+    {
+    case 0:
+        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR);
+        TEST_ASSERT_EQUAL(nullptr, param_value);
+        if (param_value_size_ret != nullptr)
+        {
+            *param_value_size_ret = 3 * sizeof(cl::size_type);
+        }
+        break;
+    case 1:
+        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl::size_type));
+        TEST_ASSERT_EQUAL(nullptr, param_value_size_ret);
+        TEST_ASSERT_NOT_NULL(param_value);
+        if (param_value != nullptr)
+        {
+            cl::size_type data[] = { 3, 4, 5 };
+            for (cl::size_type i = 0; i < 3; i++)
+            {
+                *(&(static_cast<cl::size_type*>(param_value)[i])) = data[i];
+            }
+        }
+        break;
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoGlobalWorkSize(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoGlobalWorkSize);
+
+    cl::vector<cl::size_type> global_work_size = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_GLOBAL_WORK_SIZE_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(3, global_work_size.size());
+    for (cl::size_type i = 0; i < global_work_size.size(); i++)
+    {
+        TEST_ASSERT_EQUAL(i + 3, global_work_size[i]);
+    }
+}
+
+static cl_int clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoLocalWorkSize(
+    cl_mutable_command_khr command, cl_mutable_command_info_khr param_name,
+    size_t param_value_size, void* param_value, size_t* param_value_size_ret,
+    int num_calls)
+{
+    TEST_ASSERT_EQUAL(command, mutableCommandKhrPool[0]());
+    switch (num_calls)
+    {
+    case 0:
+        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR);
+        TEST_ASSERT_EQUAL(nullptr, param_value);
+        if (param_value_size_ret != nullptr)
+        {
+            *param_value_size_ret = 3 * sizeof(cl::size_type);
+        }
+        break;
+    case 1:
+        TEST_ASSERT_EQUAL(param_name, CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR);
+        TEST_ASSERT(param_value == nullptr || param_value_size >= 3 * sizeof(cl::size_type));
+        TEST_ASSERT_EQUAL(nullptr, param_value_size_ret);
+        TEST_ASSERT_NOT_NULL(param_value);
+        if (param_value != nullptr)
+        {
+            cl::size_type data[] = { 4, 5, 6 };
+            for (int i = 0; i < 3; i++)
+            {
+                *(&(static_cast<cl::size_type*>(param_value)[i])) = data[i];
+            }
+        }
+        break;
+    }
+
+    return CL_SUCCESS;
+}
+
+void testMutableCommandKhrGetInfoLocalWorkSize(void)
+{
+    cl_int err = CL_DEVICE_NOT_FOUND;
+
+    clGetMutableCommandInfoKHR_StubWithCallback(clGetMutableCommandInfoKHR_testMutableCommandKhrGetInfoLocalWorkSize);
+
+    cl::vector<cl::size_type> local_work_size = mutableCommandKhrPool[0].getInfo<CL_MUTABLE_DISPATCH_LOCAL_WORK_SIZE_KHR>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL(3, local_work_size.size());
+    for (cl::size_type i = 0; i < local_work_size.size(); i++)
+    {
+        TEST_ASSERT_EQUAL(i + 4, local_work_size[i]);
+    }
+}
+#endif
+
 // Tests for Device::GetInfo
 static cl_int clGetInfo_testDeviceGetInfoCLDeviceVendorId(
     cl_device_id device, cl_device_info param_name, size_t param_value_size,
