@@ -1608,6 +1608,12 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
 #define CL_HPP_PARAM_NAME_CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT(F) \
     F(cl_image_requirements_info_ext, CL_IMAGE_REQUIREMENTS_SLICE_PITCH_ALIGNMENT_EXT, size_type) \
 
+#define CL_HPP_PARAM_NAME_CL_INTEL_COMMAND_QUEUE_FAMILIES_(F) \
+    F(cl_device_info, CL_DEVICE_QUEUE_FAMILY_PROPERTIES_INTEL, cl::vector<cl_queue_family_properties_intel>) \
+    \
+    F(cl_command_queue_info, CL_QUEUE_FAMILY_INTEL, cl_uint) \
+    F(cl_command_queue_info, CL_QUEUE_INDEX_INTEL, cl_uint)
+
 #define CL_HPP_PARAM_NAME_CL_INTEL_UNIFIED_SHARED_MEMORY_(F) \
     F(cl_device_info, CL_DEVICE_HOST_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel ) \
     F(cl_device_info, CL_DEVICE_DEVICE_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel ) \
@@ -1879,10 +1885,23 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_LO
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR, cl_device_kernel_clock_capabilities_khr)
 #endif /* cl_khr_kernel_clock */
 
+#if defined(cl_intel_command_queue_families)
+CL_HPP_PARAM_NAME_CL_INTEL_COMMAND_QUEUE_FAMILIES_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_intel_command_queue_families
+
+#if defined(cl_intel_device_attribute_query)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_IP_VERSION_INTEL, cl_uint)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_ID_INTEL, cl_uint)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NUM_SLICES_INTEL, cl_uint)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NUM_SUB_SLICES_PER_SLICE_INTEL, cl_uint)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NUM_EUS_PER_SUB_SLICE_INTEL, cl_uint)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NUM_THREADS_PER_EU_INTEL, cl_uint)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_FEATURE_CAPABILITIES_INTEL, cl_device_feature_capabilities_intel)
+#endif // cl_intel_device_attribute_query
+
 #if defined(cl_intel_unified_shared_memory)
 CL_HPP_PARAM_NAME_CL_INTEL_UNIFIED_SHARED_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_intel_unified_shared_memory
-
 // Convenience functions
 
 template <typename Func, typename T>
@@ -11887,14 +11906,14 @@ public:
     template <int ArrayLength>
     cl_int updateMutableCommands(std::array<cl_command_buffer_update_type_khr,
                                             ArrayLength> &config_types,
-                                 std::array<void *, ArrayLength> &configs) {
+                                 std::array<const void *, ArrayLength> &configs) {
         if (pfn_clUpdateMutableCommandsKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
                                       __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
         }
         return detail::errHandler(
-            pfn_clUpdateMutableCommandsKHR(object_, configs.length(),
-                                           config_types.data().configs.data()),
+            pfn_clUpdateMutableCommandsKHR(object_, static_cast<cl_uint>(configs.size()),
+                                           config_types.data(), configs.data()),
             __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
 #endif /* CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION */
