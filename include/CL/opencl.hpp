@@ -1885,6 +1885,12 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_mutable_command_info_khr, CL_MUTABLE_DISPATCH_LO
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_KERNEL_CLOCK_CAPABILITIES_KHR, cl_device_kernel_clock_capabilities_khr)
 #endif /* cl_khr_kernel_clock */
 
+#if defined(cl_ext_float_atomics)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SINGLE_FP_ATOMIC_CAPABILITIES_EXT, cl_device_fp_atomic_capabilities_ext)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_DOUBLE_FP_ATOMIC_CAPABILITIES_EXT, cl_device_fp_atomic_capabilities_ext)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_HALF_FP_ATOMIC_CAPABILITIES_EXT, cl_device_fp_atomic_capabilities_ext)
+#endif /* cl_ext_float_atomics */
+
 #if defined(cl_intel_command_queue_families)
 CL_HPP_PARAM_NAME_CL_INTEL_COMMAND_QUEUE_FAMILIES_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_intel_command_queue_families
@@ -1899,9 +1905,15 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_NUM_THREADS_PER_EU_INTEL,
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_FEATURE_CAPABILITIES_INTEL, cl_device_feature_capabilities_intel)
 #endif // cl_intel_device_attribute_query
 
+#if defined(cl_intel_required_subgroup_size)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SUB_GROUP_SIZES_INTEL, cl::vector<size_type>)
+CL_HPP_DECLARE_PARAM_TRAITS_(cl_kernel_work_group_info, CL_KERNEL_SPILL_MEM_SIZE_INTEL, cl_ulong)
+#endif // cl_intel_required_subgroup_size
+
 #if defined(cl_intel_unified_shared_memory)
 CL_HPP_PARAM_NAME_CL_INTEL_UNIFIED_SHARED_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_intel_unified_shared_memory
+
 // Convenience functions
 
 template <typename Func, typename T>
