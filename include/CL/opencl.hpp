@@ -1614,6 +1614,13 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_command_queue_info, CL_QUEUE_FAMILY_INTEL, cl_uint) \
     F(cl_command_queue_info, CL_QUEUE_INDEX_INTEL, cl_uint)
 
+#define CL_HPP_PARAM_NAME_CL_INTEL_UNIFIED_SHARED_MEMORY_(F) \
+    F(cl_device_info, CL_DEVICE_HOST_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel ) \
+    F(cl_device_info, CL_DEVICE_DEVICE_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel ) \
+    F(cl_device_info, CL_DEVICE_SINGLE_DEVICE_SHARED_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel ) \
+    F(cl_device_info, CL_DEVICE_CROSS_DEVICE_SHARED_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel ) \
+    F(cl_device_info, CL_DEVICE_SHARED_SYSTEM_MEM_CAPABILITIES_INTEL, cl_device_unified_shared_memory_capabilities_intel )
+
 template <typename enum_type, cl_int Name>
 struct param_traits {};
 
@@ -1902,6 +1909,10 @@ CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_FEATURE_CAPABILITIES_INTE
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_device_info, CL_DEVICE_SUB_GROUP_SIZES_INTEL, cl::vector<size_type>)
 CL_HPP_DECLARE_PARAM_TRAITS_(cl_kernel_work_group_info, CL_KERNEL_SPILL_MEM_SIZE_INTEL, cl_ulong)
 #endif // cl_intel_required_subgroup_size
+
+#if defined(cl_intel_unified_shared_memory)
+CL_HPP_PARAM_NAME_CL_INTEL_UNIFIED_SHARED_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_intel_unified_shared_memory
 
 // Convenience functions
 
