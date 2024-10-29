@@ -3806,7 +3806,7 @@ public:
 
         return detail::errHandler(
             CL_(clWaitForEvents)(
-                (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : nullptr),
+                (cl_uint) events.size(), (events.size() > 0) ? (const cl_event*)&events.front() : nullptr),
             __WAIT_FOR_EVENTS_ERR);
     }
 };
@@ -3863,7 +3863,7 @@ WaitForEvents(const vector<Event>& events)
 {
     return detail::errHandler(
         CL_(clWaitForEvents)(
-            (cl_uint) events.size(), (events.size() > 0) ? (cl_event*)&events.front() : nullptr),
+            (cl_uint) events.size(), (events.size() > 0) ? (const cl_event*)&events.front() : nullptr),
         __WAIT_FOR_EVENTS_ERR);
 }
 
@@ -8076,7 +8076,7 @@ public:
                 object_, buffer(), blocking, offset, size,
                 ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_READ_BUFFER_ERR);
 
@@ -8101,7 +8101,7 @@ public:
                 object_, buffer(), blocking, offset, size,
                 ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
                 __ENQUEUE_WRITE_BUFFER_ERR);
 
@@ -8125,7 +8125,7 @@ public:
             CL_(clEnqueueCopyBuffer)(
                 object_, src(), dst(), src_offset, dst_offset, size,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQEUE_COPY_BUFFER_ERR);
 
@@ -8164,7 +8164,7 @@ public:
                 host_slice_pitch,
                 ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
                 __ENQUEUE_READ_BUFFER_RECT_ERR);
 
@@ -8232,7 +8232,7 @@ public:
                 host_slice_pitch,
                 ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
                 __ENQUEUE_WRITE_BUFFER_RECT_ERR);
 
@@ -8298,7 +8298,7 @@ public:
                 dst_row_pitch,
                 dst_slice_pitch,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQEUE_COPY_BUFFER_RECT_ERR);
 
@@ -8367,7 +8367,7 @@ public:
                 offset, 
                 size,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
                 __ENQUEUE_FILL_BUFFER_ERR);
 
@@ -8401,7 +8401,7 @@ public:
                 slice_pitch, 
                 ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_READ_IMAGE_ERR);
 
@@ -8457,7 +8457,7 @@ public:
                 slice_pitch, 
                 ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_WRITE_IMAGE_ERR);
 
@@ -8509,7 +8509,7 @@ public:
                 dst_origin.data(), 
                 region.data(),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_COPY_IMAGE_ERR);
 
@@ -8568,7 +8568,7 @@ public:
                 origin.data(),
                 region.data(),
                 (events != nullptr) ? (cl_uint)events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : NULL,
+                (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : NULL,
                 (event != NULL) ? &tmp : nullptr),
             __ENQUEUE_FILL_IMAGE_ERR);
 
@@ -8626,7 +8626,7 @@ public:
                 region.data(), 
                 dst_offset,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_COPY_IMAGE_TO_BUFFER_ERR);
 
@@ -8674,7 +8674,7 @@ public:
                 dst_origin.data(), 
                 region.data(),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_COPY_BUFFER_TO_IMAGE_ERR);
 
@@ -8718,7 +8718,7 @@ public:
         void * result = CL_(clEnqueueMapBuffer)(
             object_, buffer(), blocking, flags, offset, size,
             (events != nullptr) ? (cl_uint) events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr,
             &error);
 
@@ -8752,7 +8752,7 @@ public:
             region.data(),
             row_pitch, slice_pitch,
             (events != nullptr) ? (cl_uint) events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr,
             &error);
 
@@ -8957,7 +8957,7 @@ public:
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMap)(
             object_, blocking, flags, static_cast<void*>(ptr), size,
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_MAP_SVM_ERR);
 
@@ -8985,7 +8985,7 @@ public:
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMap)(
             object_, blocking, flags, static_cast<void*>(ptr.get()), size,
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_MAP_SVM_ERR);
 
@@ -9011,7 +9011,7 @@ public:
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMap)(
             object_, blocking, flags, static_cast<void*>(container.data()), container.size()*sizeof(T),
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_MAP_SVM_ERR);
 
@@ -9033,7 +9033,7 @@ public:
             CL_(clEnqueueUnmapMemObject)(
                 object_, memory(), mapped_ptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
 
@@ -9060,7 +9060,7 @@ public:
             CL_(clEnqueueSVMUnmap)(
             object_, static_cast<void*>(ptr),
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_UNMAP_SVM_ERR);
 
@@ -9085,7 +9085,7 @@ public:
             CL_(clEnqueueSVMUnmap)(
             object_, static_cast<void*>(ptr.get()),
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_UNMAP_SVM_ERR);
 
@@ -9110,7 +9110,7 @@ public:
             CL_(clEnqueueSVMUnmap)(
             object_, static_cast<void*>(container.data()),
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_UNMAP_SVM_ERR);
 
@@ -9142,7 +9142,7 @@ public:
             CL_(clEnqueueMarkerWithWaitList)(
                 object_,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_MARKER_WAIT_LIST_ERR);
 
@@ -9172,7 +9172,7 @@ public:
             CL_(clEnqueueBarrierWithWaitList)(
                 object_,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_BARRIER_WAIT_LIST_ERR);
 
@@ -9208,7 +9208,7 @@ public:
                 localMemObjects.data(),
                 flags,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
 
@@ -9241,7 +9241,7 @@ public:
             sizes.data(), // array of sizes not passed
             flags,
             (events != nullptr) ? (cl_uint)events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_MIGRATE_SVM_ERR);
 
@@ -9357,7 +9357,7 @@ public:
                 (const size_type*) global,
                 local.dimensions() != 0 ? (const size_type*) local : nullptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_NDRANGE_KERNEL_ERR);
 
@@ -9378,7 +9378,7 @@ public:
             CL_(clEnqueueTask)(
                 object_, kernel(),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_TASK_ERR);
 
@@ -9403,9 +9403,9 @@ public:
                 object_, userFptr, args.first, args.second,
                 (mem_objects != nullptr) ? (cl_uint) mem_objects->size() : 0,
                 (mem_objects->size() > 0 ) ? reinterpret_cast<const cl_mem *>(mem_objects->data()) : nullptr,
-                (mem_locs != nullptr && mem_locs->size() > 0) ? (const void **) &mem_locs->front() : nullptr,
+                (mem_locs != nullptr && mem_locs->size() > 0) ? const_cast<const void**>(&mem_locs->front()) : nullptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_NATIVE_KERNEL);
 
@@ -9459,7 +9459,7 @@ public:
                  (mem_objects != nullptr) ? (cl_uint) mem_objects->size() : 0,
                  (mem_objects != nullptr && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): nullptr,
                  (events != nullptr) ? (cl_uint) events->size() : 0,
-                 (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                 (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                  (event != nullptr) ? &tmp : nullptr),
              __ENQUEUE_ACQUIRE_GL_ERR);
 
@@ -9481,7 +9481,7 @@ public:
                  (mem_objects != nullptr) ? (cl_uint) mem_objects->size() : 0,
                  (mem_objects != nullptr && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): nullptr,
                  (events != nullptr) ? (cl_uint) events->size() : 0,
-                 (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                 (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                  (event != nullptr) ? &tmp : nullptr),
              __ENQUEUE_RELEASE_GL_ERR);
 
@@ -9524,7 +9524,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
                  (mem_objects != nullptr) ? (cl_uint) mem_objects->size() : 0,
                  (mem_objects != nullptr && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): nullptr,
                  (events != nullptr) ? (cl_uint) events->size() : 0,
-                 (events != nullptr) ? (cl_event*) &events->front() : nullptr,
+                 (events != nullptr) ? (const cl_event*) &events->front() : nullptr,
                  (event != nullptr) ? &tmp : nullptr),
              __ENQUEUE_ACQUIRE_GL_ERR);
 
@@ -9557,7 +9557,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
                 (mem_objects != nullptr) ? (cl_uint) mem_objects->size() : 0,
                 (mem_objects != nullptr && mem_objects->size() > 0) ? (const cl_mem *) &mem_objects->front(): nullptr,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_RELEASE_GL_ERR);
 
@@ -10100,7 +10100,7 @@ inline void* enqueueMapBuffer(
     void * result = CL_(clEnqueueMapBuffer)(
             queue(), buffer(), blocking, flags, offset, size,
             (events != nullptr) ? (cl_uint) events->size() : 0,
-            (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+            (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
             (cl_event*) event,
             &error);
 
@@ -10204,7 +10204,7 @@ inline cl_int enqueueUnmapMemObject(
         CL_(clEnqueueUnmapMemObject)(
         queue(), memory(), mapped_ptr,
         (events != nullptr) ? (cl_uint)events->size() : 0,
-        (events != nullptr && events->size() > 0) ? (cl_event*)&events->front() : nullptr,
+        (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
         (event != nullptr) ? &tmp : nullptr),
         __ENQUEUE_UNMAP_MEM_OBJECT_ERR);
 
@@ -11422,7 +11422,7 @@ inline cl_int CommandQueue::enqueueWaitSemaphores(
                 (const cl_semaphore_khr *) &sema_objects.front(),
                 (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
                 (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
-                (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
+                (events_wait_list != nullptr && events_wait_list->size() > 0) ? (const cl_event*) &events_wait_list->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr);
     }
 
@@ -11450,7 +11450,7 @@ inline cl_int CommandQueue::enqueueSignalSemaphores(
                 (const cl_semaphore_khr*) &sema_objects.front(),
                 (sema_payloads.size() > 0) ? &sema_payloads.front() : nullptr,
                 (events_wait_list != nullptr) ? (cl_uint) events_wait_list->size() : 0,
-                (events_wait_list != nullptr && events_wait_list->size() > 0) ? (cl_event*) &events_wait_list->front() : nullptr,
+                (events_wait_list != nullptr && events_wait_list->size() > 0) ? (const cl_event*) &events_wait_list->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr);
     }
 
@@ -11492,7 +11492,7 @@ public:
         if (pfn_clCreateCommandBufferKHR)
         {
             object_ = pfn_clCreateCommandBufferKHR((cl_uint) queues.size(),
-                (cl_command_queue *) &queues.front(),
+                (const cl_command_queue *) &queues.front(),
                 command_buffer_properties,
                 &error);
         }
@@ -11558,7 +11558,7 @@ public:
                 (cl_command_queue *) &queues.front(),
                 object_,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event*) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
                 (cl_event*) event),
                 __ENQUEUE_COMMAND_BUFFER_KHR_ERR);
     }
