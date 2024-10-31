@@ -173,6 +173,11 @@
  *   Enable exceptions for use in the C++ bindings header. This is the
  *   preferred error handling mechanism but is not required.
  *
+ * - CL_HPP_CUSTOM_EXCEPTION_TYPE
+ *
+ *   Specify the type which should be used for exceptions. This type
+ *   must have a constructor accepting an int and a const char*.
+ *
  * - CL_HPP_ENABLE_SIZE_T_COMPATIBILITY
  *
  *   Backward compatibility option to support cl.hpp-style size_t
@@ -748,6 +753,7 @@ namespace cl {
 #endif // cl_khr_command_buffer
 
 #if defined(CL_HPP_ENABLE_EXCEPTIONS)
+#if !defined(CL_HPP_CUSTOM_EXCEPTION_TYPE)
     /*! \brief Exception class 
      * 
      *  This may be thrown by API functions when CL_HPP_ENABLE_EXCEPTIONS is defined.
@@ -790,6 +796,9 @@ namespace cl {
          */
         cl_int err(void) const { return err_; }
     };
+#else
+  using Error = CL_HPP_CUSTOM_EXCEPTION_TYPE;
+#endif
 #define CL_HPP_ERR_STR_(x) #x
 #else
 #define CL_HPP_ERR_STR_(x) nullptr
