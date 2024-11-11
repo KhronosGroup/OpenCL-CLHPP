@@ -8801,7 +8801,7 @@ public:
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMemcpy)(
                 object_, blocking, static_cast<void *>(dst_ptr), static_cast<const void *>(src_ptr), size,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
@@ -8827,7 +8827,7 @@ public:
                 object_, blocking, static_cast<void *>(dst_ptr.get()), static_cast<const void *>(src_ptr.get()),
                 size,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
@@ -8856,7 +8856,7 @@ public:
                 static_cast<const void *>(src_container.data()),
                 dst_container.size() * sizeof(T),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != NULL) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
@@ -8881,7 +8881,7 @@ public:
                 object_, static_cast<void *>(ptr), static_cast<void *>(&pattern),
                 sizeof(PatternType), size,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr), __ENQUEUE_FILL_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
@@ -8906,7 +8906,7 @@ public:
                 object_, static_cast<void *>(ptr.get()), static_cast<void *>(&pattern),
                 sizeof(PatternType), size,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : nullptr), __ENQUEUE_FILL_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
@@ -8931,7 +8931,7 @@ public:
                 object_, static_cast<void *>(container.data()), static_cast<void *>(&pattern),
                 sizeof(PatternType), container.size() * sizeof(T),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (cl_event *) &events->front() : nullptr,
+                (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : NULL), __ENQUEUE_FILL_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
