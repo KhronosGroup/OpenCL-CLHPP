@@ -11539,7 +11539,10 @@ public:
 
     cl_int finalizeCommandBuffer() const
     {
-        return detail::errHandler(::clFinalizeCommandBufferKHR(object_), __FINALIZE_COMMAND_BUFFER_KHR_ERR);
+        if (pfn_clFinalizeCommandBufferKHR == nullptr) {
+            return detail::errHandler(CL_INVALID_OPERATION, __FINALIZE_COMMAND_BUFFER_KHR_ERR);
+        }
+        return detail::errHandler(pfn_clFinalizeCommandBufferKHR(object_), __FINALIZE_COMMAND_BUFFER_KHR_ERR);
     }
 
     cl_int enqueueCommandBuffer(vector<CommandQueue> &queues,
