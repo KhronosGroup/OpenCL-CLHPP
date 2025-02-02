@@ -5521,6 +5521,67 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+static cl_int clEnqueueWriteImage_testenqueueWriteImage(
+    cl_command_queue command_queue, cl_mem image, cl_bool blocking_write,
+    const size_t *origin, const size_t *region, size_t input_row_pitch,
+    size_t input_slice_pitch, const void *ptr, cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list, cl_event *event, int num_calls) {
+    (void)command_queue;
+    (void)image;
+    TEST_ASSERT_EQUAL(region[0], 256);
+    TEST_ASSERT_EQUAL(origin[0], 8);
+    TEST_ASSERT_EQUAL(false, blocking_write);
+    TEST_ASSERT_EQUAL(256, input_row_pitch);
+    TEST_ASSERT_EQUAL(0, input_slice_pitch);
+    TEST_ASSERT_EQUAL_PTR(image2DPool, ptr);
+    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event);
+    TEST_ASSERT_EQUAL(nullptr, num_calls);
+    return CL_SUCCESS;
+}
+static cl_int clEnqueueReadImage_testenqueueWriteImage(
+    cl_command_queue command_queue, cl_mem image, cl_bool blocking_read,
+    const size_t *origin, const size_t *region, size_t row_pitch,
+    size_t slice_pitch, void *ptr, cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list, cl_event *event, int num_calls) {
+    (void)command_queue;
+    (void)image;
+    TEST_ASSERT_EQUAL(region[0], 256);
+    TEST_ASSERT_EQUAL(origin[0], 8);
+    TEST_ASSERT_EQUAL(false, blocking_read);
+    TEST_ASSERT_EQUAL(256, row_pitch);
+    TEST_ASSERT_EQUAL(0, slice_pitch);
+    TEST_ASSERT_EQUAL_PTR(image2DPool, ptr);
+    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event);
+    TEST_ASSERT_EQUAL(nullptr, num_calls);
+    return CL_SUCCESS;
+}
+void testenqueueWriteImage() {
+    cl_int ret = 0;
+    cl_int ret_read = 0;
+    cl_bool blocking = false;
+    const std::array<cl::size_type, 3> origin = {8, 16, 0};
+    const std::array<cl::size_type, 3> region = {256, 256, 0};
+    size_t row_pitch = 256;
+    size_t slice_pitch = 0;
+    void *ptr = image2DPool;
+
+    clEnqueueWriteImage_StubWithCallback(
+        clEnqueueWriteImage_testenqueueWriteImage);
+    clEnqueueReadImage_StubWithCallback(
+        clEnqueueReadImage_testenqueueWriteImage);
+    ret = commandQueuePool[0].enqueueWriteImage(
+        image2DPool[1], blocking, origin, region, row_pitch, slice_pitch, ptr);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    ret_read = commandQueuePool[0].enqueueReadImage(
+        image2DPool[1], blocking, origin, region, row_pitch, slice_pitch, ptr);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret_read);
+}
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
