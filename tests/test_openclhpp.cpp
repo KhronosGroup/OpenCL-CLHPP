@@ -5521,6 +5521,78 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+static cl_int clCreateKernelsInProgram_testcreateKernels(
+    cl_program program, cl_uint num_kernels, cl_kernel *kernels,
+    cl_uint *num_kernels_ret, int num_calls) {
+    switch (num_calls) {
+    case 0:
+            TEST_ASSERT_EQUAL(make_program(0), program);
+            TEST_ASSERT_EQUAL(0, num_kernels);
+            if (num_kernels_ret != nullptr)
+            {
+                *num_kernels_ret = 3;
+            }
+            return CL_SUCCESS;
+    case 1:
+            TEST_ASSERT_EQUAL(3, num_kernels);
+            TEST_ASSERT_EQUAL(nullptr, num_kernels_ret);
+            for (unsigned int i = 0; i < num_kernels; i++)
+            {
+                kernels[i] = make_kernel(i);
+            }
+
+            return CL_SUCCESS;
+    case 2:
+            TEST_ASSERT_EQUAL(make_program(1), program);
+            TEST_ASSERT_EQUAL(0, num_kernels);
+            TEST_ASSERT_NOT_NULL(num_kernels_ret);
+            if (num_kernels_ret != nullptr)
+            {
+                *num_kernels_ret = 0;
+            }
+
+            return CL_INVALID_PROGRAM_EXECUTABLE;
+    case 3:
+            TEST_ASSERT_EQUAL(nullptr, program);
+            TEST_ASSERT_EQUAL(0, num_kernels);
+            TEST_ASSERT_NOT_NULL(num_kernels_ret);
+            if (num_kernels_ret != nullptr)
+            {
+                *num_kernels_ret = 0;
+            }
+
+            return CL_INVALID_PROGRAM;
+    default:
+            return CL_SUCCESS;
+    }
+}
+
+void testCreateKernels() {
+    cl_int ret = 0;
+    cl::vector<cl::Kernel> kernels;
+
+    clCreateKernelsInProgram_StubWithCallback(clCreateKernelsInProgram_testcreateKernels);
+
+    ret = programPool[0].createKernels(&kernels);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    TEST_ASSERT_EQUAL(3, kernels.size());
+    for (unsigned int i = 0; i < kernels.size(); i++)
+    {
+        kernels[i]() = nullptr;
+    }
+    kernels.clear();
+
+    ret = programPool[1].createKernels(&kernels);
+    TEST_ASSERT_EQUAL(CL_INVALID_PROGRAM_EXECUTABLE, ret);
+    TEST_ASSERT_EQUAL(true, kernels.empty());
+
+    cl::Program invalidProgram;
+    ret = invalidProgram.createKernels(&kernels);
+    TEST_ASSERT_EQUAL(CL_INVALID_PROGRAM, ret);
+    TEST_ASSERT_EQUAL(true, kernels.empty());
+}
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
