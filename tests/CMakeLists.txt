@@ -93,6 +93,7 @@ endif()
 
 add_definitions(-DCL_TARGET_OPENCL_VERSION=300)
 add_definitions(-DCL_EXPERIMENTAL)
+add_definitions(-DCL_ENABLE_BETA_EXTENSIONS)
 
 add_definitions(-DUNITY_SUPPORT_64)
 if( CMAKE_SIZEOF_VOID_P EQUAL 8 )
