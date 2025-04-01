@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.16)
 
 if(NOT INPUT OR NOT OUTPUT)
   message(FATAL_ERROR "Usage: cmake -D INPUT=<input> -D OUTPUT=<output> -P strip_defines.cmake")
