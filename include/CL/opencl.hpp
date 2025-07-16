@@ -1572,6 +1572,9 @@ inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_
     F(cl_device_info, CL_DEVICE_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
     F(cl_semaphore_info_khr, CL_SEMAPHORE_EXPORT_HANDLE_TYPES_KHR,      cl::vector<cl_external_semaphore_handle_type_khr>) \
 
+#define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(F) \
+    F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR, void*) \
+
 #define CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(F) \
     F(cl_external_semaphore_handle_type_khr, CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR, int) \
 
@@ -1721,6 +1724,9 @@ CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_MEMORY_(CL_HPP_DECLARE_PARAM_TRAITS_)
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore
 
+#if defined(cl_khr_external_semaphore_dx_fence)
+CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_DX_FENCE_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
+#endif // cl_khr_external_semaphore_dx_fence
 #if defined(cl_khr_external_semaphore_opaque_fd)
 CL_HPP_PARAM_NAME_CL_KHR_EXTERNAL_SEMAPHORE_OPAQUE_FD_EXT(CL_HPP_DECLARE_PARAM_TRAITS_)
 #endif // cl_khr_external_semaphore_opaque_fd
@@ -7531,6 +7537,9 @@ inline Kernel::Kernel(const Program& program, const char* name, cl_int* err)
 enum class ExternalMemoryType : cl_external_memory_handle_type_khr
 {
     None = 0,
+#ifdef cl_khr_external_memory_android_hardware_buffer
+    AndroidHardwareBuffer = CL_EXTERNAL_MEMORY_HANDLE_ANDROID_HARDWARE_BUFFER_KHR,
+#endif // cl_khr_external_memory_android_hardware_buffer
 #ifdef cl_khr_external_memory_opaque_fd
     OpaqueFd = CL_EXTERNAL_MEMORY_HANDLE_OPAQUE_FD_KHR,
 #endif // cl_khr_external_memory_opaque_fd
@@ -11245,6 +11254,9 @@ namespace compatibility {
 enum ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 {
     None = 0,
+#ifdef cl_khr_external_semaphore_dx_fence
+    D3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
+#endif // cl_khr_external_semaphore_dx_fence
 #ifdef cl_khr_external_semaphore_opaque_fd
     OpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
 #endif // cl_khr_external_semaphore_opaque_fd
