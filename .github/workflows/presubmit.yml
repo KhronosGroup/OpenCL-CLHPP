@@ -140,10 +140,9 @@ jobs:
       run: $CMAKE_EXE
         -G "${{matrix.CONF.GEN}}"
         `if [[ "${{matrix.CONF.GEN}}" == "Unix Makefiles" ]]; then echo "-D CMAKE_BUILD_TYPE=${{matrix.CONF.CONFIG}}"; fi`
-        -D CMAKE_C_EXTENSIONS=OFF
+        -D BUILD_TESTING=OFF
         -D CMAKE_INSTALL_PREFIX=$GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/install
         -D CMAKE_PREFIX_PATH=$GITHUB_WORKSPACE/external/OpenCL-Headers/install
-        -D BUILD_TESTING=OFF
         -S $GITHUB_WORKSPACE/external/OpenCL-ICD-Loader
         -B $GITHUB_WORKSPACE/external/OpenCL-ICD-Loader/build &&
         $CMAKE_EXE
