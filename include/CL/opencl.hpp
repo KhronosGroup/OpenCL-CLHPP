@@ -11255,7 +11255,7 @@ enum ExternalSemaphoreType : cl_external_semaphore_handle_type_khr
 {
     None = 0,
 #ifdef cl_khr_external_semaphore_dx_fence
-    D3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR,
+    D3D12Fence = CL_SEMAPHORE_HANDLE_D3D12_FENCE_KHR, 
 #endif // cl_khr_external_semaphore_dx_fence
 #ifdef cl_khr_external_semaphore_opaque_fd
     OpaqueFd = CL_SEMAPHORE_HANDLE_OPAQUE_FD_KHR,
