@@ -11526,8 +11526,24 @@ public:
         }
     }
 
-    explicit CommandBufferKhr(const cl_command_buffer_khr& commandBufferKhr, bool retainObject = false) :
-        detail::Wrapper<cl_type>(commandBufferKhr, retainObject) { }
+    explicit CommandBufferKhr(const cl_command_buffer_khr &commandBufferKhr,
+                              bool retainObject = false)
+        : detail::Wrapper<cl_type>(commandBufferKhr, retainObject) {
+      vector<CommandQueue> queues = getInfo<CL_COMMAND_BUFFER_QUEUES_KHR>();
+
+      if (!queues.empty()) {
+        /* initialization of addresses to extension functions (it is done only
+         * once) */
+        std::call_once(ext_init_, [&] {
+          initExtensions(queues[0].getInfo<CL_QUEUE_DEVICE>());
+        });
+        cl_int error = CL_INVALID_OPERATION;
+
+        static_assert(sizeof(cl::CommandQueue) == sizeof(cl_command_queue),
+                      "Size of cl::CommandQueue must be equal to size of "
+                      "cl_command_queue");
+      }
+    }
 
     CommandBufferKhr& operator=(const cl_command_buffer_khr& rhs)
     {
@@ -11540,7 +11556,7 @@ public:
     {
         if (pfn_clGetCommandBufferInfoKHR == nullptr) {
             return detail::errHandler(CL_INVALID_OPERATION,
-                    __GET_COMMAND_BUFFER_INFO_KHR_ERR);
+                                      __GET_COMMAND_BUFFER_INFO_KHR_ERR);
         }
         return detail::errHandler(
             detail::getInfo(pfn_clGetCommandBufferInfoKHR, object_, name, param),
@@ -11553,7 +11569,15 @@ public:
     {
         typename detail::param_traits<
             detail::cl_command_buffer_info_khr, name>::param_type param;
-        cl_int result = getInfo(name, &param);
+
+        cl_int result = CL_SUCCESS;
+
+        if (pfn_clGetCommandBufferInfoKHR == nullptr &&
+            &::clGetCommandBufferInfoKHR != nullptr)
+          result = detail::getInfo(&::clGetCommandBufferInfoKHR, object_, name,
+                                   &param);
+        else
+          result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
         }
