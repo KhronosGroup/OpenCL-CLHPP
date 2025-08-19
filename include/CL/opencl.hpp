@@ -2609,7 +2609,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_device_info, name>::param_type param;
+            detail::cl_device_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -2868,7 +2868,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_platform_info, name>::param_type param;
+            detail::cl_platform_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -3557,7 +3557,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_context_info, name>::param_type param;
+            detail::cl_context_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -3640,7 +3640,7 @@ public:
             cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-        detail::cl_image_requirements_info_ext, type>::param_type param;
+        detail::cl_image_requirements_info_ext, type>::param_type param{};
         cl_int result = getImageRequirementsInfoExt(type, &param, flags, properties, image_format, image_desc);
         if (err != nullptr) {
             *err = result;
@@ -3758,7 +3758,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_event_info, name>::param_type param;
+            detail::cl_event_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -3781,7 +3781,7 @@ public:
     getProfilingInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_profiling_info, name>::param_type param;
+            detail::cl_profiling_info, name>::param_type param{};
         cl_int result = getProfilingInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -3874,7 +3874,7 @@ public:
     cl_int setStatus(cl_int status)
     {
         return detail::errHandler(
-            CL_(clSetUserEventStatus)(object_,status), 
+            CL_(clSetUserEventStatus)(object_,status),
             __SET_USER_EVENT_STATUS_ERR);
     }
 };
@@ -3947,7 +3947,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_mem_info, name>::param_type param;
+            detail::cl_mem_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -4870,7 +4870,7 @@ public:
     getImageInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_image_info, name>::param_type param;
+            detail::cl_image_info, name>::param_type param{};
         cl_int result = getImageInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -6006,7 +6006,7 @@ public:
         getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_pipe_info, name>::param_type param;
+            detail::cl_pipe_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -6113,7 +6113,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_sampler_info, name>::param_type param;
+            detail::cl_sampler_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -6321,7 +6321,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_kernel_info, name>::param_type param;
+            detail::cl_kernel_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -6343,7 +6343,7 @@ public:
     getArgInfo(cl_uint argIndex, cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_kernel_arg_info, name>::param_type param;
+            detail::cl_kernel_arg_info, name>::param_type param{};
         cl_int result = getArgInfo(argIndex, name, &param);
         if (err != nullptr) {
             *err = result;
@@ -6367,7 +6367,7 @@ public:
         getWorkGroupInfo(const Device& device, cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-        detail::cl_kernel_work_group_info, name>::param_type param;
+        detail::cl_kernel_work_group_info, name>::param_type param{};
         cl_int result = getWorkGroupInfo(device, name, &param);
         if (err != nullptr) {
             *err = result;
@@ -7201,7 +7201,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_program_info, name>::param_type param;
+            detail::cl_program_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -7224,7 +7224,7 @@ public:
     getBuildInfo(const Device& device, cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_program_build_info, name>::param_type param;
+            detail::cl_program_build_info, name>::param_type param{};
         cl_int result = getBuildInfo(device, name, &param);
         if (err != nullptr) {
             *err = result;
@@ -7257,7 +7257,7 @@ public:
 
         for (const cl::Device &d : devs) {
             typename detail::param_traits<
-                detail::cl_program_build_info, name>::param_type param;
+                detail::cl_program_build_info, name>::param_type param{};
             result = getBuildInfo(d, name, &param);
             devInfo.push_back(
                 std::pair<cl::Device, typename detail::param_traits<detail::cl_program_build_info, name>::param_type>
@@ -8082,7 +8082,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_command_queue_info, name>::param_type param;
+            detail::cl_command_queue_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -9831,7 +9831,7 @@ public:
         getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_command_queue_info, name>::param_type param;
+            detail::cl_command_queue_info, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -11334,7 +11334,7 @@ public:
     getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_semaphore_info_khr, name>::param_type param;
+            detail::cl_semaphore_info_khr, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;        
@@ -11561,7 +11561,7 @@ public:
         getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_command_buffer_info_khr, name>::param_type param;
+            detail::cl_command_buffer_info_khr, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
@@ -12088,7 +12088,7 @@ public:
         getInfo(cl_int* err = nullptr) const
     {
         typename detail::param_traits<
-            detail::cl_mutable_command_info_khr, name>::param_type param;
+            detail::cl_mutable_command_info_khr, name>::param_type param{};
         cl_int result = getInfo(name, &param);
         if (err != nullptr) {
             *err = result;
