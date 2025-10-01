@@ -2882,12 +2882,9 @@ public:
      */
     cl_int getDevices(
         cl_device_type type,
-        vector<Device>* devices) const
+        vector<Device>& devices) const
     {
         cl_uint n = 0;
-        if( devices == nullptr ) {
-            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
-        }
         cl_int err = CL_(clGetDeviceIDs)(object_, type, 0, nullptr, &n);
         if (err != CL_SUCCESS  && err != CL_DEVICE_NOT_FOUND) {
             return detail::errHandler(err, __GET_DEVICE_IDS_ERR);
@@ -2905,16 +2902,29 @@ public:
         // with safe construction
         // We must retain things we obtain from the API to avoid releasing
         // API-owned objects.
-        if (devices) {
-            devices->resize(ids.size());
+        devices.resize(ids.size());
 
-            // Assign to param, constructing with retain behaviour
-            // to correctly capture each underlying CL object
-            for (size_type i = 0; i < ids.size(); i++) {
-                (*devices)[i] = Device(ids[i], true);
-            }
+        // Assign to param, constructing with retain behaviour
+        // to correctly capture each underlying CL object
+        for (size_type i = 0; i < ids.size(); i++) {
+            devices[i] = Device(ids[i], true);
         }
         return CL_SUCCESS;
+    }
+
+    /*! \brief Gets a list of devices for this platform.
+     *
+     *  Pointer overload for backwards compatibility.
+     */
+    cl_int getDevices(
+        cl_device_type type,
+        vector<Device>* devices) const
+    {
+        if( devices == nullptr ) {
+            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
+        }
+
+        return getDevices(type, *devices);
     }
 
 #if defined(CL_HPP_USE_DX_INTEROP)
@@ -2945,7 +2955,7 @@ public:
         cl_d3d10_device_source_khr d3d_device_source,
         void *                     d3d_object,
         cl_d3d10_device_set_khr    d3d_device_set,
-        vector<Device>* devices) const
+        vector<Device>& devices) const
     {
         typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clGetDeviceIDsFromD3D10KHR)(
             cl_platform_id platform, 
@@ -2955,10 +2965,6 @@ public:
             cl_uint num_entries,
             cl_device_id * devices,
             cl_uint* num_devices);
-
-        if( devices == nullptr ) {
-            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
-        }
 
         static PFN_clGetDeviceIDsFromD3D10KHR pfn_clGetDeviceIDsFromD3D10KHR = nullptr;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
@@ -2998,16 +3004,31 @@ public:
         // with safe construction
         // We must retain things we obtain from the API to avoid releasing
         // API-owned objects.
-        if (devices) {
-            devices->resize(ids.size());
+        devices.resize(ids.size());
 
-            // Assign to param, constructing with retain behaviour
-            // to correctly capture each underlying CL object
-            for (size_type i = 0; i < ids.size(); i++) {
-                (*devices)[i] = Device(ids[i], true);
-            }
+        // Assign to param, constructing with retain behaviour
+        // to correctly capture each underlying CL object
+        for (size_type i = 0; i < ids.size(); i++) {
+            devices[i] = Device(ids[i], true);
         }
         return CL_SUCCESS;
+    }
+
+   /*! \brief Get the list of available D3D10 devices.
+     *
+     *  Pointer overload for backwards compatibility.
+     */
+    cl_int getDevices(
+        cl_d3d10_device_source_khr d3d_device_source,
+        void *                     d3d_object,
+        cl_d3d10_device_set_khr    d3d_device_set,
+        vector<Device>* devices) const
+    {
+        if( devices == nullptr ) {
+            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
+        }
+
+        return getDevices(d3d_device_source, d3d_object, d3d_device_set, *devices);
     }
 #endif
 
@@ -3016,13 +3037,9 @@ public:
      *  Wraps clGetPlatformIDs().
      */
     static cl_int get(
-        vector<Platform>* platforms)
+        vector<Platform>& platforms)
     {
         cl_uint n = 0;
-
-        if( platforms == nullptr ) {
-            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_PLATFORM_IDS_ERR);
-        }
 
         cl_int err = CL_(clGetPlatformIDs)(0, nullptr, &n);
         if (err != CL_SUCCESS) {
@@ -3035,15 +3052,27 @@ public:
             return detail::errHandler(err, __GET_PLATFORM_IDS_ERR);
         }
 
-        if (platforms) {
-            platforms->resize(ids.size());
+        platforms.resize(ids.size());
 
-            // Platforms don't reference count
-            for (size_type i = 0; i < ids.size(); i++) {
-                (*platforms)[i] = Platform(ids[i]);
-            }
+        // Platforms don't reference count
+        for (size_type i = 0; i < ids.size(); i++) {
+            platforms[i] = Platform(ids[i]);
         }
         return CL_SUCCESS;
+    }
+
+    /*! \brief Gets a list of available platforms.
+     *
+     *  Pointer overload for backwards compatibility.
+     */
+    static cl_int get(
+        vector<Platform>* platforms)
+    {
+        if( platforms == nullptr ) {
+            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_PLATFORM_IDS_ERR);
+        }
+
+        return get(*platforms);
     }
 
     /*! \brief Gets the first available platform.
@@ -3572,13 +3601,9 @@ public:
     cl_int getSupportedImageFormats(
         cl_mem_flags flags,
         cl_mem_object_type type,
-        vector<ImageFormat>* formats) const
+        vector<ImageFormat>& formats) const
     {
         cl_uint numEntries;
-        
-        if (!formats) {
-            return CL_SUCCESS;
-        }
 
         cl_int err = CL_(clGetSupportedImageFormats)(
            object_, 
@@ -3604,14 +3629,29 @@ public:
                 return detail::errHandler(err, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
             }
 
-            formats->assign(value.begin(), value.end());
+            formats.assign(value.begin(), value.end());
         }
         else {
             // If no values are being returned, ensure an empty vector comes back
-            formats->clear();
+            formats.clear();
         }
 
         return CL_SUCCESS;
+    }
+
+    /*! \brief Gets a list of supported image formats.
+     *
+     *  Pointer overload for backwards compatibility.
+     */
+    cl_int getSupportedImageFormats(
+        cl_mem_flags flags,
+        cl_mem_object_type type,
+        vector<ImageFormat>* formats) const
+    {
+        if (!formats) {
+            return CL_SUCCESS;
+        }
+        return getSupportedImageFormats(flags, type, *formats);
     }
 
 #if defined(cl_ext_image_requirements_info)
