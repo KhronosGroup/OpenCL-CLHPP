@@ -2924,14 +2924,7 @@ public:
             return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
         }
 
-        // Cannot trivially assign because we need to capture intermediates
-        // with safe construction
-        // We must retain things we obtain from the API to avoid releasing
-        // API-owned objects.
-        if (devices) {
-            return getDevices(type, *devices);
-        }
-        return CL_SUCCESS;
+        return getDevices(type, *devices);
     }
 
 #if defined(CL_HPP_USE_DX_INTEROP)
@@ -3035,14 +3028,7 @@ public:
             return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_DEVICE_IDS_ERR);
         }
 
-        // Cannot trivially assign because we need to capture intermediates
-        // with safe construction
-        // We must retain things we obtain from the API to avoid releasing
-        // API-owned objects.
-        if (devices) {
-            return getDevices(d3d_device_source, d3d_object, d3d_device_set, *devices);
-        }
-        return CL_SUCCESS;
+        return getDevices(d3d_device_source, d3d_object, d3d_device_set, *devices);
     }
 #endif
 
@@ -3086,10 +3072,7 @@ public:
             return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_PLATFORM_IDS_ERR);
         }
 
-        if (platforms) {
-            return get(*platforms);
-        }
-        return CL_SUCCESS;
+        return get(*platforms);
     }
 
     /*! \brief Gets the first available platform.
