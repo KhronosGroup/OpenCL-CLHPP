@@ -11930,7 +11930,7 @@ public:
         cl_int error = detail::errHandler(
             pfn_clCommandNDRangeKernelKHR(object_,
                 (command_queue != nullptr) ? (*command_queue)() : nullptr,
-                &properties[0],
+                properties.empty() ? nullptr : properties.data(),
                 kernel(),
                 (cl_uint) global.dimensions(),
                 offset.dimensions() != 0 ? (const size_type*) offset : nullptr,
