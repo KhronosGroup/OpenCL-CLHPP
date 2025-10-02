@@ -5521,6 +5521,52 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+static void *clEnqueueMapBuffer_testenqueueMapBuffer(
+    cl_command_queue command_queue, cl_mem buffer, cl_bool blocking_map,
+    cl_map_flags map_flags, size_t offset, size_t size,
+    cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+    cl_event *event, cl_int *errcode_ret, int num_calls) {
+    (void)command_queue;
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer);
+    TEST_ASSERT_EQUAL(CL_TRUE, blocking_map);
+    TEST_ASSERT_EQUAL(CL_MAP_WRITE, map_flags);
+    TEST_ASSERT_EQUAL(0, offset);
+    TEST_ASSERT_EQUAL(sizeof(int) * 1024, size);
+    TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+    TEST_ASSERT_EQUAL(make_event(0), event_wait_list[0]);
+    if (event != nullptr)
+    {
+        *event = make_event(1);
+    }
+    if (errcode_ret != nullptr)
+    {
+        *errcode_ret = CL_SUCCESS;
+    }
+    TEST_ASSERT_EQUAL(0, num_calls);
+    return make_mem(0);
+}
+
+void testenqueueMapBuffer() {
+    cl::Event event;
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
+    cl_int err = CL_INVALID_VALUE;
+    void *ret = nullptr;
+
+    clEnqueueMapBuffer_StubWithCallback(
+        clEnqueueMapBuffer_testenqueueMapBuffer);
+    ret = enqueueMapBuffer(bufferPool[0], CL_TRUE, CL_MAP_WRITE, 0, sizeof(int) * 1024, &events,
+                           &event, &err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), ret);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    event() = nullptr;
+    events[0]() = nullptr;
+}
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
