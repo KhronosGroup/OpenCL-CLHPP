@@ -5521,6 +5521,49 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 110
+static cl_mem clCreateSubBuffer_testCreateSubBuffer(
+    cl_mem buffer, cl_mem_flags flags, cl_buffer_create_type buffer_create_type,
+    const void *buffer_create_info, cl_int *errcode_ret, int num_calls) {
+    if (errcode_ret != nullptr)
+    {
+        *errcode_ret = CL_SUCCESS;
+    }
+    TEST_ASSERT_EQUAL(make_mem(0), buffer);
+    TEST_ASSERT_EQUAL(CL_MEM_READ_ONLY, flags);
+    TEST_ASSERT_EQUAL(CL_BUFFER_CREATE_TYPE_REGION, buffer_create_type);
+    //TEST_ASSERT_EQUAL_PTR(nullptr, buffer_create_info);
+    TEST_ASSERT_NOT_NULL(buffer_create_info);
+    if (buffer_create_info != nullptr)
+    {
+        cl_buffer_region* buffer_region = (cl_buffer_region*)buffer_create_info;
+        TEST_ASSERT_EQUAL(512, buffer_region->origin);
+        TEST_ASSERT_EQUAL(1024, buffer_region->size);
+    }
+    TEST_ASSERT_EQUAL(0, num_calls);
+
+    return make_mem(1);
+}
+
+void testCreateSubBuffer() {
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+    const void *buffer_create_info = nullptr;
+    cl_buffer_region buffer_region{ 512, 1024 };
+    cl_int err = CL_INVALID_VALUE;
+
+    clCreateSubBuffer_StubWithCallback(clCreateSubBuffer_testCreateSubBuffer);
+    cl::Buffer ret = bufferPool[0].createSubBuffer(CL_MEM_READ_ONLY, CL_BUFFER_CREATE_TYPE_REGION,
+        (void *)&buffer_region, &err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(1), ret());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    ret() = nullptr;
+#endif
+}
+#else
+void testCreateSubBuffer() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 110
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
