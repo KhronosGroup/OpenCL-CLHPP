@@ -5521,6 +5521,44 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+static cl_int clEnqueueSVMUnmap_testenqueueUnmapSVM(
+    cl_command_queue command_queue, void* svm_ptr, cl_uint num_events_in_wait_list,
+    const cl_event* event_wait_list, cl_event* event, cl_int cmock_to_return
+){
+    (void*)cmock_to_return;
+    TEST_ASSERT_EQUAL(*(cl_mem*)svm_ptr, make_mem(0));
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+    TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(event_wait_list[0], make_event(0));
+    if (event != nullptr) {
+            *event = make_event(1);
+    }
+    return CL_SUCCESS;
+}
+
+void testenqueueUnmapSVM() {
+    cl_int ret = CL_DEVICE_NOT_FOUND;
+    cl::Event event;
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
+    cl::Memory mem(make_mem(0), false);
+
+    clEnqueueSVMUnmap_StubWithCallback(
+        clEnqueueSVMUnmap_testenqueueUnmapSVM);
+    ret = commandQueuePool[0].enqueueUnmapSVM<cl::Memory>(&mem, &events, &event);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+    
+    event() = nullptr;
+    events[0]() = nullptr;
+    mem() = nullptr;
+}
+#else
+void testenqueueUnmapSVM() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 200
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
