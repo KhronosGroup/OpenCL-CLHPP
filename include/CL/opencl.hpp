@@ -3648,8 +3648,8 @@ public:
         cl_mem_object_type type,
         vector<ImageFormat>* formats) const
     {
-        if (!formats) {
-            return CL_SUCCESS;
+        if( formats == nullptr ) {
+            return detail::errHandler(CL_INVALID_ARG_VALUE, __GET_SUPPORTED_IMAGE_FORMATS_ERR);
         }
         return getSupportedImageFormats(flags, type, *formats);
     }
