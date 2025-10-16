@@ -5521,6 +5521,44 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+static cl_int clEnqueueUnmapMemObject_testenqueueUnmapMemObject(
+    cl_command_queue command_queue, cl_mem memobj, void *mapped_ptr,
+    cl_uint num_events_in_wait_list, const cl_event *event_wait_list,
+    cl_event *event, int num_calls) {
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), memobj);
+    TEST_ASSERT_EQUAL_PTR(mapped_ptr, some_host_memory);
+    TEST_ASSERT_EQUAL(0, num_events_in_wait_list);
+    TEST_ASSERT_EQUAL_PTR(nullptr, event_wait_list);
+    TEST_ASSERT_NOT_NULL(event);
+    TEST_ASSERT_EQUAL(0, num_calls);
+    event = nullptr;
+    return CL_DEVICE_NOT_FOUND;
+}
+
+void testenqueueUnmapMemObject() {
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+    cl_bool blocking = CL_TRUE;
+    cl_map_flags flags = CL_MAP_WRITE;
+    cl::size_type offset = 0;
+    cl::size_type size = sizeof(int) * 1024;
+    cl::Event event_data(make_event(0), false);
+    cl::Event *event = &event_data;
+    const cl::vector<cl::Event> *events = nullptr;
+    cl_int *err = nullptr;
+    void *ret = nullptr;
+    cl_int ret_unmap = CL_SUCCESS;
+
+    clEnqueueUnmapMemObject_StubWithCallback(
+        clEnqueueUnmapMemObject_testenqueueUnmapMemObject);
+    ret_unmap = commandQueuePool[0].enqueueUnmapMemObject(
+        bufferPool[0], some_host_memory, events, event);
+    TEST_ASSERT_EQUAL(CL_DEVICE_NOT_FOUND, ret_unmap);
+    event_data() = nullptr;
+#endif
+}
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
