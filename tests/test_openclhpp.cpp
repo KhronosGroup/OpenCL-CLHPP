@@ -5521,6 +5521,40 @@ void testgetObjectInfo(void)
     TEST_ASSERT_EQUAL(type, CL_GL_OBJECT_BUFFER);
     TEST_ASSERT_EQUAL(bufobj, 0);
 }
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+static cl_int clEnqueueBarrierWithWaitList_testEnqueueBarrierWithWaitList(
+    cl_command_queue command_queue, cl_uint num_events_in_wait_list,
+    const cl_event *event_wait_list, cl_event *event, int num_calls) {
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL(1, num_events_in_wait_list);
+    TEST_ASSERT_NOT_NULL(event_wait_list);
+    TEST_ASSERT_EQUAL(event_wait_list[0], make_event(0));
+    TEST_ASSERT_EQUAL(0, num_calls);
+    if (event != nullptr) {
+            *event = make_event(1);
+    }
+    return CL_SUCCESS;
+}
+
+void testEnqueueBarrierWithWaitList() {
+    cl_int ret = CL_DEVICE_NOT_FOUND;
+    cl::Event event;
+    cl::vector<cl::Event> events;
+    events.emplace_back(cl::Event(make_event(0)));
+
+    clEnqueueBarrierWithWaitList_StubWithCallback(
+        clEnqueueBarrierWithWaitList_testEnqueueBarrierWithWaitList);
+    ret = commandQueuePool[0].enqueueBarrierWithWaitList(&events, &event);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, ret);
+    TEST_ASSERT_EQUAL_PTR(make_event(1), event());
+    event() = nullptr;
+    events[0]() = nullptr;
+}
+#else
+void testEnqueueBarrierWithWaitList() {}
+#endif // CL_HPP_TARGET_OPENCL_VERSION >= 120
+
 #if CL_HPP_TARGET_OPENCL_VERSION >= 210
 static cl_int clGetHostTimer_testgetHostTimer(cl_device_id device,
                                               cl_ulong *host_timestamp,
