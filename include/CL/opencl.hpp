@@ -3393,8 +3393,9 @@ public:
         }
 
         object_ = CL_(clCreateContext)(
-            properties, (cl_uint) numDevices,
-            deviceIDs.data(),
+            properties,
+            (cl_uint)deviceIDs.size(),
+            deviceIDs.empty() ? nullptr : deviceIDs.data(),
             notifyFptr, data, &error);
 
         detail::errHandler(error, __CREATE_CONTEXT_ERR);
@@ -6463,10 +6464,11 @@ public:
     /*! \brief setArg overload taking a vector type.
      */
     template<typename T, class Alloc>
-    cl_int setArg(cl_uint index, const cl::vector<T, Alloc> &argPtr)
+    cl_int setArg(cl_uint index, const cl::vector<T, Alloc> &arg)
     {
         return detail::errHandler(
-            CL_(clSetKernelArgSVMPointer)(object_, index, argPtr.data()),
+            CL_(clSetKernelArgSVMPointer)(object_, index,
+                arg.empty() ? nullptr : arg.data()),
             __SET_KERNEL_ARGS_ERR);
     }
 
@@ -6515,8 +6517,8 @@ public:
             CL_(clSetKernelExecInfo)(
                 object_,
                 CL_KERNEL_EXEC_INFO_SVM_PTRS,
-                sizeof(void*)*pointerList.size(),
-                pointerList.data()));
+                sizeof(void*) * pointerList.size(),
+                pointerList.empty() ? nullptr : pointerList.data()));
     }
 
     /*!
@@ -6530,8 +6532,8 @@ public:
             CL_(clSetKernelExecInfo)(
                 object_,
                 CL_KERNEL_EXEC_INFO_SVM_PTRS,
-                sizeof(void*)*pointerList.size(),
-                pointerList.data()));
+                sizeof(void*) * pointerList.size(),
+                pointerList.empty() ? nullptr : pointerList.data()));
     }
 
     /*! \brief Enable fine-grained system SVM.
@@ -6597,7 +6599,7 @@ public:
             CL_(clSetKernelExecInfo)(
             object_,
             CL_KERNEL_EXEC_INFO_SVM_PTRS,
-            sizeof(void*)*(1 + sizeof...(Ts)),
+            sizeof(void*) * (1 + sizeof...(Ts)),
             pointerList.data()));
     }
 
@@ -6753,7 +6755,10 @@ public:
         }
 
         object_ = CL_(clCreateProgramWithSource)(
-            context(), (cl_uint)n, strings.data(), lengths.data(), &error);
+            context(), (cl_uint)n,
+            strings.empty() ? nullptr : strings.data(),
+            lengths.empty() ? nullptr : lengths.data(),
+            &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
         if (err != nullptr) {
@@ -6788,7 +6793,10 @@ public:
         }
 
         object_ = CL_(clCreateProgramWithSource)(
-            context(), (cl_uint)n, strings.data(), lengths.data(), &error);
+            context(), (cl_uint)n,
+            strings.empty() ? nullptr : strings.data(),
+            lengths.empty() ? nullptr : lengths.data(),
+            &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_SOURCE_ERR);
         if (err != nullptr) {
@@ -6969,11 +6977,15 @@ public:
         }
 
         object_ = CL_(clCreateProgramWithBinary)(
-            context(), (cl_uint) devices.size(),
-            deviceIDs.data(),
-            lengths.data(), images.data(), (binaryStatus != nullptr && numDevices > 0)
+            context(),
+            (cl_uint)deviceIDs.size(),
+            deviceIDs.empty() ? nullptr : deviceIDs.data(),
+            lengths.empty() ? nullptr : lengths.data(),
+            images.empty() ? nullptr : images.data(),
+            (binaryStatus != nullptr && numDevices > 0)
                ? &binaryStatus->front()
-               : nullptr, &error);
+               : nullptr,
+            &error);
 
         detail::errHandler(error, __CREATE_PROGRAM_WITH_BINARY_ERR);
         if (err != nullptr) {
@@ -6995,7 +7007,6 @@ public:
     {
         cl_int error;
 
-
         size_type numDevices = devices.size();
         vector<cl_device_id> deviceIDs(numDevices);
         for( size_type deviceIndex = 0; deviceIndex < numDevices; ++deviceIndex ) {
@@ -7004,8 +7015,8 @@ public:
         
         object_ = CL_(clCreateProgramWithBuiltInKernels)(
             context(), 
-            (cl_uint) devices.size(),
-            deviceIDs.data(),
+            (cl_uint)deviceIDs.size(),
+            deviceIDs.empty() ? nullptr : deviceIDs.data(),
             kernelNames.c_str(), 
             &error);
 
@@ -7058,9 +7069,8 @@ public:
 
         cl_int buildError = CL_(clBuildProgram)(
             object_,
-            (cl_uint)
-            devices.size(),
-            deviceIDs.data(),
+            (cl_uint)deviceIDs.size(),
+            deviceIDs.empty() ? nullptr : deviceIDs.data(),
             options,
             notifyFptr,
             data);
@@ -7168,18 +7178,20 @@ public:
     {
         static_assert(sizeof(cl::Program) == sizeof(cl_program),
             "Size of cl::Program must be equal to size of cl_program");
+
         vector<const char*> headerIncludeNamesCStr;
         for(const string& name: headerIncludeNames) {
             headerIncludeNamesCStr.push_back(name.c_str());
         }
+
         cl_int error = CL_(clCompileProgram)(
             object_,
             0,
             nullptr,
             options,
             static_cast<cl_uint>(inputHeaders.size()),
-            reinterpret_cast<const cl_program*>(inputHeaders.data()),
-            reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
+            reinterpret_cast<const cl_program*>(inputHeaders.empty() ? nullptr : inputHeaders.data()),
+            reinterpret_cast<const char**>(headerIncludeNamesCStr.empty() ? nullptr : headerIncludeNamesCStr.data()),
             notifyFptr,
             data);
         return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
@@ -7198,7 +7210,7 @@ public:
 
     cl_int compile(
         const char* options,
-        const vector<Device>& deviceList,
+        const vector<Device>& devices,
         const vector<Program>& inputHeaders = vector<Program>(),
         const vector<string>& headerIncludeNames = vector<string>(),
         void (CL_CALLBACK * notifyFptr)(cl_program, void *) = nullptr,
@@ -7206,22 +7218,25 @@ public:
     {
         static_assert(sizeof(cl::Program) == sizeof(cl_program),
             "Size of cl::Program must be equal to size of cl_program");
+
+        vector<cl_device_id> deviceIDs;
+        for(const Device& device: devices) {
+            deviceIDs.push_back(device());
+        }
+
         vector<const char*> headerIncludeNamesCStr;
         for(const string& name: headerIncludeNames) {
             headerIncludeNamesCStr.push_back(name.c_str());
         }
-        vector<cl_device_id> deviceIDList;
-        for(const Device& device: deviceList) {
-            deviceIDList.push_back(device());
-        }
+
         cl_int error = CL_(clCompileProgram)(
             object_,
-            static_cast<cl_uint>(deviceList.size()),
-            reinterpret_cast<const cl_device_id*>(deviceIDList.data()),
+            static_cast<cl_uint>(deviceIDs.size()),
+            reinterpret_cast<const cl_device_id*>(deviceIDs.empty() ? nullptr : deviceIDs.data()),
             options,
             static_cast<cl_uint>(inputHeaders.size()),
-            reinterpret_cast<const cl_program*>(inputHeaders.data()),
-            reinterpret_cast<const char**>(headerIncludeNamesCStr.data()),
+            reinterpret_cast<const cl_program*>(inputHeaders.empty() ? nullptr : inputHeaders.data()),
+            reinterpret_cast<const char**>(headerIncludeNamesCStr.empty() ? nullptr : headerIncludeNamesCStr.data()),
             notifyFptr,
             data);
         return detail::buildErrHandler(error, __COMPILE_PROGRAM_ERR, getBuildInfo<CL_PROGRAM_BUILD_LOG>());
@@ -7325,9 +7340,11 @@ public:
         }
 
         vector<cl_kernel> value(numKernels);
-        
         err = CL_(clCreateKernelsInProgram)(
-            object_, numKernels, value.data(), nullptr);
+            object_,
+            numKernels,
+            value.empty() ? nullptr : value.data(),
+            nullptr);
         if (err != CL_SUCCESS) {
             return detail::errHandler(err, __CREATE_KERNELS_IN_PROGRAM_ERR);
         }
@@ -7478,7 +7495,7 @@ inline Program linkProgram(
         nullptr,
         options,
         static_cast<cl_uint>(inputPrograms.size()),
-        reinterpret_cast<const cl_program *>(inputPrograms.data()),
+        reinterpret_cast<const cl_program *>(inputPrograms.empty() ? nullptr : inputPrograms.data()),
         notifyFptr,
         data,
         &error_local);
@@ -8921,12 +8938,13 @@ public:
             return detail::errHandler(CL_INVALID_VALUE,__ENQUEUE_COPY_SVM_ERR);
         }
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMemcpy)(
-                object_, blocking, static_cast<void *>(dst_container.data()),
-                static_cast<const void *>(src_container.data()),
+                object_, blocking,
+                dst_container.empty() ? nullptr : dst_container.data(),
+                src_container.empty() ? nullptr : src_container.data(),
                 dst_container.size() * sizeof(T),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
                 (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
-                (event != NULL) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
+                (event != nullptr) ? &tmp : nullptr), __ENQUEUE_COPY_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -8997,8 +9015,11 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMemFill)(
-                object_, static_cast<void *>(container.data()), static_cast<void *>(&pattern),
-                sizeof(PatternType), container.size() * sizeof(T),
+                object_,
+                container.empty() ? nullptr : container.data(),
+                &pattern,
+                sizeof(PatternType),
+                container.size() * sizeof(T),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
                 (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
                 (event != nullptr) ? &tmp : NULL), __ENQUEUE_FILL_SVM_ERR);
@@ -9078,7 +9099,9 @@ public:
     {
         cl_event tmp;
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMap)(
-            object_, blocking, flags, static_cast<void*>(container.data()), container.size()*sizeof(T),
+            object_, blocking, flags,
+            container.empty() ? nullptr : container.data(),
+            container.size() * sizeof(T),
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
@@ -9177,7 +9200,8 @@ public:
         cl_event tmp;
         cl_int err = detail::errHandler(
             CL_(clEnqueueSVMUnmap)(
-            object_, static_cast<void*>(container.data()),
+            object_,
+            container.empty() ? nullptr : container.data(),
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
             (event != nullptr) ? &tmp : nullptr),
@@ -9274,7 +9298,7 @@ public:
             CL_(clEnqueueMigrateMemObjects)(
                 object_, 
                 (cl_uint)memObjects.size(), 
-                localMemObjects.data(),
+                localMemObjects.empty() ? nullptr : localMemObjects.data(),
                 flags,
                 (events != nullptr) ? (cl_uint) events->size() : 0,
                 (events != nullptr && events->size() > 0) ? (const cl_event*) &events->front() : nullptr,
@@ -9306,8 +9330,9 @@ public:
         cl_event tmp;
         cl_int err = detail::errHandler(CL_(clEnqueueSVMMigrateMem)(
             object_,
-            svmRawPointers.size(), static_cast<void**>(svmRawPointers.data()),
-            sizes.data(), // array of sizes not passed
+            svmRawPointers.size(),
+            svmRawPointers.empty() ? nullptr : svmRawPointers.data(),
+            sizes.empty() ? nullptr : sizes.data(),
             flags,
             (events != nullptr) ? (cl_uint)events->size() : 0,
             (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
@@ -9676,7 +9701,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
             err = pfn_clEnqueueAcquireExternalMemObjectsKHR(
                 object_,
                 static_cast<cl_uint>(mem_objects.size()),
-                (mem_objects.size() > 0) ? reinterpret_cast<const cl_mem *>(mem_objects.data()) : nullptr,
+                reinterpret_cast<const cl_mem *>(mem_objects.empty() ? nullptr : mem_objects.data()),
                 (events_wait != nullptr) ? static_cast<cl_uint>(events_wait->size()) : 0,
                 (events_wait != nullptr && events_wait->size() > 0) ? reinterpret_cast<const cl_event*>(events_wait->data()) : nullptr,
                 &tmp);
@@ -9705,7 +9730,7 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
             err = pfn_clEnqueueReleaseExternalMemObjectsKHR(
                 object_,
                 static_cast<cl_uint>(mem_objects.size()),
-                (mem_objects.size() > 0) ? reinterpret_cast<const cl_mem *>(mem_objects.data()) : nullptr,
+                reinterpret_cast<const cl_mem *>(mem_objects.empty() ? nullptr : mem_objects.data()),
                 (events_wait != nullptr) ? static_cast<cl_uint>(events_wait->size()) : 0,
                 (events_wait != nullptr && events_wait->size() > 0) ? reinterpret_cast<const cl_event*>(events_wait->data()) : nullptr,
                 &tmp);
@@ -11337,7 +11362,7 @@ public:
         {
             object_ = pfn_clCreateSemaphoreWithPropertiesKHR(
                 context(),
-                sema_props.data(),
+                sema_props.empty() ? nullptr : sema_props.data(),
                 &error);
         }
           
@@ -11931,7 +11956,7 @@ public:
                 nullptr, // Properties
 #endif
                 image(),
-                static_cast<void*>(&fillColor),
+                &fillColor,
                 origin.data(),
                 region.data(),
                 (sync_points_vec != nullptr) ? (cl_uint) sync_points_vec->size() : 0,
@@ -12010,8 +12035,11 @@ public:
                                       __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
         }
         return detail::errHandler(
-            pfn_clUpdateMutableCommandsKHR(object_, static_cast<cl_uint>(configs.size()),
-                                           config_types.data(), configs.data()),
+            pfn_clUpdateMutableCommandsKHR(
+                object_,
+                static_cast<cl_uint>(configs.size()),
+                config_types.empty() ? nullptr : config_types.data(),
+                configs.empty() ? nullptr : configs.data()),
             __UPDATE_MUTABLE_COMMANDS_KHR_ERR);
     }
 #endif /* CL_KHR_COMMAND_BUFFER_MUTABLE_DISPATCH_EXTENSION_VERSION */

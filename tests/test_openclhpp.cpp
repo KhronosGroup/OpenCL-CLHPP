@@ -2026,6 +2026,21 @@ void testKernelSetSVMPointers(void)
     TEST_ASSERT_EQUAL_HEX(expected, ret);
 #endif
 }
+
+void testKernelSetSVMPointersEmpty(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clSetKernelExecInfo_ExpectAndReturn(make_kernel(0),
+                                        CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                                        0, nullptr, CL_SUCCESS);
+  
+    cl::vector<void *> vec;
+    cl_int ret = kernelPool[0].setSVMPointers(vec);
+
+    TEST_ASSERT_EQUAL_HEX(CL_SUCCESS, ret);
+#endif
+}
+
 cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
                                  cl_kernel_exec_info param_name,
                                  size_t param_value_size,
