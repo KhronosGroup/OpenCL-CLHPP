@@ -4466,14 +4466,10 @@ public:
     {
         cl_int error;
 
-        if (properties.empty()) {
-            object_ = CL_(clCreateBufferWithProperties)(context(), nullptr, flags,
-                                                     size, host_ptr, &error);
-        }
-        else {
-            object_ = CL_(clCreateBufferWithProperties)(
-                context(), properties.data(), flags, size, host_ptr, &error);
-        }
+        object_ = CL_(clCreateBufferWithProperties)(
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, size, host_ptr, &error);
 
         detail::errHandler(error, __CREATE_BUFFER_ERR);
         if (err != nullptr) {
@@ -4978,26 +4974,23 @@ public:
      */
     Image1D(const Context &context, const vector<cl_mem_properties> &properties,
             cl_mem_flags flags, ImageFormat format, size_type width,
-            void *host_ptr = nullptr, cl_int *err = nullptr) {
-      cl_int error;
+            void *host_ptr = nullptr, cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE1D;
-      desc.image_width = width;
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE1D;
+        desc.image_width = width;
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, host_ptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, host_ptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, host_ptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
@@ -5074,27 +5067,24 @@ public:
     Image1DBuffer(const Context &context,
                   const vector<cl_mem_properties> &properties,
                   cl_mem_flags flags, ImageFormat format, size_type width,
-                  const Buffer &buffer, cl_int *err = nullptr) {
-      cl_int error;
+                  const Buffer &buffer, cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
-      desc.image_width = width;
-      desc.buffer = buffer();
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE1D_BUFFER;
+        desc.image_width = width;
+        desc.buffer = buffer();
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, nullptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, nullptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, nullptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
@@ -5170,28 +5160,25 @@ public:
                  const vector<cl_mem_properties> &properties,
                  cl_mem_flags flags, ImageFormat format, size_type arraySize,
                  size_type width, size_type rowPitch = 0,
-                 void *host_ptr = nullptr, cl_int *err = nullptr) {
-      cl_int error;
+                 void *host_ptr = nullptr, cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
-      desc.image_width = width;
-      desc.image_array_size = arraySize;
-      desc.image_row_pitch = rowPitch;
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE1D_ARRAY;
+        desc.image_width = width;
+        desc.image_array_size = arraySize;
+        desc.image_row_pitch = rowPitch;
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, host_ptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, host_ptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, host_ptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
@@ -5411,28 +5398,25 @@ public:
     Image2D(const Context &context, const vector<cl_mem_properties> &properties,
             cl_mem_flags flags, ImageFormat format, size_type width,
             size_type height, size_type row_pitch = 0, void *host_ptr = nullptr,
-            cl_int *err = nullptr) {
-      cl_int error;
+            cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-      desc.image_width = width;
-      desc.image_height = height;
-      desc.image_row_pitch = row_pitch;
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+        desc.image_width = width;
+        desc.image_height = height;
+        desc.image_row_pitch = row_pitch;
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, host_ptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, host_ptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, host_ptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 
     /*! \brief Constructs a Image2D with specified properties.
@@ -5447,29 +5431,26 @@ public:
     Image2D(const Context &context, const vector<cl_mem_properties> &properties,
             cl_mem_flags flags, ImageFormat format, const Buffer &buffer,
             size_type width, size_type height, size_type row_pitch = 0,
-            cl_int *err = nullptr) {
-      cl_int error;
+            cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE2D;
-      desc.image_width = width;
-      desc.image_height = height;
-      desc.image_row_pitch = row_pitch;
-      desc.buffer = buffer();
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE2D;
+        desc.image_width = width;
+        desc.image_height = height;
+        desc.image_row_pitch = row_pitch;
+        desc.buffer = buffer();
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, nullptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, nullptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, nullptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
@@ -5628,30 +5609,27 @@ public:
                  cl_mem_flags flags, ImageFormat format, size_type arraySize,
                  size_type width, size_type height, size_type rowPitch = 0,
                  size_type slicePitch = 0, void *host_ptr = nullptr,
-                 cl_int *err = nullptr) {
-      cl_int error;
+                 cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
-      desc.image_width = width;
-      desc.image_height = height;
-      desc.image_array_size = arraySize;
-      desc.image_row_pitch = rowPitch;
-      desc.image_slice_pitch = slicePitch;
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE2D_ARRAY;
+        desc.image_width = width;
+        desc.image_height = height;
+        desc.image_array_size = arraySize;
+        desc.image_row_pitch = rowPitch;
+        desc.image_slice_pitch = slicePitch;
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, host_ptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, host_ptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, host_ptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 
@@ -5770,30 +5748,27 @@ public:
             cl_mem_flags flags, ImageFormat format, size_type width,
             size_type height, size_type depth, size_type row_pitch = 0,
             size_type slice_pitch = 0, void *host_ptr = nullptr,
-            cl_int *err = nullptr) {
-      cl_int error;
+            cl_int *err = nullptr)
+    {
+        cl_int error;
 
-      cl_image_desc desc = {};
-      desc.image_type = CL_MEM_OBJECT_IMAGE3D;
-      desc.image_width = width;
-      desc.image_height = height;
-      desc.image_depth = depth;
-      desc.image_row_pitch = row_pitch;
-      desc.image_slice_pitch = slice_pitch;
+        cl_image_desc desc = {};
+        desc.image_type = CL_MEM_OBJECT_IMAGE3D;
+        desc.image_width = width;
+        desc.image_height = height;
+        desc.image_depth = depth;
+        desc.image_row_pitch = row_pitch;
+        desc.image_slice_pitch = slice_pitch;
 
-      if (properties.empty()) {
         object_ = CL_(clCreateImageWithProperties)(
-            context(), nullptr, flags, &format, &desc, host_ptr, &error);
-      } else {
-        object_ =
-            CL_(clCreateImageWithProperties)(context(), properties.data(), flags,
-                                          &format, &desc, host_ptr, &error);
-      }
+            context(),
+            properties.empty() ? nullptr : properties.data(),
+            flags, &format, &desc, host_ptr, &error);
 
-      detail::errHandler(error, __CREATE_IMAGE_ERR);
-      if (err != nullptr) {
-        *err = error;
-      }
+        detail::errHandler(error, __CREATE_IMAGE_ERR);
+        if (err != nullptr) {
+            *err = error;
+        }
     }
 #endif //#if CL_HPP_TARGET_OPENCL_VERSION >= 300
 

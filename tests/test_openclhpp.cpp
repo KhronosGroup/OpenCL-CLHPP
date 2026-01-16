@@ -1405,6 +1405,51 @@ void testBufferWithProperties(void)
 #endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+static cl_mem clCreateBufferWithProperties_EmptyProperties(
+    cl_context context,
+    const cl_mem_properties *properties,
+    cl_mem_flags flags,
+    size_t size,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(context, make_context(1));
+    TEST_ASSERT_EQUAL(properties, nullptr);
+    TEST_ASSERT_EQUAL_HEX(flags, CL_MEM_READ_WRITE);
+    TEST_ASSERT_EQUAL(size, 42);
+    TEST_ASSERT_NULL(host_ptr);
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+
+    return make_mem(0);
+}
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
+
+void testBufferWithEmptyProperties(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    clCreateBufferWithProperties_StubWithCallback(clCreateBufferWithProperties_EmptyProperties);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context context(make_context(1));
+
+    cl_int err;
+
+    VECTOR_CLASS<cl_mem_properties> props;
+    cl::Buffer buffer(context, props, CL_MEM_READ_WRITE, 42, nullptr, &err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    // prevent destructor from interfering with the test
+    buffer() = nullptr;
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
 /****************************************************************************
  * Tests for cl::Image1DBuffer
  ****************************************************************************/
