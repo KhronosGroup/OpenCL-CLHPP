@@ -535,6 +535,44 @@ void testMoveConstructContextNonNull(void);
 void testMoveConstructContextNull(void);
 MAKE_MOVE_TESTS(Context, make_context, clReleaseContext, contextPool)
 
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+static cl_context clCreateContext_EmptyDevices(
+    const cl_context_properties* properties,
+    cl_uint num_devices,
+    const cl_device_id* devices,
+    void (CL_CALLBACK* pfn_notify)(const char* errinfo, const void* private_info, size_t cb, void* user_data),
+    void* user_data,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(properties, nullptr);
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(devices, nullptr);
+    TEST_ASSERT_EQUAL(pfn_notify, nullptr);
+    TEST_ASSERT_EQUAL(user_data, nullptr);
+
+    if (errcode_ret) {
+        errcode_ret[0] = CL_INVALID_VALUE;
+    }
+
+    return nullptr;
+}
+#endif
+
+void testContextCreateEmptyDevices(void)
+{
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+    clCreateContext_StubWithCallback(clCreateContext_EmptyDevices);
+
+    cl::vector<cl::Device> vec;
+    cl::Context context(vec);
+
+    TEST_ASSERT_EQUAL(nullptr, context());
+#endif
+}
+
 /// Stub for querying CL_CONTEXT_DEVICES that returns two devices
 static cl_int clGetContextInfo_testContextGetDevices(
     cl_context context,
@@ -1367,6 +1405,51 @@ void testBufferWithProperties(void)
 #endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
 }
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+static cl_mem clCreateBufferWithProperties_EmptyProperties(
+    cl_context context,
+    const cl_mem_properties *properties,
+    cl_mem_flags flags,
+    size_t size,
+    void *host_ptr,
+    cl_int *errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(context, make_context(1));
+    TEST_ASSERT_EQUAL(properties, nullptr);
+    TEST_ASSERT_EQUAL_HEX(flags, CL_MEM_READ_WRITE);
+    TEST_ASSERT_EQUAL(size, 42);
+    TEST_ASSERT_NULL(host_ptr);
+    if (errcode_ret)
+        *errcode_ret = CL_SUCCESS;
+
+    return make_mem(0);
+}
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
+
+void testBufferWithEmptyProperties(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 300
+    clCreateBufferWithProperties_StubWithCallback(clCreateBufferWithProperties_EmptyProperties);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context context(make_context(1));
+
+    cl_int err;
+
+    VECTOR_CLASS<cl_mem_properties> props;
+    cl::Buffer buffer(context, props, CL_MEM_READ_WRITE, 42, nullptr, &err);
+
+    TEST_ASSERT_EQUAL_PTR(make_mem(0), buffer());
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+
+    // prevent destructor from interfering with the test
+    buffer() = nullptr;
+#endif //CL_HPP_TARGET_OPENCL_VERSION >= 300
+}
+
 /****************************************************************************
  * Tests for cl::Image1DBuffer
  ****************************************************************************/
@@ -1967,6 +2050,15 @@ void testKernelSetArgBySetKernelArgSVMPointerWithVectorType(void)
 #endif
 }
 
+void testKernelSetArgBySetKernelArgSVMPointerWithEmptyVectorType(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    VECTOR_CLASS<int> vec;
+    clSetKernelArgSVMPointer_ExpectAndReturn(make_kernel(1), 2, nullptr, CL_SUCCESS);
+    TEST_ASSERT_EQUAL(kernelPool[1].setArg(2, vec), CL_SUCCESS);
+#endif
+}
+
 void testKernelSetArgBySetKernelArgSVMPointerWithPointerType(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
@@ -2026,6 +2118,35 @@ void testKernelSetSVMPointers(void)
     TEST_ASSERT_EQUAL_HEX(expected, ret);
 #endif
 }
+
+void testKernelSetSVMPointersEmptyVec(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clSetKernelExecInfo_ExpectAndReturn(make_kernel(0),
+                                        CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                                        0, nullptr, CL_SUCCESS);
+  
+    cl::vector<void *> vec;
+    cl_int ret = kernelPool[0].setSVMPointers(vec);
+
+    TEST_ASSERT_EQUAL_HEX(CL_SUCCESS, ret);
+#endif
+}
+
+void testKernelSetSVMPointersEmptyArray(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200
+    clSetKernelExecInfo_ExpectAndReturn(make_kernel(0),
+                                        CL_KERNEL_EXEC_INFO_SVM_PTRS,
+                                        0, nullptr, CL_SUCCESS);
+  
+    std::array<void*, 0> arr;
+    cl_int ret = kernelPool[0].setSVMPointers<0>(arr);
+
+    TEST_ASSERT_EQUAL_HEX(CL_SUCCESS, ret);
+#endif
+}
+
 cl_int clSetKernelExecInfo_EnableFineGrainedSystemSVM(cl_kernel kernel,
                                  cl_kernel_exec_info param_name,
                                  size_t param_value_size,
@@ -2177,6 +2298,132 @@ void testCopyHostToBuffer(void)
 /****************************************************************************
 * Tests for building Programs
 ****************************************************************************/
+
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+static cl_program clCreateProgramWithSource_EmptySource(
+    cl_context context,
+    cl_uint count,
+    const char** strings,
+    const size_t* lengths,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(context, make_context(1));
+    TEST_ASSERT_EQUAL(count, 0);
+    TEST_ASSERT_EQUAL(strings, nullptr);
+    TEST_ASSERT_EQUAL(lengths, nullptr);
+
+    if (errcode_ret) {
+        errcode_ret[0] = CL_INVALID_VALUE;
+    }
+
+    return nullptr;
+}
+#endif
+
+void testProgramCreateEmptySources(void)
+{
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+    clCreateProgramWithSource_StubWithCallback(clCreateProgramWithSource_EmptySource);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context context(make_context(1));
+
+    cl::Program::Sources sources;
+    cl::Program program(context, sources);
+
+    TEST_ASSERT_EQUAL(nullptr, program());
+#endif
+}
+
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+static cl_program clCreateProgramWithBinary_EmptyBinaries(
+    cl_context context,
+    cl_uint num_devices,
+    const cl_device_id* device_list,
+    const size_t* lengths,
+    const unsigned char** binaries,
+    cl_int* binary_status,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(context, make_context(1));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL(lengths, nullptr);
+    TEST_ASSERT_EQUAL(binaries, nullptr);
+    TEST_ASSERT_EQUAL(binary_status, nullptr);
+
+    if (errcode_ret) {
+        errcode_ret[0] = CL_INVALID_VALUE;
+    }
+
+    return nullptr;
+}
+#endif
+
+void testProgramCreateEmptyBinaries(void)
+{
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+    clCreateProgramWithBinary_StubWithCallback(clCreateProgramWithBinary_EmptyBinaries);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context context(make_context(1));
+
+    cl::vector<cl::Device> devices;
+    cl::Program::Binaries binaries;
+    cl::Program program(context, devices, binaries);
+
+    TEST_ASSERT_EQUAL(nullptr, program());
+#endif
+}
+
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+static cl_program clCreateProgramWithBuiltInKernels_EmptyDevices(
+    cl_context context,
+    cl_uint num_devices,
+    const cl_device_id* device_list,
+    const char* kernel_names,
+    cl_int* errcode_ret,
+    int num_calls)
+{
+    (void) num_calls;
+
+    TEST_ASSERT_EQUAL(context, make_context(1));
+    TEST_ASSERT_EQUAL(num_devices, 0);
+    TEST_ASSERT_EQUAL(device_list, nullptr);
+    TEST_ASSERT_EQUAL_STRING(kernel_names, "foo");
+
+    if (errcode_ret) {
+        errcode_ret[0] = CL_INVALID_VALUE;
+    }
+
+    return nullptr;
+}
+#endif
+#endif
+
+void testProgramCreateBuiltinKernelsEmptyDevices(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
+#ifndef CL_HPP_ENABLE_EXCEPTIONS
+    clCreateProgramWithBuiltInKernels_StubWithCallback(clCreateProgramWithBuiltInKernels_EmptyDevices);
+    clReleaseContext_ExpectAndReturn(make_context(1), CL_SUCCESS);
+
+    cl::Context context(make_context(1));
+
+    cl::vector<cl::Device> devices;
+    cl::Program program(context, devices, "foo");
+
+    TEST_ASSERT_EQUAL(nullptr, program());
+#endif
+#endif
+}
 
 static cl_int clGetDeviceInfo_testGetBuildInfo(
     cl_device_id device,
