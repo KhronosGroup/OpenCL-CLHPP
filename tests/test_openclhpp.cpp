@@ -1003,7 +1003,86 @@ void testCommandQueueFromSpecifiedContext(void)
     TEST_ASSERT_EQUAL(2, context_refcount);
     // Device object destroyed at end of scope
     TEST_ASSERT_EQUAL(1, device_refcount);
+}
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 310
+static cl_int clGetKernelSuggestedLocalWorkSize_stub(
+    cl_command_queue command_queue,
+    cl_kernel kernel,
+    cl_uint work_dim,
+    const size_t *offset,
+    const size_t *global,
+    size_t *local,
+    int num_calls)
+{
+    (void) num_calls;
+    TEST_ASSERT_EQUAL_PTR(make_command_queue(0), command_queue);
+    TEST_ASSERT_EQUAL_PTR(make_kernel(0), kernel);
+
+    if (work_dim > 3) {
+        return CL_INVALID_WORK_DIMENSION;
+    }
+
+    local[0] = global[0] / (offset ? offset[0] : 1);
+    if (work_dim >= 2) {
+        local[1] = global[1] / (offset ? offset[1] : 1);
+    }
+    if (work_dim >= 3) {
+        local[2] = global[2] / (offset ? offset[2] : 1);
+    }
+
+    return CL_SUCCESS;
+}
+#endif // #if CL_HPP_TARGET_OPENCL_VERSION >= 310
+
+void testKernelSuggestedLocalWorkSize1D(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 310
+    clGetKernelSuggestedLocalWorkSize_StubWithCallback(clGetKernelSuggestedLocalWorkSize_stub);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
+
+    cl::CommandQueue q(make_command_queue(0));
+    cl::Kernel k(make_kernel(0));
+
+    cl::NDRange global(256);
+
+    cl_int error = CL_INVALID_OPERATION;
+    auto local = q.getKernelSuggestedLocalWorkSize(
+        k,
+        cl::NullRange, // offset
+        global,
+        &error);
+
+    TEST_ASSERT_EQUAL(CL_SUCCESS, error);
+    TEST_ASSERT_EQUAL(1, local.dimensions());
+    TEST_ASSERT_EQUAL(256, local[0]);
+#endif
+}
+
+void testKernelSuggestedLocalWorkSize3DWithOffset(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 310
+    clGetKernelSuggestedLocalWorkSize_StubWithCallback(clGetKernelSuggestedLocalWorkSize_stub);
+    clReleaseKernel_ExpectAndReturn(make_kernel(0), CL_SUCCESS);
+    clReleaseCommandQueue_ExpectAndReturn(make_command_queue(0), CL_SUCCESS);
+
+    cl::CommandQueue q(make_command_queue(0));
+    cl::Kernel k(make_kernel(0));
+
+    cl::NDRange global(128, 64, 32);
+    cl::NDRange offset(2, 4, 8);
+
+    auto local = q.getKernelSuggestedLocalWorkSize(
+        k,
+        offset,
+        global);
+
+    TEST_ASSERT_EQUAL(3, local.dimensions());
+    TEST_ASSERT_EQUAL(64, local[0]);
+    TEST_ASSERT_EQUAL(16, local[1]);
+    TEST_ASSERT_EQUAL(4, local[2]);
+#endif
 }
 
 /****************************************************************************
