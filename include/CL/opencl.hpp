@@ -9741,6 +9741,9 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
         const NDRange& global,
         cl_int* err = nullptr) const
     {
+        // Initialize the local work-group size to the global work size
+        // so it has the right dimensionality.  The contents will be
+        // overwritten by the call to clGetKernelSuggestedLocalWorkSize.
         NDRange local = global;
         cl_int error = detail::errHandler(
             CL_(clGetKernelSuggestedLocalWorkSize)(
