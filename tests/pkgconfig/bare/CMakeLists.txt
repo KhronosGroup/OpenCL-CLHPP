@@ -31,7 +31,7 @@ target_link_libraries(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
   PRIVATE
     CL_HPP_ENABLE_EXCEPTIONS
-    CL_HPP_TARGET_OPENCL_VERSION=300
+    CL_HPP_TARGET_OPENCL_VERSION=310
 )
 
 include(CTest)

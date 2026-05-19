@@ -91,7 +91,7 @@ elseif(MSVC)
     add_compile_options(/wd4996)
 endif()
 
-add_definitions(-DCL_TARGET_OPENCL_VERSION=300)
+add_definitions(-DCL_TARGET_OPENCL_VERSION=310)
 add_definitions(-DCL_EXPERIMENTAL)
 add_definitions(-DCL_ENABLE_BETA_EXTENSIONS)
 
@@ -121,7 +121,7 @@ set(TEST_SOURCES
     ${UNITY_DIR}/src/unity.c)
 
 # TODO enable testing for OpenCL 1.0 and 1.1
-foreach(VERSION 120 200 210 220 300)
+foreach(VERSION 120 200 210 220 300 310)
   foreach(OPTION "" CL_HPP_ENABLE_EXCEPTIONS CL_HPP_ENABLE_SIZE_T_COMPATIBILITY CL_HPP_ENABLE_PROGRAM_CONSTRUCTION_FROM_ARRAY_COMPATIBILITY CL_HPP_CL_1_2_DEFAULT_BUILD CL_HPP_USE_CL_SUB_GROUPS_KHR CL_HPP_USE_IL_KHR)
     if(OPTION STREQUAL "")
       # The empty string means we're not setting any special option.
@@ -175,8 +175,8 @@ if(NOT TARGET OpenCL::openCL)
 endif()
 if(TARGET OpenCL::OpenCL)
   # TODO enable testing for OpenCL 1.0 and 1.1
-  foreach(MINVERSION 120 200 210 220 300)
-    foreach(TARGETVERSION 120 200 210 220 300)
+  foreach(MINVERSION 120 200 210 220 300 310)
+    foreach(TARGETVERSION 120 200 210 220 300 310)
       if(NOT (${MINVERSION} GREATER ${TARGETVERSION}))
         set(TEST_EXE test_openclhpp_version_min_${MINVERSION}_target_${TARGETVERSION})
         add_executable(${TEST_EXE} test_versions.cpp)
