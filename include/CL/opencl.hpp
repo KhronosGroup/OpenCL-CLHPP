@@ -3339,7 +3339,8 @@ private:
         Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetImageRequirementsInfoEXT);
-#else
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetImageRequirementsInfoEXT);
 #endif
 
@@ -7669,8 +7670,14 @@ private:
     {
         auto platform = device.getInfo<CL_DEVICE_PLATFORM>()();
 
+#if CL_HPP_TARGET_OPENCL_VERSION >= 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireExternalMemObjectsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseExternalMemObjectsKHR);
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueAcquireExternalMemObjectsKHR);
+        CL_HPP_INIT_CL_EXT_FCN_PTR_(clEnqueueReleaseExternalMemObjectsKHR);
+#endif
 
         if ((pfn_clEnqueueAcquireExternalMemObjectsKHR == nullptr)
             && (pfn_clEnqueueReleaseExternalMemObjectsKHR == nullptr))
@@ -11474,8 +11481,8 @@ private:
 #ifdef cl_khr_external_semaphore
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetSemaphoreHandleForTypeKHR);
 #endif // cl_khr_external_semaphore
-
-#else
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateSemaphoreWithPropertiesKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clReleaseSemaphoreKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clRetainSemaphoreKHR);
@@ -11485,8 +11492,8 @@ private:
 #ifdef cl_khr_external_semaphore
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetSemaphoreHandleForTypeKHR);
 #endif // cl_khr_external_semaphore
-
 #endif
+
         if ((pfn_clCreateSemaphoreWithPropertiesKHR == nullptr) &&
             (pfn_clReleaseSemaphoreKHR              == nullptr) &&
             (pfn_clRetainSemaphoreKHR               == nullptr) &&
@@ -12072,8 +12079,9 @@ private:
 #if defined(cl_khr_command_buffer_mutable_dispatch)
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clGetMutableCommandInfoKHR);
-#endif /* cl_khr_command_buffer_mutable_dispatch */
-#elif CL_HPP_TARGET_OPENCL_VERSION >= 110
+#endif // cl_khr_command_buffer_mutable_dispatch
+#endif
+#if CL_HPP_MINIMUM_OPENCL_VERSION < 120
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clCreateCommandBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clFinalizeCommandBufferKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clRetainCommandBufferKHR);
@@ -12092,8 +12100,9 @@ private:
 #if defined(cl_khr_command_buffer_mutable_dispatch)
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clUpdateMutableCommandsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_(clGetMutableCommandInfoKHR);
-#endif /* cl_khr_command_buffer_mutable_dispatch */
+#endif // cl_khr_command_buffer_mutable_dispatch
 #endif
+
         if ((pfn_clCreateCommandBufferKHR        == nullptr) &&
             (pfn_clFinalizeCommandBufferKHR      == nullptr) &&
             (pfn_clRetainCommandBufferKHR        == nullptr) &&
