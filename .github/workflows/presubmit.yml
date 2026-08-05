@@ -93,7 +93,7 @@ jobs:
 
     steps:
     - name: Install system CMake
-      if: ${{matrix.CMAKE}} == 'system'
+      if: matrix.CMAKE == 'system'
       run: apt-get update -qq && apt-get install -y cmake &&
         echo "CMAKE_EXE=cmake" >> "$GITHUB_ENV" &&
         echo "CPACK_EXE=cpack" >> "$GITHUB_ENV" &&
