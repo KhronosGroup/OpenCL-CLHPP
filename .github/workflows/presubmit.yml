@@ -298,23 +298,6 @@ jobs:
       CXXFLAGS: /W4 /WX
 
     steps:
-    - name: Checkout OpenCL-CLHPP
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-        submodules: recursive
-
-    - name: Checkout OpenCL-Headers
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-        repository: KhronosGroup/OpenCL-Headers
-        path: external/OpenCL-Headers
-
-    - name: Checkout OpenCL-ICD-Loader
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-      with:
-        repository: KhronosGroup/OpenCL-ICD-Loader
-        path: external/OpenCL-ICD-Loader
-
     - name: Resolve Visual Studio install path
       run: |
         $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
@@ -338,6 +321,23 @@ jobs:
 
         if (-not $vsPath) { throw "No suitable Visual Studio installation was found." }
         "VS_ROOT=$vsPath" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - name: Checkout OpenCL-CLHPP
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        submodules: recursive
+
+    - name: Checkout OpenCL-Headers
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        repository: KhronosGroup/OpenCL-Headers
+        path: external/OpenCL-Headers
+
+    - name: Checkout OpenCL-ICD-Loader
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      with:
+        repository: KhronosGroup/OpenCL-ICD-Loader
+        path: external/OpenCL-ICD-Loader
 
     - name: Build & install OpenCL-Headers (MSBuild)
       if: matrix.GEN == 'Visual Studio 18 2026'
