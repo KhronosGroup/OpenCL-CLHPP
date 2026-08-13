@@ -3334,7 +3334,6 @@ private:
         void* param_value,
         size_type* param_value_size_ret)
     {
-
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
@@ -7668,9 +7667,9 @@ private:
 
     static void initMemoryExtension(const cl::Device& device) 
     {
-        auto platform = device.getInfo<CL_DEVICE_PLATFORM>()();
-
+        (void)device; // suppress unused variable warning
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
+        auto platform = device.getInfo<CL_DEVICE_PLATFORM>()();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireExternalMemObjectsKHR);
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseExternalMemObjectsKHR);
 #endif
@@ -9584,7 +9583,6 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     {
         static PFN_clEnqueueAcquireD3D10ObjectsKHR pfn_clEnqueueAcquireD3D10ObjectsKHR = nullptr;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        cl_context context = getInfo<CL_QUEUE_CONTEXT>();
         cl::Device device(getInfo<CL_QUEUE_DEVICE>());
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueAcquireD3D10ObjectsKHR);
@@ -9617,7 +9615,6 @@ typedef CL_API_ENTRY cl_int (CL_API_CALL *PFN_clEnqueueReleaseD3D10ObjectsKHR)(
     {
         static PFN_clEnqueueReleaseD3D10ObjectsKHR pfn_clEnqueueReleaseD3D10ObjectsKHR = nullptr;
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
-        cl_context context = getInfo<CL_QUEUE_CONTEXT>();
         cl::Device device(getInfo<CL_QUEUE_DEVICE>());
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clEnqueueReleaseD3D10ObjectsKHR);
@@ -11469,6 +11466,7 @@ private:
 
     static void initExtensions(const Context& context)
     {
+        (void)context; // suppress unused variable warning
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         Device device = context.getInfo<CL_CONTEXT_DEVICES>().at(0);
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
@@ -12059,6 +12057,7 @@ private:
 
     static void initExtensions(const cl::Device& device)
     {
+        (void)device; // suppress unused variable warning
 #if CL_HPP_TARGET_OPENCL_VERSION >= 120
         cl_platform_id platform = device.getInfo<CL_DEVICE_PLATFORM>()();
         CL_HPP_INIT_CL_EXT_FCN_PTR_PLATFORM_(platform, clCreateCommandBufferKHR);
