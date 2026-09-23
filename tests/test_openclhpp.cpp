@@ -3328,7 +3328,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
     TEST_ASSERT_EQUAL_PTR(make_context(1), context);
     TEST_ASSERT_EQUAL_PTR(make_device_id(1), device);
     TEST_ASSERT_EQUAL(properties[0], CL_QUEUE_PROPERTIES);
-    static cl_command_queue default_ = 0;
+    static cl_command_queue default_ = nullptr;
 
     if (errcode_ret != nullptr)
         *errcode_ret = CL_SUCCESS;
@@ -3347,7 +3347,7 @@ static cl_command_queue clCreateCommandQueueWithProperties_testCommandQueueDevic
     }
     else {
         TEST_ASSERT_EQUAL(properties[1], (CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE | CL_QUEUE_ON_DEVICE | CL_QUEUE_ON_DEVICE_DEFAULT));
-        if (default_ == 0) {
+        if (default_ == nullptr) {
             default_ = make_command_queue(4);
         }
         return default_;
@@ -5682,7 +5682,7 @@ void testSVMMemoryAllocation(void)
 
     int *ptr = svmAllocator.allocate(3);
     TEST_ASSERT_EQUAL_PTR(ptr,testMemory);
-    clSVMFree_Expect(0, ptr);
+    clSVMFree_Expect(nullptr, ptr);
     svmAllocator.deallocate(ptr,3);
 #endif
 }

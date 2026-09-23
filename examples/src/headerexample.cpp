@@ -23,7 +23,7 @@ int main(void)
             plat = p;
         }
     }
-    if (plat() == 0) {
+    if (plat() == nullptr) {
         std::cout << "No OpenCL 2.0 or newer platform found.\n";
         return -1;
     }
