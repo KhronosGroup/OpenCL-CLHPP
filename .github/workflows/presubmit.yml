@@ -88,8 +88,11 @@ jobs:
       DEB_INSTALLATION_PATH: /usr
       CC: ${{matrix.COMPILER.C_NAME}}-${{matrix.COMPILER.VER}}
       CXX:  ${{matrix.COMPILER.CXX_NAME}}-${{matrix.COMPILER.VER}}
-      CFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Werror -m${{matrix.BIN}}
-      CXXFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Werror -m${{matrix.BIN}}
+      # -Wzero-as-null-pointer-constant is only enabled for gcc and for clang 18 or newer.
+      # In C++, clang defines NULL as __null, and clang 17 and older warn about __null
+      # with -Wzero-as-null-pointer-constant.
+      CFLAGS: -Wall -Wextra ${{ (matrix.COMPILER.C_NAME != 'clang' || matrix.COMPILER.VER >= 18) && '-Wzero-as-null-pointer-constant' || '' }} -pedantic -Werror -m${{matrix.BIN}}
+      CXXFLAGS: -Wall -Wextra ${{ (matrix.COMPILER.C_NAME != 'clang' || matrix.COMPILER.VER >= 18) && '-Wzero-as-null-pointer-constant' || '' }} -pedantic -Werror -m${{matrix.BIN}}
 
     steps:
     - name: Install system CMake
