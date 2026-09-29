@@ -88,8 +88,8 @@ jobs:
       DEB_INSTALLATION_PATH: /usr
       CC: ${{matrix.COMPILER.C_NAME}}-${{matrix.COMPILER.VER}}
       CXX:  ${{matrix.COMPILER.CXX_NAME}}-${{matrix.COMPILER.VER}}
-      CFLAGS: -Wall -Wextra -pedantic -Werror -m${{matrix.BIN}}
-      CXXFLAGS: -Wall -Wextra -pedantic -Werror -m${{matrix.BIN}}
+      CFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Werror -m${{matrix.BIN}}
+      CXXFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Werror -m${{matrix.BIN}}
 
     steps:
     - name: Install system CMake
@@ -667,8 +667,8 @@ jobs:
     env:
       CC: ${{matrix.COMPILER.C_NAME}}
       CXX: ${{matrix.COMPILER.CXX_NAME}}
-      CFLAGS: -Wall -Wextra -pedantic -Wno-format -Werror ${{matrix.COMPILER.EXTRA_FLAGS}}
-      CXXFLAGS: -Wall -Wextra -pedantic -Wno-format -Werror ${{matrix.COMPILER.EXTRA_FLAGS}}
+      CFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Wno-format -Werror ${{matrix.COMPILER.EXTRA_FLAGS}}
+      CXXFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Wno-format -Werror ${{matrix.COMPILER.EXTRA_FLAGS}}
 
     steps:
     - name: Checkout OpenCL-CLHPP
@@ -792,8 +792,8 @@ jobs:
         - Debug
         - Release
     env:
-      CFLAGS: -Wall -Wextra -pedantic -Werror
-      CXXFLAGS: -Wall -Wextra -pedantic -Werror
+      CFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Werror
+      CXXFLAGS: -Wall -Wextra -Wzero-as-null-pointer-constant -pedantic -Werror
     steps:
     - name: Checkout OpenCL-CLHPP
       uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
