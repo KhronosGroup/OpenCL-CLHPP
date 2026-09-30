@@ -1203,7 +1203,7 @@ inline cl_int getInfoHelper(Func f, cl_uint name, vector<T>* param, long)
  */
 template <typename Func, typename T>
 inline cl_int getInfoHelper(
-    Func f, cl_uint name, vector<T>* param, int, typename T::cl_type = 0)
+    Func f, cl_uint name, vector<T>* param, int, typename T::cl_type = {})
 {
     size_type required;
     cl_int err = f(name, 0, nullptr, &required);
@@ -1299,7 +1299,7 @@ template<typename T> struct ReferenceHandler;
  * template will provide a better match.
  */
 template<typename Func, typename T>
-inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_type = 0)
+inline cl_int getInfoHelper(Func f, cl_uint name, T* param, int, typename T::cl_type = {})
 {
     typename T::cl_type value;
     cl_int err = f(name, sizeof(value), &value, nullptr);
@@ -4205,7 +4205,7 @@ public:
      */
     pointer allocate(
         size_type size,
-        typename cl::SVMAllocator<void, SVMTrait>::const_pointer = 0,
+        typename cl::SVMAllocator<void, SVMTrait>::const_pointer = nullptr,
         bool map = true)
     {
         // Allocate memory with default alignment matching the size of the type
@@ -4548,7 +4548,7 @@ public:
         if( useHostPtr ) {
             object_ = CL_(clCreateBuffer)(context(), flags, size, const_cast<DataType*>(&*startIterator), &error);
         } else {
-            object_ = CL_(clCreateBuffer)(context(), flags, size, 0, &error);
+            object_ = CL_(clCreateBuffer)(context(), flags, size, nullptr, &error);
         }
 
         detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -8635,8 +8635,8 @@ public:
                 origin.data(),
                 region.data(),
                 (events != nullptr) ? (cl_uint)events->size() : 0,
-                (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : NULL,
-                (event != NULL) ? &tmp : nullptr),
+                (events != nullptr && events->size() > 0) ? (const cl_event*)&events->front() : nullptr,
+                (event != nullptr) ? &tmp : nullptr),
             __ENQUEUE_FILL_IMAGE_ERR);
 
         if (event != nullptr && err == CL_SUCCESS) *event = tmp;
@@ -9003,7 +9003,7 @@ public:
                 container.size() * sizeof(T),
                 (events != nullptr) ? (cl_uint) events->size() : 0,
                 (events != nullptr && events->size() > 0) ? (const cl_event *) &events->front() : nullptr,
-                (event != nullptr) ? &tmp : NULL), __ENQUEUE_FILL_SVM_ERR);
+                (event != nullptr) ? &tmp : nullptr), __ENQUEUE_FILL_SVM_ERR);
 
         if (event != nullptr && err == CL_SUCCESS)
             *event = tmp;
@@ -10071,7 +10071,7 @@ Buffer::Buffer(
     if( useHostPtr ) {
         object_ = CL_(clCreateBuffer)(context(), flags, size, const_cast<DataType*>(&*startIterator), &error);
     } else {
-        object_ = CL_(clCreateBuffer)(context(), flags, size, 0, &error);
+        object_ = CL_(clCreateBuffer)(context(), flags, size, nullptr, &error);
     }
 
     detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -10125,7 +10125,7 @@ Buffer::Buffer(
         object_ = CL_(clCreateBuffer)(context(), flags, size, const_cast<DataType*>(&*startIterator), &error);
     }
     else {
-        object_ = CL_(clCreateBuffer)(context(), flags, size, 0, &error);
+        object_ = CL_(clCreateBuffer)(context(), flags, size, nullptr, &error);
     }
 
     detail::errHandler(error, __CREATE_BUFFER_ERR);
@@ -10447,7 +10447,7 @@ inline cl_int copy( const CommandQueue &queue, IteratorType startIterator, Itera
     size_type byteLength = length*sizeof(DataType);
 
     DataType *pointer = 
-        static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_WRITE, 0, byteLength, 0, 0, &error));
+        static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_WRITE, 0, byteLength, nullptr, nullptr, &error));
     // if exceptions enabled, enqueueMapBuffer will throw
     if( error != CL_SUCCESS ) {
         return error;
@@ -10462,7 +10462,7 @@ inline cl_int copy( const CommandQueue &queue, IteratorType startIterator, Itera
     std::copy(startIterator, endIterator, pointer);
 #endif // defined(_MSC_VER) && _MSC_VER < 1920
     Event endEvent;
-    error = queue.enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
+    error = queue.enqueueUnmapMemObject(buffer, pointer, nullptr, &endEvent);
     // if exceptions enabled, enqueueUnmapMemObject will throw
     if( error != CL_SUCCESS ) { 
         return error;
@@ -10486,14 +10486,14 @@ inline cl_int copy( const CommandQueue &queue, const cl::Buffer &buffer, Iterato
     size_type byteLength = length*sizeof(DataType);
 
     DataType *pointer = 
-        static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_READ, 0, byteLength, 0, 0, &error));
+        static_cast<DataType*>(queue.enqueueMapBuffer(buffer, CL_TRUE, CL_MAP_READ, 0, byteLength, nullptr, nullptr, &error));
     // if exceptions enabled, enqueueMapBuffer will throw
     if( error != CL_SUCCESS ) {
         return error;
     }
     std::copy(pointer, pointer + length, startIterator);
     Event endEvent;
-    error = queue.enqueueUnmapMemObject(buffer, pointer, 0, &endEvent);
+    error = queue.enqueueUnmapMemObject(buffer, pointer, nullptr, &endEvent);
     // if exceptions enabled, enqueueUnmapMemObject will throw
     if( error != CL_SUCCESS ) { 
         return error;
