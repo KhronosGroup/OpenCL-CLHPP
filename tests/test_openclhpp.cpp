@@ -2147,6 +2147,51 @@ void testKernelSetArgBySetKernelArgSVMPointerWithPointerType(void)
 #endif
 }
 
+void testDeviceMemoryControlsCapabilitiesARM(void)
+{
+#ifdef CL_DEVICE_MEMORY_CONTROLS_CAPABILITIES_ARM
+    cl_device_memory_controls_capabilities_arm capabilities =
+        CL_DEVICE_MEMORY_CONTROLS_COHERENCY_ARM | CL_DEVICE_MEMORY_CONTROLS_LOCAL_MEMORY_ARM;
+    clGetDeviceInfo_StubWithCallback([](cl_device_id device, cl_device_info name,
+        size_t size, void* value, size_t*, int) -> cl_int {
+        TEST_ASSERT_EQUAL_PTR(make_device_id(0), device);
+        TEST_ASSERT_EQUAL(CL_DEVICE_MEMORY_CONTROLS_CAPABILITIES_ARM, name);
+        TEST_ASSERT_EQUAL(sizeof(cl_device_memory_controls_capabilities_arm), size);
+        *static_cast<cl_device_memory_controls_capabilities_arm*>(value) =
+            CL_DEVICE_MEMORY_CONTROLS_COHERENCY_ARM | CL_DEVICE_MEMORY_CONTROLS_LOCAL_MEMORY_ARM;
+        return CL_SUCCESS;
+    });
+    cl_int err = CL_INVALID_VALUE;
+    auto result = devicePool[0].getInfo<CL_DEVICE_MEMORY_CONTROLS_CAPABILITIES_ARM>(&err);
+    TEST_ASSERT_EQUAL(CL_SUCCESS, err);
+    TEST_ASSERT_EQUAL_HEX64(capabilities, result);
+#endif
+}
+
+void testKernelLocalMemoryBackingARM(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && defined(CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_ARM)
+    const cl_kernel_exec_info_local_memory_backing_arm values[] = {CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_GLOBAL_ARM, CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_COMPUTE_UNIT_ARM, CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_AUTO_ARM};
+    for (auto value : values) {
+        clSetKernelExecInfo_ExpectAndReturn(make_kernel(0), CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_ARM,
+            sizeof(value), &value, CL_SUCCESS);
+        TEST_ASSERT_EQUAL(CL_SUCCESS, kernelPool[0].setExecInfo<CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_BACKING_ARM>(value));
+    }
+#endif
+}
+
+void testKernelLocalMemoryHashingARM(void)
+{
+#if CL_HPP_TARGET_OPENCL_VERSION >= 200 && defined(CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_HASHING_ARM)
+    const cl_bool values[] = {CL_FALSE, CL_TRUE};
+    for (auto value : values) {
+        clSetKernelExecInfo_ExpectAndReturn(make_kernel(0), CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_HASHING_ARM,
+            sizeof(value), &value, CL_SUCCESS);
+        TEST_ASSERT_EQUAL(CL_SUCCESS, kernelPool[0].setExecInfo<CL_KERNEL_EXEC_INFO_LOCAL_MEMORY_HASHING_ARM>(value));
+    }
+#endif
+}
+
 void testKernelSetExecInfo(void)
 {
 #if CL_HPP_TARGET_OPENCL_VERSION >= 200
